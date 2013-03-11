@@ -1,7 +1,7 @@
 {
   "name": "sumeru",
   "version": "0.1.0",
-  "description": "A brand new WebApp framework present by Baidu.Inc",
+  "description": "A brand new WebApp framework presented by Baidu.Inc",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
