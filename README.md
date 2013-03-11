@@ -1,4 +1,4 @@
-sumeru
+Sumeru
 ======
 
 Baidu Sumeru Framework
