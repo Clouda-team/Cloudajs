@@ -2,8 +2,8 @@ module.exports = function(directory,dstDir){
     var fs = require('fs');
     var path = require('path');
     //var uglify = path.join(directory,'server/node_modules/', 'UglifyJs');	
-    var jsp = require('UglifyJs').parser;
-    var pro = require('UglifyJs').uglify;
+    var jsp = require('uglify-js').parser;
+    var pro = require('uglify-js').uglify;
 
     //默认路径和默认路径下的package.json
     var baseUrl = __dirname;

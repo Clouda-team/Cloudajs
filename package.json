@@ -26,6 +26,5 @@
     "sumeru": "./sumeru/npm-tools/sumeru"
   },
   "author": "sumeru team",
-  "license": "MIT",
-  "readmeFilename": "README.md"
+  "license": "MIT"
 }
