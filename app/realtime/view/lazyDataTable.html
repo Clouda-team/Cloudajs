@@ -1,0 +1,52 @@
+<table cellspadding="0" cellspacing="0">
+	<thead>
+		<tr>
+			<th>model</th>
+			<th>collection</th>
+			<th>array</th>
+			<th>object</th>
+			<th>datetime</th>
+			<th>boolean</th>
+			<th>string</th>
+			<th>int</th>
+			<th></th>
+			<th></th>
+			<th></th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	
+	<tbody tpl-role="page_unit">
+		{{#foreach data}}
+			
+			{{> inc/tr}}
+			<!-- {{> inc/tr}}
+			{{> inc/tr}} -->
+			<!--
+				malform include test:
+			{{> ../inc/tr}}
+			-->
+
+		{{/foreach}}
+	</tbody>
+	
+	<tbody>
+		<tr>
+			<td colspan="11" align="center">
+				<button id="loadMore" style="width:300px;height:50px;background:#fff;border:1px solid #999">加载下一页</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" align="right">
+				<button id="Add" style="height:50px;width:100px;background:#fff;border:1px solid #999;">新增</button>
+			</td>
+			<td colspan="4" align="right">
+			    <button id="Modify" style="height:50px;width:100px;background:#fff;border:1px solid #999;">修改Session</button>
+			</td>
+			<td colspan="3" align="right">
+			    <button id="Config" style="height:50px;width:100px;background:#fff;border:1px solid #999;">修改Config</button>
+			</td>
+		</tr>
+	</tbody>
+</table>

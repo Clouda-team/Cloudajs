@@ -1,0 +1,35 @@
+﻿
+<style>
+	.error{
+		color: #990000;
+	}
+	.tips{
+		color:#ff6600;
+	}
+</style>
+	<label for="sdname">用户名</label>
+	<input id="sdname" name="sdname" value="jin"/>
+	<div id="sdnameerror" class="error"></div>
+	<br/>
+
+	<label for="sdage">年龄</label>
+	<input id="sdage" name="sdage" value="1"/>
+	<div id="sdageerror" class="error"></div>
+	<div id="sdvalidation" class="tips"></div>
+	<div id="sdloading" class="tips"></div>
+	
+	<button id="sdsave">save</button>
+	<button id="sdensuresave">ensuresave</button>
+
+	
+
+	<block tpl-id="sduserlist">
+	<table>
+		<thead>
+			<tr><th>用户名</th><th>年龄</th></tr>
+		</thead>
+		<tbody>
+				{{> sduserlist}}
+		</tbody>
+	</table>
+	</block>

@@ -1,0 +1,11 @@
+{
+	"buildList" : [
+			{
+                "name" : "buildJavscript",
+                "path" : "/build/buildJavascript.js",
+                "param" : ""
+            }
+         
+ 		]
+	
+}

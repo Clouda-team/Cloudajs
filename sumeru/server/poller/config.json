@@ -1,0 +1,19 @@
+{
+	"HTTP" : {
+		"ishttps" : 0,
+		"host" : "",
+		"port" : "80",
+		"path" : "",
+		"method" : "POST",
+		"headers" : {
+			"Host" : "",
+			"User-Agent" : "",
+			"Accept" : "*/*",
+			"Cookie" : {},
+			"Content-Type" : "",
+			"Content-Length" : 0
+			},
+		"content" : ""
+	}
+
+}

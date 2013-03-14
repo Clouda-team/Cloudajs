@@ -1,0 +1,83 @@
+<table cellspadding="0" cellspacing="0">
+	<thead>
+		<tr>
+			<th>model</th>
+			<th>collection</th>
+			<th>array</th>
+			<th>object</th>
+			<th>datetime</th>
+			<th>boolean</th>
+			<th>string</th>
+			<th>int</th>
+			<th>name</th>
+			<th></th>
+			<th></th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+	   
+		
+		{{#foreach data}}
+			
+			{{> inc/tr}}
+			<!-- {{> inc/tr}}
+			{{> inc/tr}} -->
+			<!--
+				malform include test:
+			{{> ../inc/tr}}
+			-->
+
+		{{/foreach}}
+		<tr>
+			<td colspan="13">
+				<button id="Modify" style="height:50px;width:100px;background:#fff;border:1px solid #999;">修改Session</button>
+				<button id="ModifySubModelName" style="height:50px;width:100px;background:#fff;border:1px solid #999;">修改SubModelName</button>
+				<button id="Refresh" style="height:50px;width:100px;background:#fff;border:1px solid #999;">Refresh</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="13">
+				<h3>validation test</h3>
+				<textarea id="model-data" style="width:1000px;height:100px">
+{
+	model:{
+		s_model:{
+			ss_name:'submodel submodel'
+		},
+		s_collection:[{
+			ss_name:'submodel subcollection 1',
+		},{
+			ss_name:'submodel subcollection 2',
+		}],
+		s_name:'submodel'
+	},
+	collection:[{
+		s_model:{
+			ss_name:'subcollection submodel'
+		},
+		s_collection:[{
+			ss_name:'subcollection subcollection 1',
+		},{
+			ss_name:'subcollection subcollection 2',
+		}],
+		s_name:'subcollection'
+	}],
+	array:[1,2],
+	object:{a:1,b:2,c:3},
+	datetime:new Date().getTime(),
+	boolean:false,
+	string:"i'm string",
+	int:26,
+	name:'model111111'
+}
+				</textarea>
+				<div id="validation-result" style="color:#990000"></div>
+				<button id="Add">新增</button>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+

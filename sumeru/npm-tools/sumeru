@@ -1,0 +1,282 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+var fs = require('fs')
+  , os = require('os')
+  , path = require('path')
+  , util = require('util')
+  , mkdirp = require('mkdirp')
+  , exec = require('child_process').exec
+  , spawn = require('child_process').spawn
+  , version = require('../../package.json').version
+  ;
+
+
+/**
+ *  Common Variables
+ */
+var DEV = 'development';
+var PRD = 'production';
+var DEM = '--daemon';
+var DAEMON = false;
+var TIME_INIT = 1 * 1000;
+var TIME_KILL_WAIT = 5 * 1000;
+
+var CUR_DIR = process.cwd();
+var IF_SERVERSPACE = fs.existsSync('./run.js');
+var IF_WORKSPACE = IF_SERVERSPACE || fs.existsSync('sumeru/server/run.js');
+var HOME = IF_SERVERSPACE ? CUR_DIR : path.join(CUR_DIR, 'sumeru/server');
+var LOGS_DIR = IF_SERVERSPACE ? path.join(CUR_DIR, 'logs') : path.join(CUR_DIR, 'sumeru/server/logs');
+var TMP_FILE = path.resolve(LOGS_DIR, 'tmp');
+var KILL_CMD_LUX = 'kill -9 `ps -ef|grep node|awk \'{print $2}\'`';
+var KILL_CMD_WIN = 'taskkill /im node.exe /f';
+var MASTER_JSON;
+
+var NOWORKSPACE_ERROR = 'Please go to your sumeru/server directory to start the application.';
+var COMMAND_ERROR = 'The command is error format.';
+var FILEREAD_ERROR = 'Fail to read the file, please check if the application is started legally.';
+var RUNDAEMON_INFO = 'Application run in daemon.\nStop the application use the command:sumeru stop.';
+var CLOSEAPP_INFO = 'Closing the application......\nPlease wait......';
+
+/**
+ * Usage documentation.
+ */
+var usage = '' + '\n' + '  Usage: sumeru [action] [option]\n' + '\n' + '  Options:\n' + '  init  [path]        create new application\n' + '  start [option]      start the application\n' + '  stop                stop the application\n' + '  kill  [--force]     kill the application\n' + '  --version             output framework version\n' + '  --help                output help information\n' + '  [option]            developement(default)/production --daemon';
+
+/**
+ * Parse command arguments.
+ */
+var args = process.argv.slice(2);
+
+(function() {
+  var arg = args.shift();
+  switch(arg) {
+  case undefined:
+  case '--help':
+    legalArgNum(0);
+    abort(usage);
+    break;
+  case '--version':
+    legalArgNum(0);
+    abort(version);
+    break;
+  case 'init':
+    legalArgNum(1);
+    init(args[0]);
+    break;
+  case 'start':
+    start();
+    break;
+  case 'stop':
+    terminal('stop');
+    break;
+  case 'kill':
+    terminal('kill');
+    break;
+  default:
+    abort(COMMAND_ERROR);
+    break;
+  }
+})();
+
+/**
+ * Init application at the given directory `path`.
+ *
+ * @param {String} path
+ */
+function init(path) {
+  emptyDirectory(path, function(empty) {
+    if(empty) {
+      createApplicationAt(path);
+    } else {
+      confirm('destination is not empty, continue? (y/n)', function(ok) {
+        if(ok) {
+          process.stdin.destroy();
+          createApplicationAt(path);
+        } else {
+          abort('aborting');
+        }
+      });
+    }
+  });
+};
+
+/**
+ * Create directory and files at the given directory `path`.
+ *
+ * @param {String} ph
+ */
+function createApplicationAt(ph) {
+  var name = path.basename(path.resolve(CUR_DIR, ph));
+  copy(path.join(__dirname, '../../'), ph);
+  mkdir(path.join(ph, 'sumeru/server/logs'));
+  setTimeout(function() {
+    var repalcefile = [];
+    for(var i = 0; i < repalcefile.length; i++) {
+      var str = fs.readFileSync(repalcefile[i]).toString();
+      fs.writeFileSync(repalcefile[i], str.replace('$', name));
+    }
+    var rmfile = [path.join(ph, 'sumeru/npm-tools')];
+    for(var i = 0; i < rmfile.length; i++) {
+      exec('rm -rf ' + rmfile[i]);
+    }
+  }, TIME_INIT);
+};
+
+/**
+ * Start application.
+ *
+ */
+function start() {
+  var mode = DEV;
+  var appName = '';
+  switch(args.length) {
+  case 0:
+    break;
+  case 1:
+    appName = args[0];
+    /*
+    if(args[0] == DEV || args[0] == PRD) mode = args[0];
+    else if(args[0] == DEM) DAEMON = true;
+    else abort(COMMAND_ERROR);
+    break;
+  case 2:
+    if(args[0] == DEV || args[0] == PRD) {
+      mode = args[0];
+      if(args[1] == DEM) DAEMON = true;
+      else abort(COMMAND_ERROR);
+    } else abort(COMMAND_ERROR);*/
+    break;
+  default:
+    abort(COMMAND_ERROR);
+    break;
+  };
+  if(IF_WORKSPACE) {
+    var ls;
+      ls = spawn(process.execPath, [path.resolve(HOME, 'run.js'), appName]);
+      ls.stdout.on('data', function(data) {
+        console.log(data.toString());
+      });
+      ls.stderr.on('data', function(data) {
+        console.log(data.toString());
+      });
+  } else abort(NOWORKSPACE_ERROR);
+};
+
+
+
+/**
+ * Terminal application.
+ *
+ * @param {String} signal stop/kill
+ *
+ */
+function terminal(signal) {
+  if(IF_WORKSPACE) {
+    console.info(CLOSEAPP_INFO);
+    //if(args[0] === '--force') {
+      os.platform() === 'win32' ? exec(KILL_CMD_WIN):exec(KILL_CMD_LUX);
+      process.exit(1);
+    //}
+  } else abort(NOWORKSPACE_ERROR);
+};
+
+/**
+ * Check if the given directory `path` is empty.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+function emptyDirectory(path, fn) {
+  fs.readdir(path, function(err, files) {
+    if(err && 'ENOENT' != err.code) abort(FILEREAD_ERROR);
+    fn(!files || !files.length);
+  });
+};
+
+/**
+ * Prompt confirmation with the given `msg`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+function confirm(msg, fn) {
+  prompt(msg, function(val) {
+    fn(/^ *y(es)?/i.test(val));
+  });
+};
+
+/**
+ * Prompt input with the given `msg` and callback `fn`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+function prompt(msg, fn) {
+  if(' ' == msg[msg.length - 1]) process.stdout.write(msg);
+  else console.log(msg);
+  process.stdin.setEncoding('ascii');
+  process.stdin.once('data', function(data) {
+    fn(data);
+  }).resume();
+};
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+function abort(str) {
+  console.error(str);
+  process.exit(1);
+};
+
+/**
+ * Check whether the number of arguments is legal.
+ *
+ * @param {Number} argNum
+ */
+function legalArgNum(argNum) {
+  if(args.length != argNum) abort(COMMAND_ERROR);
+};
+
+/**
+ * Copy template files to project.
+ *
+ * @param {String} origin
+ * @param {String} target
+ */
+function copy(origin, target) {
+  if(!fs.existsSync(origin)) abort(origin + 'is not exist.');
+  if(!fs.existsSync(target)) {
+    mkdir(target);
+    console.log('   \x1b[36mcreate\x1b[0m : ' + target);
+  }
+  fs.readdir(origin, function(err, datalist) {
+    if(err) abort(FILEREAD_ERROR);
+    for(var i = 0; i < datalist.length; i++) {
+      var oCurrent = path.resolve(origin, datalist[i]);
+      var tCurrent = path.resolve(target, datalist[i]);
+      if(fs.statSync(oCurrent).isFile()) {
+        fs.writeFileSync(tCurrent, fs.readFileSync(oCurrent, ''), '');
+        console.log('   \x1b[36mcreate\x1b[0m : ' + tCurrent);
+      } else if(fs.statSync(oCurrent).isDirectory()) copy(oCurrent, tCurrent);
+    }
+  });
+};
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+function mkdir(path, fn) {
+  mkdirp(path, 0755, function(err){
+    if (err) throw err;
+    console.log('   \033[36mcreate\033[0m : ' + path);
+    fn && fn();
+  });
+}

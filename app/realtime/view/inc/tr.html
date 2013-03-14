@@ -1,0 +1,34 @@
+<tr>
+	<td>{{value.model}}</td>
+	<td>
+		[{{#foreach value.collection}}
+			{
+			{{value}},<br/>
+			{{value.s_model}},<br/>
+			{{value.s_collection}},<br/><br/>}
+		{{/foreach}}]
+	</td>
+	<td>{{value.array}}</td>
+	<td>
+		{{#foreach value.object}}
+			{{key}}:{{value}}<br/>
+		{{/foreach}}
+	</td>
+	<td>{{value.datetime}}</td>
+	<td>{{#if value.boolean}}true{{else}}false{{/if}}</td>
+	<td>{{value.string}}</td>
+	<td>{{value.int}}</td>
+	<td>{{value.name}}</td>
+	<td><button class="modf-coll" data-id="{{value.smr_id}}">修改collection</button></td>
+	<td><button class="update" data-id="{{value.smr_id}}">编辑</button></td>
+	<td><button class="delete" data-id="{{value.smr_id}}">删除</button></td>
+	<td>
+		<block tpl-id="dynamicBlock">
+			dynamic subBlock {{string}}
+		</ block>
+	</td>
+</tr>
+<!--
+	circular include test:
+{{> datatable}}
+!-->
