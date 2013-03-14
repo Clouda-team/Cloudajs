@@ -1,7 +1,7 @@
 {
   "name": "sumeru",
   "version": "0.1.0",
-  "description": "A brand new WebApp framework presented by Baidu.Inc",
+  "description": "A brand new WebApp framework present by Baidu.Inc",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,6 +15,17 @@
     "nodejs",
     "webapp"
   ],
+  "dependencies": {
+    "mkdirp": "0.3.3",
+    "mongodb": "1.0.2",
+    "shelljs": "0.0.8",
+    "sockjs": "0.3.5",
+    "uglify-js": "1.3.4"
+  },
+  "bin": {
+    "sumeru": "./npm-tools/sumeru"
+  },
   "author": "sumeru team",
-  "license": "MIT"
+  "license": "MIT",
+  "readmeFilename": "README.md"
 }
