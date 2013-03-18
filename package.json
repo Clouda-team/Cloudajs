@@ -1,6 +1,6 @@
 {
   "name": "sumeru",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "A brand new WebApp framework present by Baidu.Inc",
   "main": "index.js",
   "scripts": {
