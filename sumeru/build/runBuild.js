@@ -69,10 +69,10 @@ console.log('Home Dir =' +  basedir);
 
 require('./build.js');
 setTimeout(function(){
-	rmdir(path.join(basedir, '__bae__'));
+	//rmdir(path.join(basedir, '__bae__'));
 	if (fs.existsSync(path.join(basedir,'__bae__/bin/cache.manifest')))
 	{
- 		fs.unlinkSync(path.join(basedir,'__bae__/bin/cache.manifest'));	
+ 		//fs.unlinkSync(path.join(basedir,'__bae__/bin/cache.manifest'));	
 	}
 },4000);
 

@@ -1,4 +1,4 @@
-module.exports = function(directory,dstDir){
+module.exports = function(directory, dstDir){
     var fs = require('fs');
     var path = require('path');
     //var uglify = path.join(directory,'server/node_modules/', 'UglifyJs');	
@@ -15,19 +15,21 @@ module.exports = function(directory,dstDir){
     //如果指令目录存在， 覆盖默认baseUrl 和 manifest
     if(fs.existsSync(directory) && fs.existsSync(directory + '/package.js')){
 		baseUrl = directory;
-		manifest = directory + '/package.js';
+		manifest = path.join(directory, 'package.js');
     }else{
-		baseUrl += baseUrl + directory;
-		manifest = baseUrl + '/package.js';
+		baseUrl += path.join(baseUrl, directory);
+		manifest = path.join(baseUrl, 'package.js');
     }
 
     if(fs.existsSync(manifest)){
-	    !fs.existsSync(dstDir + '/bin') && fs.mkdirSync(dstDir + '/bin');
-	
-		var buildEntireContent = '';
+    	var binDir = path.join(dstDir, 'bin');
+	    var buildEntireContent = '';
 		var buildCSSEntireContent = '';
-		var targetCSSFileName = dstDir + '/bin/sumeru.css';
-		var offline_manifest = dstDir + '/bin/cache.manifest';
+		var targetJsFileName = path.join(binDir, 'sumeru.js');
+		var targetCSSFileName = path.join(binDir, 'sumeru.css');
+		var offline_manifest = path.join(binDir, 'cache.manifest');
+
+		!fs.existsSync(binDir) && fs.mkdirSync(binDir);
 	
 		var readPackage = function(path){
 		    var url = path + '/package.js';
@@ -61,23 +63,25 @@ module.exports = function(directory,dstDir){
 				}
 		    });
 		}
+		//读取css and js 内容
 		readPackage(directory);
 		
-		var debugPara = /var\s*SUMERU_APP_FW_DEBUG\s*=\s*true/ig;
-		buildEntireContent = buildEntireContent.replace(debugPara, 'var SUMERU_APP_FW_DEBUG=false');
+		//关掉debug开关
+		var debugReg = /var\s*SUMERU_APP_FW_DEBUG\s*=\s*true/ig;
+		buildEntireContent = buildEntireContent.replace(debugReg, 'var SUMERU_APP_FW_DEBUG=false');
 		
-		fs.writeFileSync(targetCSSFileName, buildCSSEntireContent, 'utf8');
-
+		//压缩js代码
 		var orig_code = buildEntireContent;
-
-		var ast = jsp.parse(orig_code); // parse code and get the initial AST
+        var ast = jsp.parse(orig_code); // parse code and get the initial AST
 		ast = pro.ast_mangle(ast); // get a new AST with mangled names
 		ast = pro.ast_squeeze(ast); // get an AST with compression optimizations
 		var final_code = pro.gen_code(ast); // compressed code here
-		fs.writeFileSync(dstDir + '/bin/sumeru.js', final_code);
+        
+        //写入sumeru.js 和 sumeru.css文件
+		fs.writeFileSync(targetCSSFileName, buildCSSEntireContent, 'utf8');
+		fs.writeFileSync(targetJsFileName, final_code, 'utf8');
 
-
-		//create manifest file
+		/*//create manifest file
 		var first_line_str = 'CACHE MANIFEST \n#version:'+Date.now() + '\n';
 		var cache_title = 'CACHE:\n';
 
@@ -115,7 +119,7 @@ module.exports = function(directory,dstDir){
         if(fs.existsSync(offline_manifest)){
         	fs.unlinkSync(offline_manifest);
         }
-        fs.writeFileSync(offline_manifest, cache_content_str, 'utf8');
+        fs.writeFileSync(offline_manifest, cache_content_str, 'utf8');*/
     }else{
 	    console.log('Not specified directory.');
     }

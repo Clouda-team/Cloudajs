@@ -1,6 +1,6 @@
 var runnable = function(fw){
 	fw.validation.addrule("length" , {
-										"runat":"cs",
+										"runat":"both",
 										"func":function(v,min,max){
 											var v = v+""||"",
 												len = v.length;
@@ -18,7 +18,7 @@ var runnable = function(fw){
 										"msg":["$1长度不能大于$3，且不能小于$2。","$1长度不能大于$3。","$1长度不能小于$2。"]
 									});
 	fw.validation.addrule("minlength" , {
-										"runat":"cs",
+										"runat":"both",
 										"func":function(v,min){
 											var v = v+""||"",
 												len = v.length;
@@ -27,7 +27,7 @@ var runnable = function(fw){
 										"msg":"$1长度不能小于$2。"
 									});
 	fw.validation.addrule("maxlength" , {
-										"runat":"cs",
+										"runat":"both",
 										"func":function(v,max){
 											var v = v+""||"",
 												len = v.length;
@@ -36,7 +36,7 @@ var runnable = function(fw){
 										"msg":"$1长度不能大于$2。"
 									});
 	fw.validation.addrule("required" , {
-										"runat":"cs",
+										"runat":"both",
 										"func":function(value){
 											var v = v+""||"",
 												len = v.length;
@@ -45,47 +45,47 @@ var runnable = function(fw){
 										"msg":"$1为必填项。"
 									});
 	fw.validation.addrule("number" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^[0-9]+$",
 										"msg":"$1必须为数字。"
 									});
 	fw.validation.addrule("telephone" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^(0[0-9]{2,3}\-)?([2-9][0-9]{6,7})+(\-[0-9]{1,4})?$",
 										"msg":"$1必须为电话号码格式。"
 									});
 	fw.validation.addrule("mobilephone" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"(^0?[1][358][0-9]{9}$)",
 										"msg":"$1必须为手机号码格式。"
 									});
 	fw.validation.addrule("email" , {   
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^[a-zA-Z0-9_\.\-\+]+\@([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9]{2,4}$",
 										"msg":"$1必须为email格式。"
 									});
 	fw.validation.addrule("onlyletter" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^[a-zA-Z]+$",
 										"msg":"$只能是字母。"
 									});
 	fw.validation.addrule("nospecialchars" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^[0-9a-zA-Z]+$",
 										"msg":"$1不能包含特殊字符。"
 									});
 	fw.validation.addrule("date" , {
-										"runat":"cs",
+										"runat":"both",
 										"regexp":"^[0-9]{2,4}[\/\-]{1}[0,1]{0,1}[0-9]{1}[\/\-]{1}[0,3]{0,1}[0-9]{1}$",
 										"msg":"$1格式不正确。"
 									});
 	fw.validation.addrule("chinese" , {  
-										"runat":"cs", 
+										"runat":"both", 
 								        "regexp":"/^[\u4e00-\u9fa5]+$/",
 										"msg":"$1必须为中文。"
 								    });
 	fw.validation.addrule("url" , {   
-										"runat":"cs",
+										"runat":"both",
 								        "regexp":"/^[a-zA-z]:\\/\\/[^s]$/",
 										"msg":"$1必须为URL。"
 								    });
@@ -97,7 +97,7 @@ var runnable = function(fw){
 									       这里的asyncFunc是在server端运行，其中测callback是server端生成的。
 									       this == dbCollectionHandle
 									     */
-										"runat":"s",
+										"runat":"server",
 								        "asyncFunc":function(callback,k,v,modelObj){
 								        	var where = {};
 								        	where[k] = v;

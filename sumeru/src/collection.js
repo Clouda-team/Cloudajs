@@ -9,6 +9,7 @@
 		 */
 		defineProperty:function(property){
 			Object.defineProperty(this, property,{
+
 				get:function(){
 					if(this.length>0){
 						return this[0][property];
@@ -54,6 +55,15 @@
 		_setStorable : function(){
 			fw.msgpilot.setPilot(this);
 		},
+		/**
+		 * 将数据设置为clean状态，不触发保持的状态
+		 */
+		_clean :function(){
+			var allModels = this.find();
+			allModels.forEach(function(item){
+				item._clean();
+			});
+		},
 
 		/**
 		 * 返回验证失败的key value validation
@@ -76,7 +86,7 @@
 				}
 
 				if(this.onValidation){
-					this.onValidation.call(this, isPass, 'c', resultObjs);
+					this.onValidation.call(this, isPass, 'client', resultObjs);
 				}
 				return isPass||resultObjs;
 			}else{
@@ -116,16 +126,27 @@
 		//remove只是从collection中去除，并不实际删除。
 		//所以不需要改变Synced状态
 		remove : function(where){
-			var candidates = this.find.apply(this, arguments);
-			
-			//FIXME 因为要兼容Find，做了两次遍历
-			for (var i = 0, l = candidates.length; i < l; i++){
+			if(where._isModel){
 				for (var j = 0, k = this.length; j < k; j++){
-					if(this[j] == candidates[i]){
+					if(this[j] == where){
 						this.splice(j, 1);
 						j--;
 						k--;
 						this._setNeedSort();
+					}
+				}
+			}else{
+				var candidates = this.find.apply(this, arguments);
+				
+				//FIXME 因为要兼容Find，做了两次遍历
+				for (var i = 0, l = candidates.length; i < l; i++){
+					for (var j = 0, k = this.length; j < k; j++){
+						if(this[j] == candidates[i]){
+							this.splice(j, 1);
+							j--;
+							k--;
+							this._setNeedSort();
+						}
 					}
 				}
 			}
@@ -431,6 +452,11 @@
 		},
 		
 		save : function(isSubSave,isSecure){
+            if(isSecure){
+				this.__smr__.saveType = 'ensure';
+            }else{
+				this.__smr__.saveType = 'none';
+            }
 			if(!isSubSave){
 				console.log("save collection");
 				console.log(this);
@@ -457,14 +483,27 @@
             //FIXME 伪造一个消息发送给自己
             if(!isSecure){
             	this.render();
-            }	
+            }
 			
 			return true;
 		},
 		ensureSave : function(){
 			this.save(false,true);
 		},
+		rollback : function(){
+			for(var i = 0, l = this.length; i < l; i++){
+				var item = this[i];
+				var _snapshot = item._getSnapshot();
+				//console.log(JSON.stringify(_snapshot));
+				if(_snapshot['smr_id']){
+					item._setData(_snapshot);
+				}else{
+					this.remove(item);
+				}
 
+			}
+			this._clean();
+		},
 		//重新渲染数据
 		render : function(){
 			if(typeof this.pubName != 'undefined'){
@@ -486,8 +525,10 @@
 		releaseHold : function(){
 		    fw.pubsub._releaseHold(this);
 		    this.__smr__.isHolding = false;
+		},
+		isEnsureSave : function(){
+			return this.__smr__.saveType === 'ensure';
 		}
-		
 	};
 	var collectionBase = function(){
 		var baseArray = [];
@@ -518,7 +559,12 @@
 			isHolding:false,
 			modelName:'',
 			dal:{type : 'live'},
-			isSynced:false
+			isSynced:false,
+			/**
+			 * none:数据在没有验证完成，不确定是否能正确存入的时候就进行渲染
+			 * ensure:数据在验证通过后，再进行渲染
+			 */
+			saveType:'none'
 		}
 		return this;
 	}

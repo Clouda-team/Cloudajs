@@ -98,6 +98,21 @@ if(typeof module != 'undefined' && module.exports){
 		_delete : function(key){
 			this.__smr__.dataMap[key] = undefined;
 		},
+		/**
+		 * 将数据设置为clean状态，不触发保持的状态
+		 */
+		_clean :function(){
+			this.__smr__.isDirty = false;
+			this.__smr__.isDeleted = false;
+			this.__smr__.isPhantom = false;
+			if (key in this._fieldsMap) {
+				var field = this._fieldsMap[key];
+				var fieldType = field['type'];
+				if(fieldType === 'model'){
+					this[key]._clean();
+				}
+			}
+		},
 		_getModelName : function(){
 			return this._modelName;
 		},
@@ -324,7 +339,7 @@ if(typeof module != 'undefined' && module.exports){
 				ispass = true;
 			}
 			if(this.onValidation){
-				this.onValidation.call(this, ispass, 'c', resultObjs);
+				this.onValidation.call(this, ispass, 'client', resultObjs);
 			}
 			return resultObjs;
 		},

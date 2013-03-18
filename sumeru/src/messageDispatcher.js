@@ -323,7 +323,7 @@
                             resultObjs[i]['key'] = data.modelchain+'.'+resultObjs[i]['key'];
                         }
                     }
-                    item.collection.onValidation.call(item.collection,resultObjs.length>0?false:true, 's', resultObjs);
+                    item.collection.onValidation.call(item.collection,resultObjs.length>0?false:true, 'server', resultObjs);
                     isSend = true || isSend;
                 }else{
                     /*
@@ -340,7 +340,7 @@
             var isSend = false;
             if(_pilot.stub.onValidation){
                 var resultObjs = data.data;
-                _pilot.stub.onValidation.call(_pilot.stub,resultObjs.length>0?false:true, 's', resultObjs);
+                _pilot.stub.onValidation.call(_pilot.stub,resultObjs.length>0?false:true, 'server', resultObjs);
                 isSend = true || isSend;
             }else{
                 isSend = false || isSend;

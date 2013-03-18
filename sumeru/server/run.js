@@ -154,6 +154,24 @@ clientTracer.__reg("socketCount",function(clientId){
     return clientToSocket[clientId].length;
 });
 
+/**
+ * 根据一组clientId发送GlobalMessage.
+ */
+clientTracer.__reg("SendGlobalMessageByClientId",function(msg,tag,clientId){
+    var id = null, sockets = null;
+    debugger;
+    if(!msg || !tag || !clientId){
+        return;
+    }
+    
+    for(var ckey in clientId){
+        id = clientId[ckey];
+        sockets = clientToSocket[id];
+        for(var skey in sockets){
+            netMessage.sendGlobalMessage(msg,tag,sockets[skey]);
+        }
+    }
+});
 
 
 //==============
@@ -400,7 +418,7 @@ var runStub = function(db) {
         }
         
         socket.write(data2);
-        onsuccess();
+        onsuccess && onsuccess();
         log.swrite('sending:', data.substr(0, 400));
     });
     
@@ -523,13 +541,26 @@ var runStub = function(db) {
                 fw.checkLogin(conn.clientId, conn.sessionId, conn.passportType, function(status, userinfo){
                     conn.loginStatus = status;
                     conn.userinfo = userinfo;
+                    
+                    if(userinfo){
+                        userinfo.clientId = conn.clientId;      //确保始终携带正确的clientId
+                    }
+                    
                     cb(msg,conn);   //下一个过滤
                     if (msg.sessionId && sessionAuthQueue[msg.sessionId]) {
                         var queue = sessionAuthQueue[msg.sessionId].queue;
-                        for(var i = 0, l = queue.length; i < l; i++){
-                            queue[i]();
+                        
+                        while(queue && queue.length){
+                            queue.shift()();
                         }
-                        sessionAuthQueue[msg.sessionId].status = 'done';
+                        
+//                        for(var i = 0, l = queue.length; i < l; i++){
+//                            queue[i]();
+//                        }
+                        
+                        sessionAuthQueue[msg.sessionId] = null;
+                        delete sessionAuthQueue[msg.sessionId];
+                        //sessionAuthQueue[msg.sessionId].status = 'done';
                     }
                 });
                 return;
@@ -842,7 +873,7 @@ var runStub = function(db) {
             target:'subscribe',
             handle:function(content,target,conn){
                 
-                console.log('subscribe receiver.....');
+                console.log('subscribe receiver.....', pubname , socketId);
                 
                 var pubname = content.name;
                 var socketId = conn._sumeru_socket_id;
@@ -969,9 +1000,9 @@ var runStub = function(db) {
                                 data: dataArray,
                                 flag : 'full_ship'
                             }, 'data_write_from_server', socketId, function(err){
-                                console.log('send data_write_from_server faile ' + err);
+                                console.log('send data_write_from_server faile ' + err , socketId);
                             }, function(){
-                                console.log('send data_write_from_server ok');
+                                console.log('send data_write_from_server ok' , socketId);
                             }
                         );
                         
@@ -1081,6 +1112,15 @@ var runStub = function(db) {
 
             (function(item, pubRecord){
                 var stop = false;
+                /**
+                 * 不知为何，socketId在某种情况下，无法指向一个存在的socket连接对像，在此种情况下，由于数据无法返回客户端，继续做下发并无意义。所以直接退出。
+                 * FIXME 更好的方式是找出丢失连接的原因，并清理掉不存在连接的subscriber.
+                 */
+                if(!SocketMgr[item.socketId]){
+                    console.log('SocketMgr: lost connection, the socket id is " ' + item.socketId + '"');
+                    return;
+                }
+                
                 var userinfo = SocketMgr[item.socketId].userinfo;
                 //FIXME 这里现在其实有性能问题，对每个subscriber都会重新运行一次pubFunc。但由于异步的问题，现在没有实现缓存其结果。
                 pubFunc.call(pubRecord.collection, item.args, function(dataArray){

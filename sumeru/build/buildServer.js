@@ -9,7 +9,7 @@ module.exports = function(baseDir, dstDir){
     var fs = require('fs');
     var path = require('path');
 
-//判断build的文件是否是fw本身的文件
+    //判断build的文件是否是fw本身的文件
     var isFwFile = function(filename){
 	
 	var name = path.basename(filename);
@@ -110,67 +110,68 @@ module.exports = function(baseDir, dstDir){
     	return cnt;
     };
 
-    var buildModel = function(modelBaseDir){
-	var target_path = path.join(dstDir, 'server/tmp'); 
-	
-	//delete existing files
-	fs.existsSync(target_path) && rmdir(target_path);
-	if (!fs.existsSync(target_path)){
-	    fs.mkdirSync(target_path);
-	}
-	
-    var authModelPath = baseDir + '/sumeru/authModel.js';
-	var fileCnt = 'var Model = {}; ';
-	
-	fileCnt += readfile(modelBaseDir);
-    //引入权限中心的model， 因为
-	if (isFwFile(authModelPath)){
-        fileCnt += fs.readFileSync(authModelPath, 'utf8');
-    }
-    fileCnt += 'module.exports = Model;';
+    /*var buildModel = function(modelBaseDir){
+		var target_path = path.join(dstDir, 'server/tmp'); 
 		
-	fs.writeFileSync(target_path + '/model.js', fileCnt, 'utf8');
+		//delete existing files
+		fs.existsSync(target_path) && rmdir(target_path);
+		if (!fs.existsSync(target_path)){
+		    fs.mkdirSync(target_path);
+		}
+		
+	    var authModelPath = baseDir + '/sumeru/authModel.js';
+		var fileCnt = 'var Model = {}; ';
+		
+		fileCnt += readfile(modelBaseDir);
+	    //引入权限中心的model， 因为
+		if (isFwFile(authModelPath)){
+	        fileCnt += fs.readFileSync(authModelPath, 'utf8');
+	    }
+	    fileCnt += 'module.exports = Model;';
+			
+		fs.writeFileSync(target_path + '/model.js', fileCnt, 'utf8');
 
-	//console.log(modelBaseDir + '-->' + target_path)
-    }
+		//console.log(modelBaseDir + '-->' + target_path)
+    };*/
 
     if(!fs.existsSync(baseDir)){
-	return;
+	    return;
     }else{
-	!fs.existsSync(dstDir + '/bin') && fs.mkdirSync(dstDir + '/bin');
+	    !fs.existsSync(dstDir + '/bin') && fs.mkdirSync(dstDir + '/bin');
 	
-	var modelBaseDir = baseDir + '/model';
-	var viewBaseDir = baseDir + '/view';
-	
-	if(!fs.existsSync(modelBaseDir)){
-	}else{
-	    buildModel(modelBaseDir); 
-	}
-	
-	
-	if(!fs.existsSync(viewBaseDir)){
-	}else{
-	    
+	    /*var modelBaseDir = baseDir + '/model';
+	    if(fs.existsSync(modelBaseDir)){
+		    buildModel(modelBaseDir); 
+		}*/
+
+
+	var appDir = path.join(baseDir, '../app');
+
+	if(!fs.existsSync(path.join(baseDir, '../app/view'))){
+
+	}else{;
 	    var directory = 'view';
 	    //var directory = baseDir + directory;
 	    var allFiles = [];
 	    
 	    var findFile = function(dirName){
-		var dir = baseDir + '/' + dirName;
-		var theDirFiles = fs.readdirSync(dir);
-		for(var i=0, len = theDirFiles.length; i < len; i++){		    var content = theDirFiles[i];
-		    if(content.indexOf('.') > -1){
-			allFiles.push(dirName + '/' + content);
-		    }else{
-			findFile(dirName + '/' + content);
-		    }
-		}
+			var dir = appDir + '/' + dirName;
+			var theDirFiles = fs.readdirSync(dir);
+			for(var i=0, len = theDirFiles.length; i < len; i++){		    var content = theDirFiles[i];
+			    if(content.indexOf('.') > -1){
+				    allFiles.push(dirName + '/' + content);
+			    }else{
+				    findFile(dirName + '/' + content);
+			    }
+			}
 	    };
 	    //找出所有的文件并存于allFiles中
 	    findFile(directory);
+
+
 	    
 	    var buildFile = function(filePath){
-		var dircetoryPath = baseDir + '/' +  filePath;
+		var dircetoryPath = path.join(appDir, filePath);
 		if(!isFwFile(dircetoryPath)){
 		    return;
 		}
@@ -326,6 +327,7 @@ module.exports = function(baseDir, dstDir){
 				    if (fs.existsSync(path.join(target_path,fileName))){
 					fs.unlinkSync(path.join(target_path, fileName));
 				    }
+
 				    fs.writeFileSync(target_path + '/' + fileName, entireContent, 'utf8');
 				    
 				});
@@ -333,13 +335,13 @@ module.exports = function(baseDir, dstDir){
 			    }
 			});
 		    } else {
-			console.log('File :' + filePath + 'did\'t exited.');
+			    console.log('File :' + filePath + 'did\'t exited.');
 		    }
 		});
 	    }
 	    
-	    allFiles.forEach(function(fielPath){
-		buildFile(fielPath);
+	    allFiles.forEach(function(filePath){
+	    	buildFile(filePath);
 	    });
 	}
     }

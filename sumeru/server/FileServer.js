@@ -13,20 +13,26 @@ var http = require("http"),
 if(FILE_PORT > 0){
     var fileServer = http.createServer(function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
-        var localBase = __dirname + '/../../app'+ (appName ? '/' + appName : ''),
+        var frkDir = __dirname + '/../../',
+            localBase = frkDir + '/app'+ (appName ? '/' + appName : ''),
             filePath = req.url,
             range = typeof req.headers.range == 'string' ? req.headers.range : undefined;
         
         filePath = filePath.replace(/\.\.\//g, '');
         localBase = path.normalize(localBase);
-        
+
+        if(filePath.indexOf('/unit/') > -1){
+            localBase = __dirname + '/../..';
+        }
+        console.log('================================================');
+        console.log(filePath);
         if(filePath == '/'){
             filePath = localBase + '/index.html';
         } else {
             var sumerujs = '/sumeru.js';
             var sumerudir = /sumeru\//g;
             var sumeruPath = path.join(localBase, fw.config.get('sumeruPath'));
-            
+
             if(sumerujs === filePath){
                 filePath = sumeruPath + '/sumeru.js';
             }else if(sumerudir.test(filePath)){

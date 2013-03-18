@@ -50,7 +50,7 @@ oValidation.unitValidation = function(runat,label,key,value,validation,callback,
 	}else if(Library.objUtils.isString(validation)){
 		var vali = oValidation.validations[validation];
 		if(vali){
-			if(vali.runat.indexOf(runat)<0){return false};//判断与预定义的运行方是否一致
+			if(vali.runat.indexOf(runat)<0&&vali.runat!='both'){return false};//判断与预定义的运行方是否一致
 			if(vali["regexp"]){
 				returnvalue = (new RegExp(vali["regexp"])).test(value);
 			}else if(vali["func"]){
@@ -78,12 +78,12 @@ oValidation.unitValidation = function(runat,label,key,value,validation,callback,
 };
 oValidation.clientValidation = function(label,key,value,validation){
 	var _args = oValidation.copyArgs(arguments);
-	_args.unshift("c");
+	_args.unshift("client");
 	return oValidation.unitValidation.apply(this,_args);
 };
 oValidation.serverValidation = function(label,key,value,validation){
 	var _args = oValidation.copyArgs(arguments);
-	_args.unshift("s");
+	_args.unshift("server");
 	return oValidation.unitValidation.apply(this,_args);
 };
 

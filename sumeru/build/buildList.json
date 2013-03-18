@@ -1,11 +1,16 @@
 {
 	"buildList" : [
-			{
+	        {
                 "name" : "buildJavscript",
-                "path" : "/build/buildJavascript.js",
+                "path" : "buildJavascript.js",
                 "param" : ""
-            }
-         
- 		]
-	
+            },
+
+			{
+				"name" : "buildServer",
+		      	"path" : "buildServer.js",
+		      	"param" : ""
+			}
+ 		],
+	"cacheDirectory" :  []
 }
