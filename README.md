@@ -31,12 +31,8 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 ## Documents
 
 
-step1: 《step1_getstarted.md》
+step1: [《step1_getstarted.md》](https://github.com/ganxun1/Framework-document/blob/master/step1_getstarted.md)
 
-<https://github.com/ganxun1/Framework-document/blob/master/step1_getstarted.md>
-
-step2: 《step2_your_first_app.md》
-
-<https://github.com/ganxun1/Framework-document/blob/master/step2_your_first_app.md>
+step2: [《step2_your_first_app.md》](https://github.com/ganxun1/Framework-document/blob/master/step2_your_first_app.md)
 	
 
