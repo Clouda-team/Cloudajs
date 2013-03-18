@@ -189,8 +189,8 @@ var copySumeruFile2AppBin = function(){
             if(!fs.existsSync(binDir)){
                 fs.mkdirSync(binDir);
             }
-            shell.cp('-r', path.join(sumeruDir, 'bin/sumeru.js'), binDir);
-            shell.cp('-r', path.join(sumeruDir, 'bin/sumeru.css'), binDir);
+            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.js'), binDir);
+            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.css'), binDir);
             buildAppResource(dir, binDir);
         }
     });
