@@ -1,7 +1,3 @@
-Framework-document
-==================
-
-
 ##What is Sumeru Framework?
 
 
