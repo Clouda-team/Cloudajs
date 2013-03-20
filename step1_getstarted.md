@@ -4,7 +4,7 @@
 
 欢迎来到sumeru的世界，在这里，您将获得超乎想象、无比便捷的开发体验。
 sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端统一开发框架，使用sumeru开发的App，既可以作为Web App运行，也可以打包作为Native App安装，其以打造全新App架构为使命，提供使用Javascript抹平云和端的新世界，你将不再需要切换语言分别编写服务器和客户端逻辑；你将不再需要花费原来50%以上的精力遍历、操作DOM和管理链接，只需专心编写最核心的业务逻辑。
-(Sumeru, a simple but powerful Web App framework, provides rich functionalities for building de-facto Web Applications based on Baidu Cloud technology. Sumeru offers awesome features such as data-unify，adaptive feedback，realtime network connection etc. Developers beneﬁts from Sumeru in terms of coding efforts, performance and application distribution)
+Sumeru, a simple but powerful Web App framework, provides rich functionalities for building de-facto Web Applications based on Baidu Cloud technology. Sumeru offers awesome features such as data-unify，adaptive feedback，realtime network connection etc. Developers beneﬁts from Sumeru in terms of coding efforts, performance and application distribution.
 
 ## 一. 获取sumeru
 

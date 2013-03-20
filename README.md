@@ -34,10 +34,10 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 ## Documents
 
 
-step1: [《step1_getstarted.md》](https://github.com/brandnewera/sumeru/blob/master/step1_getstarted.md)
+Step1: [Getting Started](https://github.com/brandnewera/sumeru/blob/master/step1_getstarted.md)
 
-step2: [《step2_your_first_app.md》](https://github.com/brandnewera/sumeru/blob/master/step2_your_first_app.md)
+Step2: [Your First App](https://github.com/brandnewera/sumeru/blob/master/step2_your_first_app.md)
 
-step3: 《step3_overview》
+Step3: Overview
 	
 
