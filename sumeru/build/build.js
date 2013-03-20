@@ -1,40 +1,31 @@
 var path = require('path');
 var fs = require('fs');
-var build, buildList;
 
 var baseDir = path.join(__dirname, '../../');
 var sumeruDir = path.join(__dirname, '/../');
+var dstDir = '';//加注释
+var buildConfig = require(path.join(__dirname, 'buildList.json'));
+
 
 /**BAE环境模拟测试用**/
 //process.BAE = 'bae';
-/*******************/
 
 if (typeof process.BAE !== 'undefined'){
-    dstDir = path.join(baseDir, '/__bae__');
 console.log('BAE MODE');
+    dstDir = path.join(baseDir, '/__bae__');
     var serverDir = path.join(dstDir, '/server');
     var binDir = path.join(dstDir, '/bin');
     var tmpDir = path.join(serverDir, '/tmp');
     var staticDir = path.join(dstDir,'/static');
 
-    if (!fs.existsSync(dstDir)){
-    	fs.mkdirSync(dstDir);
-    };
-    if (!fs.existsSync(serverDir)){
-    	fs.mkdirSync(serverDir);
-    };
-    if (!fs.existsSync(tmpDir)){
-    	fs.mkdirSync(tmpDir);
-    };
-    if (!fs.existsSync(binDir)){
-    	fs.mkdirSync(binDir);
-    }
-    if (!fs.existsSync(staticDir)){
-    	fs.mkdirSync(staticDir);
-    }
+    !fs.existsSync(dstDir) && fs.mkdirSync(dstDir);
+    !fs.existsSync(serverDir) && fs.mkdirSync(serverDir);
+    !fs.existsSync(tmpDir) && fs.mkdirSync(tmpDir);
+    !fs.existsSync(binDir) && fs.mkdirSync(binDir);
+    !fs.existsSync(staticDir) && fs.mkdirSync(staticDir);
 }else{
 console.log('NON BAE MODE');
-    dstDir = sumeruDir;
+    dstDir = path.join(__dirname, '/../app');
 }
 console.log('BaseDir :' + baseDir);
 console.log('DstDir :' + dstDir);
@@ -42,37 +33,24 @@ console.log('DstDir :' + dstDir);
 process.baseDir = baseDir;
 process.dstDir = dstDir;
 
-var buildListPath = path.join(__dirname,'/buildList.json');	
-if(!fs.existsSync(buildListPath)){
-     return;
-}
-
-build = require(buildListPath);		
-buildList = build.buildList; 
-
-if (typeof buildList == 'undefined' || buildList.length <= 0){
-    console.log('Error: read buildList.json, build failed');
-    return;
-}
-
-
 if (baseDir.charAt(baseDir.length-1) == '/'){
     //去掉尾部的'/'
     baseDir = baseDir.slice(0,baseDir.length - 1);
 }
 
 var buildDir  = __dirname + '/';
-for (var i = 0; i< buildList.length; i++){
-    require(path.join(buildDir, buildList[i].path))(sumeruDir, dstDir);
-}
+var buildView = require(path.join(buildDir, 'buildServer.js'));
+
+var buildSmrTargetDir = typeof process.BAE !== 'undefined' ? dstDir : sumeruDir;
+require(path.join(buildDir, 'buildJavascript.js'))(sumeruDir, buildSmrTargetDir);
 
 
-//build Apps
+//---------------------------build Apps resourc--------------------------------
 var shell = require('shelljs');
 
 //build app resource
 var manifestFileName = 'cache.manifest';
-var buildAppResource = function(appDir, binDir){
+var buildAppResource = function(appDir, theBinDir){
     var buildAppContent = '';
     var buildAppCssContent = '';
 
@@ -108,13 +86,24 @@ var buildAppResource = function(appDir, binDir){
             }
         });
     };
+
     readPackage(appDir);
-    fs.writeFileSync(binDir + '/app.js', buildAppContent, 'utf-8');
-    fs.writeFileSync(binDir + '/app.css', buildAppCssContent, 'utf-8');
+    
+    if(typeof process.BAE !== 'undefined'){
+        fs.writeFileSync(binDir + '/app.js', buildAppContent, 'utf-8');
+        fs.writeFileSync(binDir + '/app.css', buildAppCssContent, 'utf-8');
+        buildView(appDir, binDir);
+        buildManifest(appDir, path.join(dstDir, 'bin'));
+    }else{
+        fs.writeFileSync(theBinDir + '/app.js', buildAppContent, 'utf-8');
+        fs.writeFileSync(theBinDir + '/app.css', buildAppCssContent, 'utf-8');
+        buildView(appDir, theBinDir);
+        buildManifest(appDir, theBinDir);
+    }
 };
 
 
-var buildManifest = function(appDir, binDir){
+var buildManifest = function(appDir, theBinDir){
     var first_line_str = 'CACHE MANIFEST \n#version:'+Date.now() + '\n';
     var cache_title = 'CACHE:\n';
     
@@ -140,7 +129,7 @@ var buildManifest = function(appDir, binDir){
     };
     readAllFileInView(baseViewDir,  'view');
 
-    var cdir = build.cacheDirectory;
+    var cdir = buildConfig.cacheDirectory;
     if(cdir){
         var appDir = path.join(baseDir, 'app');
         cdir.forEach(function(dir){
@@ -162,7 +151,7 @@ var buildManifest = function(appDir, binDir){
     var network_title = 'NETWORK:\n';
     var network_res_list = '*'
     
-    var offline_manifest = binDir + '/cache.manifest';
+    var offline_manifest = theBinDir + '/cache.manifest';
     var cache_content_str = first_line_str + cache_title + cache_res_list + network_title + network_res_list;
     if(fs.existsSync(offline_manifest)){
         fs.unlinkSync(offline_manifest);
@@ -175,29 +164,31 @@ var copySumeruFile2AppBin = function(){
     var appDir = path.join(baseDir, 'app');
     var apps = fs.readdirSync(appDir);
     
-    apps = [''].concat(apps);
-
+    
+    if(typeof process.BAE == 'undefined'){
+        apps = [''].concat(apps);
+    }else{
+        apps = [''];
+    }
     apps.forEach(function(dir){
         if(dir && dir.indexOf('.') > -1) return;
 
         var dir = path.join(appDir, dir);
-        var binDir = path.join(dir, 'bin');
+        var theBinDir = path.join(dir, 'bin');
 
         if(fs.existsSync(path.join(dir, 'package.js')) &&
             fs.existsSync(path.join(dir, 'view'))){
 
-            if(!fs.existsSync(binDir)){
-                fs.mkdirSync(binDir);
+            if(!fs.existsSync(theBinDir)){
+                fs.mkdirSync(theBinDir);
             }
-            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.js'), binDir);
-            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.css'), binDir);
-            buildAppResource(dir, binDir);
+            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.js'), theBinDir);
+            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.css'), theBinDir);
+            buildAppResource(dir, theBinDir);
         }
     });
-
-    
-    buildManifest(appDir, path.join(dstDir, 'bin'));
 }
+
 copySumeruFile2AppBin();
 
 

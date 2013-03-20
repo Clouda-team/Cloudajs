@@ -1,29 +1,24 @@
-module.exports = function(directory, dstDir){
+/**
+  *@fileoverview Build sumeru Javascript css and manifest file In this file，
+  * and copy the built files to bin dir.
+  *
+  */
+module.exports = function(sumeruDir, dstDir){
     var fs = require('fs');
     var path = require('path');
-    //var uglify = path.join(directory,'server/node_modules/', 'UglifyJs');	
     var jsp = require('uglify-js').parser;
     var pro = require('uglify-js').uglify;
 
+    sumeruDir = path.join(sumeruDir, 'src');
+
     //默认路径和默认路径下的package.json
     var baseUrl = __dirname;
-    var manifest = '';
+    var packagePath = path.join(sumeruDir, 'package.js');
 
-    //命令行的第一个参数默认为指定根目录
-    //var directory = process.argv.splice(2)[0];
+    if(fs.existsSync(packagePath)){
 
-    //如果指令目录存在， 覆盖默认baseUrl 和 manifest
-    if(fs.existsSync(directory) && fs.existsSync(directory + '/package.js')){
-		baseUrl = directory;
-		manifest = path.join(directory, 'package.js');
-    }else{
-		baseUrl += path.join(baseUrl, directory);
-		manifest = path.join(baseUrl, 'package.js');
-    }
-
-    if(fs.existsSync(manifest)){
     	var binDir = path.join(dstDir, 'bin');
-	    var buildEntireContent = '';
+    	var buildEntireContent = '';
 		var buildCSSEntireContent = '';
 		var targetJsFileName = path.join(binDir, 'sumeru.js');
 		var targetCSSFileName = path.join(binDir, 'sumeru.css');
@@ -64,7 +59,7 @@ module.exports = function(directory, dstDir){
 		    });
 		}
 		//读取css and js 内容
-		readPackage(directory);
+		readPackage(sumeruDir);
 		
 		//关掉debug开关
 		var debugReg = /var\s*SUMERU_APP_FW_DEBUG\s*=\s*true/ig;
@@ -81,46 +76,7 @@ module.exports = function(directory, dstDir){
 		fs.writeFileSync(targetCSSFileName, buildCSSEntireContent, 'utf8');
 		fs.writeFileSync(targetJsFileName, final_code, 'utf8');
 
-		/*//create manifest file
-		var first_line_str = 'CACHE MANIFEST \n#version:'+Date.now() + '\n';
-		var cache_title = 'CACHE:\n';
-
-		//扫描view目录并列入缓存清单
-		var baseViewDir = directory + '/view';
-        var allFiles = [];
-        var cacheViewStr = '';
-		var readAllFileInView = function(bsvdir, httpBase){
-			if(path.existsSync(bsvdir)){
-	            var theDirFiles = fs.readdirSync(bsvdir);
-	   			if(theDirFiles && theDirFiles.length > 0){
-	                for(var i=0; i < theDirFiles.length; i++){
-	                    if(theDirFiles[i].indexOf('.') > -1){
-	                    	allFiles.push(httpBase + '/' + theDirFiles[i]);
-	                    }else{
-                            readAllFileInView(bsvdir + '/' + theDirFiles[i], httpBase + '/' + theDirFiles[i]);
-	                    }
-	                }
-			    }
-			}
-		};
-		readAllFileInView(baseViewDir,  typeof process.BAE != 'undefined' ? '../../view' : '../view');
-        allFiles.forEach(function(cfile){
-            cacheViewStr += cfile + '\n';
-        });
-
-        var cache_res_list = '../index.html\napp.css\n';
-            cache_res_list += 'sumeru-min.js\n';
-            cache_res_list += cacheViewStr;
-
-        var network_title = 'NETWORK:\n';
-        var network_res_list = '*'
-
-        var cache_content_str = first_line_str + cache_title + cache_res_list + network_title + network_res_list;
-        if(fs.existsSync(offline_manifest)){
-        	fs.unlinkSync(offline_manifest);
-        }
-        fs.writeFileSync(offline_manifest, cache_content_str, 'utf8');*/
     }else{
-	    console.log('Not specified directory.');
+	    console.log('sumeru dir or sumeru package.js do not existed!');
     }
 }

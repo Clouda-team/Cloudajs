@@ -6,6 +6,7 @@ var globalConfig = function(fw){
     var httpServerPort = 8080;
     var dbname = 'test';
     var whiteList = ['websocket', 'xdr-streaming', 'xhr-streaming', 'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling', 'jsonp-polling'];	
+    
     // BAE CONFIG    
     if (typeof process !== 'undefined' && typeof process.BAE !== 'undefined'){
         socketPort = process.env.APP_PORT;
@@ -17,14 +18,16 @@ var globalConfig = function(fw){
    
     fw.config({
     	soketPort: socketPort,
-	dbname : dbname,
+	    dbname : dbname,
     	mongoServer: mongoServer,
     	mongoPort: mongoPort,
-	bae_user: '',
-	bae_password: '',
+	    bae_user: '',
+	    bae_password: '',
     	httpServerPort: httpServerPort,
     	protocols_whitelist : whiteList,
+    	view_from_cache:true
     });
+
     fw.config({
         clientValidation: true,
         serverValidation: true
@@ -35,11 +38,11 @@ var globalConfig = function(fw){
         //clientSocketServer = location.hostname + '/socket/';//BAE CONFIG	
 
 
-	fw.config({
-            clientSocketServer: clientSocketServer,
-            selfGroupManagerAddr:'0.0.0.0',
-            selfGroupManagerPort:'8089',
-	});
+    	fw.config({
+                clientSocketServer: clientSocketServer,
+                selfGroupManagerAddr:'0.0.0.0',
+                selfGroupManagerPort:'8089',
+    	});
     };
     
     if (typeof exports != 'undefined' && typeof module !='undefined'){

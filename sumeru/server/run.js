@@ -15,7 +15,7 @@ fw.__reg('clientIdField', '__clientId');
  * 其它组件文件只需载入newPkg.js即可，否则将引发一个重复载入的错误。
  */
  
-require(__dirname + '/../sumeru.js')(fw);
+require(__dirname + '/../src/sumeru.js')(fw);
 
 //build model
 require(__dirname + '/serverModel.js')(fw);
@@ -286,7 +286,8 @@ require(__dirname + '/poller/poller.js')(fw,getDbCollectionHandler);
 
 
 //require all publish and model
-var appPath  = __dirname + '/../../app' + (process.argv[2] ? '/' +process.argv[2] : '');
+var appPath  = __dirname + '/../../app' + 
+    ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
 var publishBaseDir = appPath + '/publish';
 var allTheDirFiles = []; 
 

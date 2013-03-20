@@ -45,7 +45,8 @@ var runnable = function(fw){
 		//var modelPath = path.join(process.dstDir, 'server/tmp/model.js');
 		//console.log('modelPath :' + modelPath);
         
-        var appPath  = __dirname + '/../../app' + (process.argv[2] ? '/' +process.argv[2] : '');
+        var appPath  = __dirname + '/../../app' + 
+            ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
         var allTheDirFiles = [];
         var modelBaseDir = appPath + '/model';
         var Model = Model || {};
@@ -104,17 +105,14 @@ var runnable = function(fw){
 	}
 	buildModelTemp();
 	fw.model.getModelRelation = function(modelName){
-	    log.dev('getModelRelation', fw.model.modelRelation, modelName);
 		if(typeof fw.model.modelRelation[modelName] == 'undefined'){
-			console.log('error: undefined modelName.');
-			return false;
+			fw.model.modelRelation[modelName] = [];
 		}
 		return fw.model.modelRelation[modelName];
 	}
 	fw.model.getModelTemp = function(modelName){
-		console.log(fw.model.modelTempContainter);
 		if(typeof fw.model.modelTempContainter[modelName] == 'undefined'){
-			console.log('error: undefined modelName.',modelName);
+			console.log('error: undefined modelName.', modelName);
 			return false;
 		}
 

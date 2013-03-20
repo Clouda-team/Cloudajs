@@ -24,17 +24,22 @@ if(FILE_PORT > 0){
         if(filePath.indexOf('/unit/') > -1){
             localBase = __dirname + '/../..';
         }
-        console.log('================================================');
-        console.log(filePath);
+        
         if(filePath == '/'){
             filePath = localBase + '/index.html';
         } else {
             var sumerujs = '/sumeru.js';
             var sumerudir = /sumeru\//g;
+            var viewdir = /\/view\//;
             var sumeruPath = path.join(localBase, fw.config.get('sumeruPath'));
+            var view_from_cache = fw.config.get('view_from_cache');
+            
 
             if(sumerujs === filePath){
-                filePath = sumeruPath + '/sumeru.js';
+                filePath = sumeruPath + '/src/sumeru.js';
+            }else if(view_from_cache && viewdir.test(filePath)){//hack it！在bin/view目录下读取编译后的
+                
+                filePath = localBase +"/bin"+ filePath;
             }else if(sumerudir.test(filePath)){
                 filePath = sumeruPath + '/' + 
                     filePath.slice(filePath.lastIndexOf('sumeru/') + 'sumeru/'.length);
@@ -42,6 +47,7 @@ if(FILE_PORT > 0){
                 filePath = localBase + filePath;
             }
         }
+
         //把问号后面去掉
         if(filePath.indexOf('?') != -1){
             filePath = filePath.split('?')[0];
