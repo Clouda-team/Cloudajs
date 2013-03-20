@@ -9,7 +9,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 ![](docs/images/devices.png)
 
 
-[Click to tryout the live demo](http://sumerudemo.duapp.com/debug.html#/todos)
+[Click and Use multiple devices or browsers simultaneously to tryout the live demo with realtime sync of To-Do Lists](http://sumerudemo.duapp.com/debug.html#/todos)
 
 
 
