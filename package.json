@@ -1,7 +1,7 @@
 {
   "name": "sumeru",
   "version": "0.6.3",
-  "description": "A brand new WebApp framework present by Baidu.Inc",
+  "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
