@@ -38,6 +38,6 @@ Step1: [Getting Started](https://github.com/brandnewera/sumeru/blob/master/docs/
 
 Step2: [Your First App](https://github.com/brandnewera/sumeru/blob/master/docs/step2_your_first_app.md)
 
-Step3: Overview
+Step3: [Overview](https://github.com/brandnewera/sumeru/blob/master/docs/step3_overview.md)
 	
 
