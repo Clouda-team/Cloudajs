@@ -6,7 +6,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 ## Live Demo: Manage To-Do Lists Across Multiple Devices
 
-![](images/devices.png)
+![](docs/images/devices.png)
 
 
 [Click to tryout the live demo](http://sumerudemo.duapp.com/debug.html#/todos)
