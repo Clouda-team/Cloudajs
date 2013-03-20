@@ -1,1 +1,0 @@
-sumeru.config({    maxComment: 5});

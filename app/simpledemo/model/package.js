@@ -1,3 +1,0 @@
-sumeru.packages(
-    'sduser.js'
-)
