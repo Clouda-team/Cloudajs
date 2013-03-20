@@ -11,7 +11,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 [Click and use multiple devices/browsers simultaneously to tryout the live demo with realtime sync of To-Do Lists](http://sumerudemo.duapp.com/debug.html#/todos)
 
-[Click to see a live video](http://v.youku.com/v_show/id_XNTI5NzY0Njg0.html)
+[Click to see a live video ======> ](http://v.youku.com/v_show/id_XNTI5NzY0Njg0.html)
 
 
 ##How to install and run sumeru?
