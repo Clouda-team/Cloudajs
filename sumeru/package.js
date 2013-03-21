@@ -1,1 +1,0 @@
-sumeru.packages(	'src');
