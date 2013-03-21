@@ -13,7 +13,8 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 
 
-<a href="http://v.youku.com/v_show/id_XNTI5NzcxNTcy.html">Click to see a live video ======></a>
+[Click to see a live video ====>](http://v.youku.com/v_show/id_XNTI5NzcxNTcy.html) 
+![](docs/images/youkuvideo.png)
 
 
 
