@@ -2,6 +2,7 @@
 ###################
 bin/
 server/tmp/
+__BAE__
 *.manifest
 node_modules/
 
