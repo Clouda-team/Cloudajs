@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>fx test</title>
+		<meta name="description" content="" />
+		<meta name="author" content="fantao" />
+
+		<meta name="viewport" content="width=device-width; initial-scale=1.0" />
+<script>var FX_SCRIPT_PATH = "./";</script>
+<script language="JavaScript" src="fx.js"></script>
+	</head>
+
+	<body>
+		<div>
+			<div id="demo" style="position: absolute;border: 1px solid #363;width:100px;height:100px;"></div>
+		</div>
+		<script>
+			var F = FantomX;
+			
+			
+			//写法1 引擎调用
+			var testFx1 = new F.engine({
+				frequency:40,//越小越流畅、性能要求越高 建议 10~30
+				time:500,
+				ease:"easeOutQuint",
+				onstart:function(){},
+				onstop:function(){}
+			});
+			
+			testFx1.addAction({from:0,to:400},
+				function(value){
+					F.G("demo").style.webkitTransform = "translateX(" + value + "px)";
+			});
+				
+			testFx1.start();
+			
+			/*
+			//写法2 移动、透明、缩放组合效果简写
+			var fx = F.C.move(
+	    		F.G("demo"),{
+	    		from: { x: 1000 },
+				to: { x: 0 },
+				transparent: {from:0,to:1},
+				ease: "easeOutExpo",
+				time: 1000,
+				onstart: function (){},
+				oncomplete:function(){}
+	    		}
+	    	);
+	    	*/
+		</script>
+	</body>
+</html>
