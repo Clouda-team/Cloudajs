@@ -24,7 +24,7 @@ sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端�
 			exports.config = {		
 				fields : [
 					{name: 'content', type: 'text'},
-					{name: 'time', type: 'datatime',defaultValue: 'now()'}
+					{name: 'time', type: 'datatime',defaultValue: Date()}
 				]
 			};
 		};
