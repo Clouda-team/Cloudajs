@@ -10,6 +10,7 @@ node_modules/
 .project
 .settings/
 
+
 # OS generated files #
 ######################
 .DS_Store
