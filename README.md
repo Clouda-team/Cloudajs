@@ -2,7 +2,7 @@
 
 
 
-Sumeru Framework, a simple but powerful Web App framework, provides rich functionalities for building de-facto Web Applications based on Baidu Cloud technology. Sumeru framework offers awesome features such as data-unify，adaptive feedback， realtime network connection etc. Developers beneﬁts from Sumeru Framework in terms of coding efforts, performance and application distribution.
+Sumeru Framework, a simple but powerful Web App framework, provides rich functionalities for building de-facto Web Applications based on cloud technology. Sumeru framework offers awesome features such as data-unify, adaptive feedback, realtime network connection etc. Developers beneﬁts from Sumeru Framework in terms of coding efforts, performance and application distribution.
 
 ## Live Demo: Manage To-Do Lists Across Multiple Devices
 
@@ -10,6 +10,9 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 
 [Click and use multiple devices/browsers simultaneously to tryout the live demo with realtime sync of To-Do Lists](http://sumerudemo.duapp.com/debug.html#/todos)
+
+[Click to see a live video ======> ](http://v.youku.com/v_show/id_XNTI5NzcxNTcy.html)
+
 
 
 
