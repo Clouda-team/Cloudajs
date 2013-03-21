@@ -14,7 +14,6 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 [Click to see a live video ======> ](http://v.youku.com/v_show/id_XNTI5NzcxNTcy.html)
 
 
-![](docs/images/youkuvideo.png)
 
 ##How to install and run sumeru?
 
