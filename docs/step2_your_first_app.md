@@ -102,9 +102,8 @@ sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端�
 			//onready is respond for event binding and data manipulate
 			env.onready = function(){			
 				session.event('message-hall', function(){     
-				
-				var messageubmitButton = document.getElementById('messageSubmit');
-				var clearHistoryButton = document.getElementById('clearHistory');
+					var messageubmitButton = document.getElementById('messageSubmit');
+					var clearHistoryButton = document.getElementById('clearHistory');
 		     		messageubmitButton.addEventListener('click', submitMessage); 
 		     		clearHistoryButton.addEventListener('click',clearHistory);                             
 		        });
