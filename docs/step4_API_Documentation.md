@@ -1058,28 +1058,28 @@ sumeru对handlebars的语法做了一些扩展：
 	
 	
 
-下面的三种方法是包含权限中心的身份验证的Publish。
+	下面的三种方法是包含权限中心的身份验证的Publish。
 
 
 * #### securePublish 
 
-在身份验证成功的情况下发布数据
+	在身份验证成功的情况下发布数据
 	
-	sumeru.publish(modelName,pubName,function(userinfo, callback){},options)
+		sumeru.publish(modelName,pubName,function(userinfo, callback){},options)
 
 
 * #### securePublishByPage 
 
-在身份验证成功的情况下分页发布数据
+	在身份验证成功的情况下分页发布数据
 	
-	sumeru.securePublishByPage(modelName,pubName,function(pageOptions,userinfo, callback){},options)
+		sumeru.securePublishByPage(modelName,pubName,function(pageOptions,userinfo, callback){},options)
 
 
 * #### securePublishPlain 
 
-在身份验证成功的情况下发布简单对象
+	在身份验证成功的情况下发布简单对象
 
-	sumeru.securePublishPlain(modelName,pubName,function(userinfo, callback){},options)
+		sumeru.securePublishPlain(modelName,pubName,function(userinfo, callback){},options)
 
 
 ## Auth
