@@ -9,8 +9,13 @@
 	在router中添加一组hash与Controller的对于关系
 	
 		sumeru.router.add(
-			{				pattern: '/studentList',				action: 'App.studentList'			}
-		);
+
+			{
+				pattern: '/studentList',
+				action: 'App.studentList'
+			}
+
+		);
 
 	*  pattern
 
@@ -56,7 +61,7 @@ Model用来定义App的数据模型。
 	
 		整型
 	
-	* datatime
+	* datetime
 	
 		日期
 	
