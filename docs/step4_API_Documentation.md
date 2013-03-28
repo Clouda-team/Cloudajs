@@ -10,8 +10,13 @@
 	在router中添加一组hash与Controller的对于关系
 	
 		sumeru.router.add(
-			{				pattern: '/studentList',				action: 'App.studentList'			}
-		);
+
+			{
+				pattern: '/studentList',
+				action: 'App.studentList'
+			}
+
+		);
 
 	*  pattern
 
@@ -850,7 +855,9 @@ sumeru对handlebars的语法做了一些扩展：
 	
 			var pageOption{	
 					
-				pagesize : 1, 	        	page : 2,	        	uniqueField : 'time' 
+				pagesize : 1, 
+	        	page : 2,
+	        	uniqueField : 'time' 
 	        	
 			};
 			
@@ -1260,9 +1267,11 @@ package.js用于将文件之间的依赖关系添加到sumeru中，我们可以�
 
 	 sumeru.packages(
 	 	'student.js,
-	 	'kkk/',
+	 	'class/',
 	 	.....
 	 )
+	 
+如果参数为文件夹，则sumeru会加载相应文件夹下的package.js。
 	 
 并不是在所有文件夹下新建文件或者文件夹后需要修改package.js文件，view文件夹和publish文件夹例外。
 
