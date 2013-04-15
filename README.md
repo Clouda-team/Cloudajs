@@ -44,6 +44,11 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 	npm ls -g sumeru
 
+or
+
+	grep '"version"' /usr/local/lib/node_modules/sumeru/package.json
+
+
 ### Check the up-to-date version number
 
 	npm view sumeru version
