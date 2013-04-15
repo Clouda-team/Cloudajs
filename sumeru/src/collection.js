@@ -528,6 +528,10 @@
 		},
 		isEnsureSave : function(){
 			return this.__smr__.saveType === 'ensure';
+		},
+		onValidation : function(ispass, runat, validationResult){
+			console.log((runat=='client'?'客户端':'服务端')+(ispass==true?'验证通过':'验证失败'));
+			console.log(validationResult);
 		}
 	};
 	var collectionBase = function(){

@@ -56,7 +56,8 @@ var PublishContainer = {};
  * } 
  */
 var clientToSocket = {};
-
+var socket_count = 0;
+var socket_count_reg = 0;
 var nope = function(){};
 
 //startup a server
@@ -70,6 +71,9 @@ var createDB = DbCollectionHandler.createDB;
 var ObjectId = DbCollectionHandler.ObjectId;
 var serverCollection = DbCollectionHandler.serverCollection;
 var appendUserInfoNCallback = require(__dirname + '/lib/appendUserInfoNCallback.js');
+
+// trigger的触发频率. 单位毫秒， 在单位时间内的所有trigger将合并为一次，用于控制DB压力
+var trigger_rate = 1000;
 
 //==============
 // 用户追踪方法
@@ -107,6 +111,7 @@ clientTracer.__reg('onSocketConnection',function(clientId,socketId){
         return;
     }
     
+    socket_count_reg ++;
     var socketArr = clientToSocket[clientId];
     
     /*
@@ -129,25 +134,53 @@ clientTracer.__reg('onSocketConnection',function(clientId,socketId){
 
 clientTracer.__reg('onSocketDisconnection',function(clientId,socketId){
     
-    if(!socketId || !clientId){
+    if(!socketId){
         return;
     }
-    
-    var socketArr = clientToSocket[clientId];
-    /*
-     * 记录socket与client关系，一个client可以同时有多个socket,
-     * 当socket ＝ 0 时，即该用户的最后一个socket断开时，触发onClientDisconnection
-     */
-    if(Array.isArray(socketArr)){
-        var p = socketArr.indexOf(socketId);
-        socketArr.splice(p,1);
+    socket_count_reg --;
+    var socketArr = null, p = null;
+    if(clientId){
+        /*
+         * 大部份情况， 都应同时提供clientId与socketId.
+         */
+        
+        socketArr = clientToSocket[clientId];
+        /*
+         * 记录socket与client关系，一个client可以同时有多个socket,
+         * 当socket ＝ 0 时，即该用户的最后一个socket断开时，触发onClientDisconnection
+         */
+        if(Array.isArray(socketArr)){
+            p = socketArr.indexOf(socketId);
+            socketArr.splice(p,1);
+        }
+        
+        if(!socketArr || socketArr.length == 0){
+            clientTracer.onClientDisconnection(clientId);
+            // 删除clientid记录.
+            delete clientToSocket[clientId];
+        }
+        console.log("socket disconnection, client " + clientId + ", socket disconnection :" + socketId , "Active Socket reg :" + socket_count_reg , "Active Client : " + Object.keys(clientToSocket).length);
+        netMessage.sendLocalMessage({clientId : clientId, socketId: socketId},'Client_SocketDisconnection');
+    }else{
+        /*
+         * 如果未提供clientId，则应是由pushUpdateOfModel时，未找到socketId对应的socket引发.
+         * 此时的清理，是清理非正常断开的socket.正在常的情况下，不应走这个else.
+         */
+        // 如果没有clientid，则需要遍历所有的client并找到对应的socket并断开
+        console.log("trying to clear the socketId:", socketId , ", that does not have a corresponding clientId");
+        for(var key in clientToSocket){
+            socketArr = clientToSocket[key];
+            if(Array.isArray(socketArr)){
+                p = socketArr.indexOf(socketId);
+                if(p != -1){
+                    // 找到clientId下的的socket连接,并触发断开事件;
+                    clientTracer.onSocketDisconnection(key,socketId);
+                    return;
+                }
+            }
+        }
     }
     
-    if(socketArr.length == 0){
-        clientTracer.onClientDisconnection(clientId);
-    }
-    //console.log("client " + clientId + ", socket disconnection :" + socketId);
-    netMessage.sendLocalMessage({clientId : clientId, socketId: socketId},'Client_SocketDisconnection');
 });
 
 clientTracer.__reg("socketCount",function(clientId){
@@ -363,7 +396,12 @@ var runStub = function(db) {
     });
 
     sock.on("connection", function(conn) {
-
+        
+        if(!conn){
+            console.log('no connection object.');
+            return;
+        }
+        socket_count ++;
         conn.on("data", function(msg){
             //FIXME 做跨域连接检测和授权检查
             //后面的pk判断是用于如果server的pk变化，中断后重新交换公钥的时候不加密,所以此处遇到'{}'不解密。
@@ -377,27 +415,50 @@ var runStub = function(db) {
         });
 
         conn.on("close", function(){
+            socket_count --;
+            console.log( "Active Socket:" + socket_count);
  //           netMessage.sendLocalMessage({clientId : conn.clientId},'Client_Disconnection');
             clientTracer.onSocketDisconnection(conn.clientId,conn._sumeru_socket_id);
-            delete SocketMgr[conn._sumeru_socket_id];
-            for (var model in SubscribeMgr){
-                var clients = SubscribeMgr[model];
-                for (var i = 0, l  = clients.length; i < l; i++){
-                    if (clients[i].socketId == conn._sumeru_socket_id) {
-                        //删除这一项
-                        clients.splice(i, 1);
-                        i--;
-                        l--;
-                    };
-                }
-                if (clients.length == 0) {
-                    delete SubscribeMgr[model];
-                };
-            }
-            scanPublishEnd();
+            clearSocketMgrBySocketId(conn._sumeru_socket_id);
+//            delete SocketMgr[conn._sumeru_socket_id];
+//            for (var model in SubscribeMgr){
+//                var clients = SubscribeMgr[model];
+//                for (var i = 0, l  = clients.length; i < l; i++){
+//                    if (clients[i].socketId == conn._sumeru_socket_id) {
+//                        //删除这一项
+//                        clients.splice(i, 1);
+//                        i--;
+//                        l--;
+//                    };
+//                }
+//                if (clients.length == 0) {
+//                    delete SubscribeMgr[model];
+//                };
+//            }
+//            scanPublishEnd();
         });
     });
-        
+    
+    
+    var clearSocketMgrBySocketId = function(_sumeru_socket_id){
+        delete SocketMgr[_sumeru_socket_id];
+        for (var model in SubscribeMgr){
+            var clients = SubscribeMgr[model];
+            for (var i = 0, l  = clients.length; i < l; i++){
+                if (clients[i].socketId == _sumeru_socket_id) {
+                    //删除这一项
+                    clients.splice(i, 1);
+                    i--;
+                    l--;
+                };
+            }
+            if (clients.length == 0) {
+                delete SubscribeMgr[model];
+            };
+        }
+        scanPublishEnd();
+    };
+    
     /**
      * 绑定实际使用socket发送数据的方法
      * @param {Object} data
@@ -407,7 +468,7 @@ var runStub = function(db) {
         var socket = SocketMgr[socketId];
         
         if (!socket) {
-            onerror("no socket");
+            onerror && onerror("no socket");
             return true;
         };
         var data2;
@@ -475,6 +536,7 @@ var runStub = function(db) {
              * 但由于现在记录和使用的信息量不大，所以暂不实现session.
              */
             var needAuth = false;
+            
             /*
              * 如果三个传是相同的，只可能是undefined或null，统一认为首次传入登际标记并进行验证 
              */
@@ -504,6 +566,7 @@ var runStub = function(db) {
                     })(cb, msg, conn);
                 
                 sessionAuthQueue[msg.sessionId].queue.push(callback__);
+                return;
             };
             
             /*
@@ -565,7 +628,15 @@ var runStub = function(db) {
                     }
                 });
                 return;
-            }
+            } else if (msg.content
+                        && 
+                        (msg.content.match(/"name":"auth-login"/)
+                         || msg.content.match(/"name":"auth-login-baidu"/)
+                         || msg.content.match(/"name":"other-login"/)
+                        )){
+                //如果是登陆请求，则清空其sessionId，等待下次请求（登陆后的第一次请求），去更新是否已登录的状态
+                conn.sessionId = null;                    
+            };
         }
 
         return cb(msg,conn);   //下一个过滤
@@ -579,6 +650,20 @@ var runStub = function(db) {
             target:'echo',
             handle:function(content,target,conn){
                 var socketId = content.socketId;
+                
+                if(!socketId){
+                    console.log("No SocketId, Can't register connection");
+                    conn.write("ERROR: NO SOCKET_ID");
+                    return;
+                }
+                
+                if(SocketMgr[socketId]){
+                    console.log("same socketId, Can't register connection");
+                    conn.write("ERROR: SAME SOCKET_ID");
+                    return;
+                }
+                
+                
                 SocketMgr[socketId] = conn;
                 conn._sumeru_socket_id = socketId;
                 if (content.pk){
@@ -657,14 +742,50 @@ var runStub = function(db) {
         }
     });
     
+    var trigger_push_cache = [];
+    var trigger_push_timer = null;
+    
     /**
      * 外部用网络来触发对某个model进行更新push检查和后续的push
      */
-    var trigger_push = function(content,target,conn){
-        var modelName = content.modelName;
-        fw.pushUpdateOfModel(modelName);
-        console.log('trigger_push, modelName:' + modelName);
+    var run_trigger = function(){
+        // 如果没有trigger内容，则停止周期执行
+        if(trigger_push_cache.length == 0){
+            clearTimerout(trigger_push_timer);
+            return;
+        }else{
+            var modelName = "";
+            while(modelName = trigger_push_cache.shift()){
+                fw.pushUpdateOfModel(modelName);
+                console.log('trigger_push, modelName:' + modelName);
+            }
+        }
+        trigger_push_timer = clearTimeout(trigger_push_timer);
     };
+    
+    var trigger_push = function(content,target,conn){
+        //如果打开了Cluster，且当前消息不是来自Cluster的触发，就发送cluster更新通知
+        if (fw.config.cluster.get('enable') === true
+            && fw.cluster && target != fw.cluster.channelNameRev) {
+            
+            fw.netMessage.sendLocalMessage(content, fw.cluster.channelNameSend);    
+        } else { 
+        
+        	var modelName = content.modelName;
+        
+        	if(trigger_push_cache.indexOf(modelName) == -1){
+            	trigger_push_cache.push(modelName);
+        	}
+        
+        	if(!trigger_push_timer){
+            	// 稀释trigger的频率.每秒一次
+            	trigger_push_timer = setTimeout(run_trigger,trigger_rate);
+        	}
+        }
+        
+        //fw.pushUpdateOfModel(modelName);
+    };
+    
     
     netMessage.setReceiver({
         onLocalMessage:{
@@ -680,6 +801,20 @@ var runStub = function(db) {
             handle:trigger_push
         }
     });
+    if (config.cluster.get('enable') === true) {
+        var cluster_mgr = require(__dirname + '/cluster.js');
+        
+        netMessage.setReceiver({
+            onLocalMessage:{
+                target:cluster_mgr.channelNameRev,
+                handle:trigger_push
+            }
+        });
+        
+        cluster_mgr.init(fw);
+        
+        fw.cluster = cluster_mgr;
+    }
 
 
     /*
@@ -793,7 +928,8 @@ var runStub = function(db) {
                             }
                             
                             //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            fw.pushUpdateOfModel(struct.modelName);
+                            //fw.pushUpdateOfModel(struct.modelName);
+                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');    
                         },errorHandle,struct.modelName);    
                     };
                     
@@ -824,7 +960,8 @@ var runStub = function(db) {
                             pubRecord.options.afterDelete(pubRecord.collection, structData);
                             pubRecord.options.onDelete(pubRecord.collection, structData);
                             //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            fw.pushUpdateOfModel(struct.modelName);
+                            //fw.pushUpdateOfModel(struct.modelName);
+                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
                         },errorHandle,struct.modelName);    
                     };
                     
@@ -852,7 +989,8 @@ var runStub = function(db) {
                             pubRecord.options.onUpdate(pubRecord.collection, structData);
                             pubRecord.options.afterUpdate(pubRecord.collection, structData);
                             //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            fw.pushUpdateOfModel(struct.modelName);
+                            //fw.pushUpdateOfModel(struct.modelName);
+                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
                         },errorHandle,struct.modelName);
                     }
                     
@@ -1119,6 +1257,8 @@ var runStub = function(db) {
                  */
                 if(!SocketMgr[item.socketId]){
                     console.log('SocketMgr: lost connection, the socket id is " ' + item.socketId + '"');
+                    clientTracer.onSocketDisconnection(null,item.socketId);
+                    clearSocketMgrBySocketId(item.socketId);
                     return;
                 }
                 
@@ -1147,9 +1287,9 @@ var runStub = function(db) {
                             'data_write_from_server_delta',
                             item.socketId,
                             function(err){
-                                console.log('send data_write_from_server_delta faile ' + err);
+                                console.log('send data_write_from_server_delta faile ' + err  , item.pubname , item.socketId);
                             },function(){
-                                console.log('send data_write_from_server_delta ok...');
+                               // console.log('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
                             }
                         );
                         

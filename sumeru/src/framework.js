@@ -5,9 +5,19 @@
 	var blockClassName = '__viewBlock__';
 	
 	var __socketInit = function(counter,callback){
+	    var cookie = Library.cookie;
+	    
+	    if(!cookie.getCookie('clientId')){
+	        cookie.addCookie('clientId',sumeru.utils.randomStr(12) , 24*365*20);
+	    }
+	    if(!cookie.getCookie('OPEN_STICKY_SESSION')){
+            cookie.addCookie('OPEN_STICKY_SESSION',1);
+        }
 		counter = counter || 0;
 		
 		var socketId = fw.__random();
+		
+		
 		
 		//创建一个Socket通道
 		console.log("OPEN : " +  fw.config.get('clientSocketServer'));
@@ -93,13 +103,13 @@
 		    
 		    sumeru.reachability.setStatus_(sumeru.reachability.STATUS_OFFLINE);
 		    
-			if(counter > 70){ //70次是(1+70) * 70 / 2 = 41分钟重连时间
+			if(counter > 500){ //70次是(1+70) * 70 / 2 = 41分钟重连时间
 				throw "Fail to connect to network";
 			}
 			
 			setTimeout(function(){
                 __socketInit(++counter);  
-			}, 1000 * (counter + 1));
+			}, 1000);
 		};
 		
 		//FIXME RSA,this is client
@@ -129,9 +139,8 @@
 		};
 		
 		fw.netMessage.addOutFilter(function(msg){
-		    var cookie = Library.cookie;
 		    msg.sessionId = cookie.getCookie('sessionId');
-		    msg.clientId = cookie.getCookie('clientId') || sumeru.utils.randomStr(12);
+		    msg.clientId = cookie.getCookie('clientId');
 			msg.passportType = cookie.getCookie('passportType');
 		    return msg;
 		},0);

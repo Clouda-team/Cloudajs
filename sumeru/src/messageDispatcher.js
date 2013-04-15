@@ -395,6 +395,13 @@
                 return;
             };
             
+            if (type == 'data_write_from_server' 
+                && fw.pubsub._subscribeMgr[pubName].topPriority == true
+                && typeof fw.pubsub._priorityAsyncHandler != 'undefined') {
+                //如果是prioritySubscribe的全量写回（即第一次的返回），又存在fw.pubsub._priorityAsyncHandler(是redo)
+                fw.pubsub._priorityAsyncHandler.decrease();
+            };
+            
             //candidates is array of collections
             var candidates = fw.pubsub._subscribeMgr[pubName].stub;
 

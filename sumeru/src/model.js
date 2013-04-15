@@ -488,6 +488,10 @@ if(typeof module != 'undefined' && module.exports){
 		},
 		save : function(callback, pubname, pilotid){
 			this._save(callback, pubname, pilotid, false);
+		},
+		onValidation : function(ispass, runat, validationResult){
+			console.log((runat=='client'?'客户端':'服务端')+(ispass==true?'验证通过':'验证失败'));
+			console.log(validationResult);
 		}
 	}
 	/**

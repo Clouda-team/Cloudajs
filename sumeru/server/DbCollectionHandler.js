@@ -120,7 +120,24 @@ var runnable = function(fw){
     case MONGO:
     default:
         var mongodb = require('mongodb');
-        var server = new mongodb.Server(config.get('mongoServer'), config.get('mongoPort'), {});
+        var serverOptions = {
+            'auto_reconnect': true,
+            'poolSize': 50         //MAX IS 2000
+          };
+        
+        var host = config.get('mongoServer'),
+            port = config.get('mongoPort'),
+            username = config.get('bae_user'),
+            password = config.get('bae_password');
+        
+        if(process && process.BAE){
+            host = "10.50.147.16";
+            port = 43030;
+            username = "SmrWebApp";//fw.config.get('bae_user');
+            password = "AppWebSumeru%";//fw.config.get('bae_password');
+        }
+        
+        var server = new mongodb.Server(host, port, serverOptions);
         var db = new mongodb.Db(config.get('dbname'), server, {});
 	
         ObjectId = mongodb.ObjectID;
@@ -143,25 +160,24 @@ var runnable = function(fw){
         
         createDB = function(callback){
             db.open(function(err, db){
-		if (err){
-		    console.log('DB OPEN ERROR');
-		    console.log(err);
-		    return;
-		}
-		var username = fw.config.get('bae_user');
-		var password = fw.config.get('bae_password');
-		if (username !== '' || password !== ''){
-		    db.authenticate(username,password,function(err,result){
-                    	if (!err){
-			    callback(db);
-			}else {
-			    console.log('DB auth failed');
-			    console.log(err);
-			}
-		    })
-		}else{
-		     callback(db);
-		}
+        		if (err){
+        		    console.log('DB OPEN ERROR');
+        		    console.log(err);
+        		    return;
+        		}
+        		
+        		if (username !== '' || password !== ''){
+        		    db.authenticate(username,password,function(err,result){
+                            	if (!err){
+        			    callback(db);
+        			}else {
+        			    console.log('DB auth failed');
+        			    console.log(err);
+        			}
+        		    })
+        		}else{
+        		     callback(db);
+        		}
             });
         };
     }

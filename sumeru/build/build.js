@@ -25,7 +25,7 @@ console.log('BAE MODE');
     !fs.existsSync(staticDir) && fs.mkdirSync(staticDir);
 }else{
 console.log('NON BAE MODE');
-    dstDir = path.join(__dirname, '/../app');
+    dstDir = path.join(__dirname, '/../../app' + (process.argv[2] ? '/' +process.argv[2] : ''));
 }
 console.log('BaseDir :' + baseDir);
 console.log('DstDir :' + dstDir);
@@ -178,12 +178,13 @@ var copySumeruFile2AppBin = function(){
 
         if(fs.existsSync(path.join(dir, 'package.js')) &&
             fs.existsSync(path.join(dir, 'view'))){
-
-            if(!fs.existsSync(theBinDir)){
-                fs.mkdirSync(theBinDir);
+            if(typeof process.BAE === 'undefined'){
+                if(!fs.existsSync(theBinDir)){
+                    fs.mkdirSync(theBinDir);
+                }
+                shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.js'), theBinDir);
+                shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.css'), theBinDir);
             }
-            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.js'), theBinDir);
-            shell.cp('-rf', path.join(sumeruDir, 'bin/sumeru.css'), theBinDir);
             buildAppResource(dir, theBinDir);
         }
     });
