@@ -24,7 +24,7 @@ sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端�
 			exports.config = {		
 				fields : [
 					{name: 'content', type: 'text'},
-					{name: 'time', type: 'datatime',defaultValue: 'now()'}
+					{name: 'time', type: 'datetime',defaultValue: 'now()'}
 				]
 			};
 		};
@@ -100,10 +100,10 @@ sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端�
 	在上一篇文档中我们已经见过env.onrender()，这是Controller的第二个时态，负责对View(视图)的渲染，关于该时态在后续会做专门说明。
 		
 			//onready is respond for event binding and data manipulate
-			env.onready = function(){
-				var messageubmitButton = document.getElementById('messageSubmit');
-				var clearHistoryButton = document.getElementById('clearHistory');			
-				session.event('message-hall', function(){                   
+			env.onready = function(){			
+				session.event('message-hall', function(){     
+					var messageubmitButton = document.getElementById('messageSubmit');
+					var clearHistoryButton = document.getElementById('clearHistory');
 		     		messageubmitButton.addEventListener('click', submitMessage); 
 		     		clearHistoryButton.addEventListener('click',clearHistory);                             
 		        });
