@@ -19,7 +19,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 
 
-##How to install and run sumeru?
+##How to install and run sumeru
 
 ### Install
 
@@ -38,7 +38,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 
 
-##How to update existing installation to lastest version of sumeru?
+##How to update existing installation to lastest version
 
 ### Check current installed version
 
@@ -48,7 +48,7 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 
 	npm update -g sumeru
 	
-### Update existing project to use the lastest version (with auto backup of course)
+### Update existing project to use the lastest version (with auto backup, of course)
 
 	sumeru update ./myproject
 
