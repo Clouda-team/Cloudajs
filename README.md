@@ -37,6 +37,24 @@ Sumeru Framework, a simple but powerful Web App framework, provides rich functio
 	sumeru start
 
 
+
+##How to update existing installation to lastest version of sumeru?
+
+### Check current installed version
+
+	npm ls -g sumeru
+
+### Update sumeru 
+
+	npm update -g sumeru
+	
+### Update existing project to use the lastest version (with auto backup of course)
+
+	sumeru update ./myproject
+
+### Install
+
+
 ## Documents
 
 
