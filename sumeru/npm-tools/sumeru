@@ -161,7 +161,7 @@ function update(path_) {
 function updateApplicationAt(ph) {
   //create backup
   mkdir(path.join(ph, 'backup'));
-  var currentDate = (new Date()).toJSON(),
+  var currentDate = time(),
       backupPath = path.join(ph, 'backup/' + currentDate);
 
   mkdir(backupPath);
@@ -335,4 +335,15 @@ function mkdir(path, fn) {
     console.log('   \033[36mcreate\033[0m : ' + path);
     fn && fn();
   });
+}
+
+/**
+ * get current time
+ *
+**/
+
+function time(){
+	var time = new Date();
+	
+	return time.getDate() + '-' + (time.getMonth() - 0 + 1) + '-' + time.getFullYear() + '-' + time.valueOf();
 }
