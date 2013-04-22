@@ -285,7 +285,7 @@ onload()是Controller的第一个时态，Controller中需要使用的数据都�
 	 };
 	 
 	 
-## Controller接受参数
+### Controller接受参数
 
 Controller中也可以接受URl的参数，形式如下：
 
