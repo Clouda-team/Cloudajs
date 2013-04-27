@@ -282,7 +282,36 @@ onload()是Controller的第一个时态，Controller中需要使用的数据都�
 当Controller被销毁时，ondestroy()将被调用。
 
 	 env.ondestroy = function(){
-	 };	
+	 };
+	 
+	 
+### Controller接受参数
+
+Controller中也可以接受URl的参数，形式如下：
+
+	 App.studentList = sumeru.controller.create(function(env, session, params){
+	 
+	 });
+	 
+参数的传入方式需要在转入Controller中的env.redirect()方法实现，例如传入参数a、b：
+
+	env.redirect('/somewhere', {a:1, b:2})
+	
+完成跳转后的URL的格式为：
+
+	http://index.html#/controller!b=1&a=2
+	
+在跳转后的controller中获取参数a、b：
+
+	App.studentList = sumeru.controller.create(function(env, session, params){
+	 
+	 	env.onready = function(){
+	 	
+	 		console.log(params.a);
+	 		console.log(params.b);
+	 	}
+	
+	 });
 
 
 ## Model
@@ -489,8 +518,13 @@ router用于建立URL中hash与Controller之间的对应关系，添加router的
 
 
 	sumeru.router.add(
-		{			pattern: '/studentList',			action: 'App.studentList'		}
-	);
+
+		{
+			pattern: '/studentList',
+			action: 'App.studentList'
+		}
+
+	);
 
 	* #### pattern
 
