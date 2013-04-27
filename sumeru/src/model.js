@@ -351,12 +351,8 @@ if(typeof module != 'undefined' && module.exports){
 			}
 			//subSave是不需要validation的，因为validation是多层的。
 			if(!isSubSave){
-				console.log("save model");
-				console.log(this);
 				var validationResult = this.validation();
 				if(validationResult.length>0){
-					console.log("validation faild");
-					console.log(validationResult);
 					return validationResult;
 				}
 			}
@@ -411,8 +407,6 @@ if(typeof module != 'undefined' && module.exports){
 						return;
 					}
 					hasSaved = true;
-					//console.log("doSave");
-					//console.log(_self);
 
 					var _callback = function(callback,isSubSave){
 						return function(){
@@ -430,8 +424,6 @@ if(typeof module != 'undefined' && module.exports){
 
 				//save subModel
 				saveModel = function(_model){
-					//console.log("saveModel");
-					//console.log(_model);
 					var _model = _model;
 
 					//对于干净的，无需二次存储，直接转换为reference
@@ -489,9 +481,11 @@ if(typeof module != 'undefined' && module.exports){
 		save : function(callback, pubname, pilotid){
 			this._save(callback, pubname, pilotid, false);
 		},
+		/**
+		 * @ispass true:'验证通过',false:'验证失败
+		 * @runat 'client':客户端验证结果,'server':服务端验证结果
+		 */
 		onValidation : function(ispass, runat, validationResult){
-			console.log((runat=='client'?'客户端':'服务端')+(ispass==true?'验证通过':'验证失败'));
-			console.log(validationResult);
 		}
 	}
 	/**
