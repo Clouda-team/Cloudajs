@@ -2,8 +2,6 @@
 	
 	var inited = false;
 	
-	var blockClassName = '__viewBlock__';
-	
 	var __socketInit = function(counter,callback){
 	    var cookie = Library.cookie;
 	    
@@ -44,13 +42,13 @@
 		
 		socket.onopen = function(){
 			//发送链接标示符
-			
+			var SUMERU_APP_UUID = 'sumeru_app_uuid';
             sumeru.reachability.setStatus_(sumeru.reachability.STATUS_CONNECTED);
 			var identifier = {};
 			if ( !fw.config.get("rsa_enable") ) {//默认
 			    identifier = {
                     socketId : socketId,
-                    uuid    :   'sumeru_app_uuid'//SUMERU_APP_UUID
+                    uuid    :   SUMERU_APP_UUID//SUMERU_APP_UUID
                 }
 			}else{
 			    
@@ -161,6 +159,10 @@
 		//fw.Controller.__load('_load').apply(this, arguments);
 	};
 	
+	fw.reconnect = function(){
+	    sumeru.reachability.setStatus_(sumeru.reachability.STATUS_CONNECTING);
+	    __socketInit(1);
+	}
 	
 	return fw;
 })(sumeru);

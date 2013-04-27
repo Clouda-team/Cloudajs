@@ -131,9 +131,9 @@ var buildManifest = function(appDir, theBinDir){
 
     var cdir = buildConfig.cacheDirectory;
     if(cdir){
-        var appDir = path.join(baseDir, 'app');
+        var baseAppDir = path.join(baseDir, 'app');
         cdir.forEach(function(dir){
-            var pt = path.join(appDir, dir);
+            var pt = path.join(baseAppDir, dir);
             if(fs.existsSync(pt)){
                  readAllFileInView(pt, dir);
             }
@@ -143,10 +143,38 @@ var buildManifest = function(appDir, theBinDir){
     allFiles.forEach(function(cfile){
         cacheViewStr += cfile + '\n';
     });
+    
+    var appManifest = path.join(appDir, 'app.manifest');
+    var appCache = appNetWork = appFallback = '';
+    
+    if(fs.existsSync(appManifest)){
+        var customContent = fs.readFileSync(appManifest, 'utf-8');
+        
+        if(customContent){
+            var cacheIndex = customContent.indexOf('CACHE:');
+            var networkIndex = customContent.indexOf('NETWORK:');
+            var fallbackIndex = customContent.indexOf('FALLBACK:');
+            
+            if(cacheIndex != -1){
+                appCache = customContent.slice(cacheIndex + 6,
+                networkIndex == -1 ? (fallbackIndex == -1 ? customContent.length : fallbackIndex ) : networkIndex);
+            }
+            
+            if(networkIndex != -1){
+                appNetWork = customContent.slice(networkIndex + 8,
+                fallbackIndex == -1 ? customContent.length : fallbackIndex); 
+            }
+            
+            if(fallbackIndex != -1){
+                appFallback = customContent.slice(fallbackIndex + 9,customContent.length);
+            }
+        }
+    }
 
     var cache_res_list = '../index.html\nsumeru.css\n';
-    cache_res_list += 'sumeru.js\n';
+    cache_res_list += 'sumeru.js\napp.js\n';
     cache_res_list += cacheViewStr;
+    cache_res_list += appCache;
 
     var network_title = 'NETWORK:\n';
     var network_res_list = '*'

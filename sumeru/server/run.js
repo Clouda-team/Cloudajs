@@ -390,8 +390,8 @@ var runStub = function(db) {
 
  // =====================  NET MESSAGE DISPATCHER , WANG SU ================== // 
     //start websocket server
-    var sock = sockjs.createServer();
-    sock.installHandlers(globalServer, {
+    
+    var sock = sockjs.listen(globalServer, {
         prefix : '/socket'
     });
 
@@ -684,15 +684,15 @@ var runStub = function(db) {
                                                 'plainstruct' : PublishContainer[pubname]['plainStruct']
                                                 };
                 }
-                
+                var msgObj = {
+                    timestamp: (new Date()).valueOf(),
+                    pubmap : publishModelMap
+                };
+                if (fw.config.get("rsa_enable")){
+                    msgObj.swappk = fw.myrsa.getPk();//server传递给客户端自己的公钥，这句不加密
+                }
                 setTimeout(function(){
-                    netMessage.sendMessage({
-                        
-                        timestamp: (new Date()).valueOf(),
-                        swappk:fw.myrsa.getPk(),//server传递给客户端自己的公钥，这句不加密
-                        pubmap : publishModelMap
-                        
-                    },'echo_from_server', socketId, function(err){
+                    netMessage.sendMessage(msgObj,'echo_from_server', socketId, function(err){
                         console.log('send echo_from_server faile' + err);
                     }, function(){
                         console.log('send echo_from_server ok');

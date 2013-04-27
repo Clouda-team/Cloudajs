@@ -131,10 +131,10 @@ var runnable = function(fw){
             password = config.get('bae_password');
         
         if(process && process.BAE){
-            host = "10.50.147.16";
-            port = 43030;
-            username = "SmrWebApp";//fw.config.get('bae_user');
-            password = "AppWebSumeru%";//fw.config.get('bae_password');
+            host = "";
+            port = 27017;
+            username = "";//fw.config.get('bae_user');
+            password = "";//fw.config.get('bae_password');
         }
         
         var server = new mongodb.Server(host, port, serverOptions);
