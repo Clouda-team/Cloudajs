@@ -2,7 +2,7 @@
 var socketPort = 
     (typeof process !== 'undefined' && 
      typeof process.BAE !== 'undefined') ?
-    process.env.APP_PORT : 8082;
+    80 : 8082;
 var clientSocketServer = typeof location !== 'undefined' ? 
         location.hostname + ':' + socketPort + '/socket/' : '';
 
