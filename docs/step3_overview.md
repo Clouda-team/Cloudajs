@@ -347,7 +347,9 @@ onload()是Controller的第一个时态，Controller中需要使用的数据都�
 				});
 		
 			
+	跳转后的URL为：http://localhost:8080/debug.html#/destinationpage!a=100&b=200&
 
+	开发者也可按照上面的URl格式来拼接一个带参数的URL。
 
 ## Model
 
