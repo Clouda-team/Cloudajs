@@ -285,33 +285,68 @@ onload()是Controller的第一个时态，Controller中需要使用的数据都�
 	 };
 	 
 	 
-### Controller接受参数
+### Controller之间传递参数
 
-Controller中也可以接受URl的参数，形式如下：
+*  使用env.redirect()方法
 
-	 App.studentList = sumeru.controller.create(function(env, session, params){
-	 
-	 });
-	 
-参数的传入方式需要在转入Controller中的env.redirect()方法实现，例如传入参数a、b：
-
-	env.redirect('/somewhere', {a:1, b:2})
+	当一个Controller（起始Controller）跳转到另一个Controller（目标Controller）时，可以使用env.redirect()方法来实现参数的传递，方法如下：
 	
-完成跳转后的URL的格式为：
-
-	http://index.html#/controller!b=1&a=2
+	* 在起始Controller中
 	
-在跳转后的controller中获取参数a、b：
-
-	App.studentList = sumeru.controller.create(function(env, session, params){
-	 
-	 	env.onready = function(){
-	 	
-	 		console.log(params.a);
-	 		console.log(params.b);
-	 	}
+			env.redirect(queryPath ,paramMap);
+		
+		第一个queryPath： 目标Controller在router中“pattern”的值；
 	
-	 });
+		paramMap：需要传递的参数
+		
+	* 目标Controller中使用“param”对象接受参数
+	
+			sumeru.controller.create(function(env, session, param){
+			
+				
+			});
+			
+	* 实例
+	
+		* SourceController.js
+		
+		
+				sumeru.router.add(
+					{
+					
+						pattern: '/sourcepage',
+						action: 'App.SourceController'
+					
+					}
+				
+				);
+		
+				App.SourceController = sumeru.controller.create(function(env, session){
+							
+						env.redirect('/destinationpage',{a:100,b:200});							
+				});
+				
+		*  DestinationController.js
+		
+		
+				sumeru.router.add(
+					{
+					
+						pattern: '/destinationpage',
+						action: 'App.DestinationController'
+					
+					}
+				
+				);
+		
+				App.DestinationController = sumeru.controller.create(function(env, session, param){
+			
+					console.log(param.a);	
+					console.log(param.b);
+				
+				});
+		
+			
 
 
 ## Model
