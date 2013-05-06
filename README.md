@@ -61,7 +61,6 @@ or
 
 	sumeru update ./myproject
 
-### Install
 
 
 ## Documents
