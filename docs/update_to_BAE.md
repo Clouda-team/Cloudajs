@@ -86,9 +86,6 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	 //修改第7行，换成自己的dbname
 	 var dbname = '';
 	
-	 去掉45行注释   
-
-	 //clientSocketServer = location.hostname + '/socket/';//BAE CONFIG	
 	 
 （11）修改sumeru/server/DbCollectionHandler.js
 
