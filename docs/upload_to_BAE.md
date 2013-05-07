@@ -104,7 +104,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	
 （13）修改根目录下的package.json文件
 
-	将弟5行：
+	将第5行：
 	     "main": "index.js"
 	修改成：
 	     "main": "app.js"
