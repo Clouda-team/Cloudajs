@@ -1,0 +1,71 @@
+# Framework托管到BAE
+
+
+Framework是基于node.js开发的，所以需要node.js环境以及需要数据库的支持，百度开发者中心上BAE提供整套的环境的支持，只需简单的配置就可以快速运行基于framework开发的应用，具体方法如下：
+（1）登陆[百度开发者中心](http://developer.baidu.com)，如果没有百度帐号请先注册百度帐号，并注册成为开发者；
+（2）使用BAE，如果是第一次使用，需要先发送邮件到dev_support@baidu.com申请开通node.js权限。
+![](images/intro_4_2.png)
+（3）node.js权限开通后，点击 “创建应用” ，如图：
+![](images/intro_4_3.png)
+（4）点击 “确定”后在页面点击“云环境(BAE)”
+
+![](images/intro_4_4.png)
+（5）完成“应用域名”申请，以及选择使用“node.js”环境
+![](images/intro_4_5.png)（6）修改app.conf文件
+	handlers:
+  		- url : ^/socket/(.*)
+    		script: $1.nodejs
+
+  		- url : ^/view/(.*)
+    		script: /__bae__/bin/view/$1
+
+  		- url : ^/bin/(.*)
+    		script: /__bae__/bin/$1
+
+  		- url : ^/hiUpload/(.*)
+    		script: /__bae__/static/hiUpload/$1
+
+  		- url : /server/(.*)
+    		script: /index.html
+
+  		- url : ^/publish/(.*)
+    		script: /index.html
+
+  		- url : (*.ico)
+    		script: $1
+  
+  		- url : ^/sumeru/(.*)
+    		script : /sumeru/$1
+  
+  		- url : ^/sumeru\.js
+    		script : /sumeru/sumeru.js
+    
+  		- url : (.*)
+    		script: /app/$1
+    
+  		- expire : .* modify 0 seconds
+  		- expire : .jpg modify 10 years
+  		- expire : .swf modify 10 years
+  		- expire : .png modify 10 years
+  		- expire : .gif modify 10 years
+  		- expire : .JPG modify 10 years
+  		- expire : .ico modify 10 years
+  
+  		- mime: .manifest text/cache-manifest
+  		
+  		
+  也可点击<http://pan.baidu.com/share/link?shareid=474214&uk=1077217927>下载该文件	（7）修改app.js文件
+	 require("./sumeru/server/run.js");	
+（8）修改Sumeru框架中sumeru/src/frameworkConfig.js文件，修改如下：	
+	 去掉45行注释   
+	 //clientSocketServer = location.hostname + '/socket/';//BAE CONFIG		 （9）修改sumeru/server/DbCollectionHandler.js
+	修改该文件第136、137行的username、password，输入分配的username和password
+	username = " ";
+    password = " ";
+（10）进入sumeru/build/，并运行 node runBuild.js
+（11）查看根目录下的package.json文件的内容是否为：
+	{
+    	"main": "app.js"
+	}（12）使用SVN上传代码，并在BAE上上线该应用
+
+（13）访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
