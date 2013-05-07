@@ -11,7 +11,13 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 ![](images/intro_4_4.png)
 （5）完成“应用域名”申请，以及选择使用“node.js”环境
-![](images/intro_4_5.png)（6）修改app.conf文件
+![](images/intro_4_5.png)
+
+（6）“创建新版本”，并使用SVN下载版本代码
+
+![](images/intro_4_6.png)
+
+（7）将本地sumeru工程文件拷贝到SVN下载版本代码目录下（8）修改app.conf文件
 	handlers:
   		- url : ^/socket/(.*)
     		script: $1.nodejs
@@ -54,18 +60,18 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
   		- mime: .manifest text/cache-manifest
   		
   		
-  也可点击<http://pan.baidu.com/share/link?shareid=474214&uk=1077217927>下载该文件	（7）修改app.js文件
+  也可点击<http://pan.baidu.com/share/link?shareid=474214&uk=1077217927>下载该文件	（9）修改app.js文件
 	 require("./sumeru/server/run.js");	
-（8）修改Sumeru框架中sumeru/src/frameworkConfig.js文件，修改如下：	
-	 去掉45行注释   
-	 //clientSocketServer = location.hostname + '/socket/';//BAE CONFIG		 （9）修改sumeru/server/DbCollectionHandler.js
+（10）修改Sumeru框架中sumeru/src/frameworkConfig.js文件，修改如下：
+	 //修改第7行，换成自己的dbname	 var dbname = '';		 去掉45行注释   
+	 //clientSocketServer = location.hostname + '/socket/';//BAE CONFIG		 （11）修改sumeru/server/DbCollectionHandler.js
 	修改该文件第136、137行的username、password，输入分配的username和password
 	username = " ";
     password = " ";
-（10）进入sumeru/build/，并运行 node runBuild.js
-（11）查看根目录下的package.json文件的内容是否为：
+（12）进入sumeru/build/，并运行 node runBuild.js
+（13）查看根目录下的package.json文件的内容是否为：
 	{
     	"main": "app.js"
-	}（12）使用SVN上传代码，并在BAE上上线该应用
+	}（14）使用SVN上传代码，并在BAE上上线该应用
 
-（13）访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
+（15）访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
