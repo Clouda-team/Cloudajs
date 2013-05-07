@@ -282,8 +282,74 @@ onload()是Controller的第一个时态，Controller中需要使用的数据都�
 当Controller被销毁时，ondestroy()将被调用。
 
 	 env.ondestroy = function(){
-	 };	
+	 };
+	 
+	 
+### Controller之间传递参数
 
+*  使用env.redirect()方法
+
+	当一个Controller（起始Controller）跳转到另一个Controller（目标Controller）时，可以使用env.redirect()方法来实现参数的传递，方法如下：
+	
+	* 在起始Controller中
+	
+			env.redirect(queryPath ,paramMap);
+		
+		第一个queryPath： 目标Controller在router中“pattern”的值；
+	
+		paramMap：需要传递的参数
+		
+	* 目标Controller中使用“param”对象接受参数
+	
+			sumeru.controller.create(function(env, session, param){
+			
+				
+			});
+			
+	* 实例
+	
+		* SourceController.js
+		
+		
+				sumeru.router.add(
+					{
+					
+						pattern: '/sourcepage',
+						action: 'App.SourceController'
+					
+					}
+				
+				);
+		
+				App.SourceController = sumeru.controller.create(function(env, session){
+							
+						env.redirect('/destinationpage',{a:100,b:200});							
+				});
+				
+		*  DestinationController.js
+		
+		
+				sumeru.router.add(
+					{
+					
+						pattern: '/destinationpage',
+						action: 'App.DestinationController'
+					
+					}
+				
+				);
+		
+				App.DestinationController = sumeru.controller.create(function(env, session, param){
+			
+					console.log(param.a);	
+					console.log(param.b);
+				
+				});
+		
+			
+	跳转后的URL为：http://localhost:8080/debug.html#/destinationpage!a=100&b=200&
+
+	开发者也可按照上面的URl格式来拼接一个带参数的URL。
 
 ## Model
 
@@ -489,8 +555,13 @@ router用于建立URL中hash与Controller之间的对应关系，添加router的
 
 
 	sumeru.router.add(
-		{			pattern: '/studentList',			action: 'App.studentList'		}
-	);
+
+		{
+			pattern: '/studentList',
+			action: 'App.studentList'
+		}
+
+	);
 
 	* #### pattern
 

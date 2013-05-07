@@ -21,7 +21,7 @@ var DEV = 'development';
 var PRD = 'production';
 var DEM = '--daemon';
 var DAEMON = false;
-var TIME_INIT = 1 * 1000;
+var TIME_INIT = 3 * 1000;
 var TIME_KILL_WAIT = 5 * 1000;
 
 var CUR_DIR = process.cwd();
@@ -66,6 +66,10 @@ var args = process.argv.slice(2);
     legalArgNum(1);
     init(args[0]);
     break;
+  case 'update':
+    legalArgNum(1);
+    update(args[0]);
+    break;  
   case 'start':
     start();
     break;
@@ -123,6 +127,57 @@ function createApplicationAt(ph) {
       exec('rm -rf ' + rmfile[i]);
     }
   }, TIME_INIT);
+};
+
+/**
+ * Update application's sumeru fw at the given directory `path`.
+ *
+ * @param {String} path
+ */
+function update(path_) {
+  emptyDirectory(path_, function(empty) {
+    var resolvedPath = path.resolve(path_);
+    if(empty) {
+      abort(resolvedPath + ' is not a valid sumeru project space');
+    } else {
+      confirm('update ' + resolvedPath + ' to use the latest sumeru after auto-backup, continue? (y/n)', function(ok) {
+        if(ok) {
+          process.stdin.destroy();
+          updateApplicationAt(path_);
+        } else {
+          abort('aborting');
+        }
+      });
+    }
+  });
+};
+
+
+/**
+ * Update directory and files at the given directory `path`.
+ *
+ * @param {String} ph
+ */
+function updateApplicationAt(ph) {
+  //create backup
+  mkdir(path.join(ph, 'backup'));
+  var currentDate = time(),
+      backupPath = path.join(ph, 'backup/' + currentDate);
+
+  mkdir(backupPath);
+  copy(ph, backupPath);
+  
+  setTimeout(function(){      
+    //use create to init a new project
+    createApplicationAt(ph);
+
+    setTimeout(function(){
+
+      //copy app back
+      copy(path.join(backupPath, 'app'), path.join(ph, 'app'));  
+    }, TIME_INIT);
+  }, TIME_INIT);
+
 };
 
 /**
@@ -249,7 +304,8 @@ function legalArgNum(argNum) {
  * @param {String} target
  */
 function copy(origin, target) {
-  if(!fs.existsSync(origin)) abort(origin + 'is not exist.');
+  if (path.basename(origin) == 'backup') {return};
+  if(!fs.existsSync(origin)) abort(origin + ' is not exist.');
   if(!fs.existsSync(target)) {
     mkdir(target);
     console.log('   \x1b[36mcreate\x1b[0m : ' + target);
@@ -279,4 +335,15 @@ function mkdir(path, fn) {
     console.log('   \033[36mcreate\033[0m : ' + path);
     fn && fn();
   });
+}
+
+/**
+ * get current time
+ *
+**/
+
+function time(){
+	var time = new Date();
+	
+	return time.getDate() + '-' + (time.getMonth() - 0 + 1) + '-' + time.getFullYear() + '-' + time.valueOf();
 }

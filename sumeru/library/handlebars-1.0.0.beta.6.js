@@ -706,6 +706,11 @@ Handlebars.SafeString.prototype.toString = function() {
         return true;
       } else if(Object.prototype.toString.call(value) === "[object Array]" && value.length === 0) {
         return true;
+      } else if(typeof value === 'object') {
+          for(var name in value) {
+              return false;
+          }
+          return true;
       } else {
         return false;
       }
@@ -1266,7 +1271,7 @@ Handlebars.JavaScriptCompiler = function() {};
         if (code.match(/this/)) {
             code = code.replace(/this/g,"depth0");
         }
-        this.source.push("with(depth0){"+this.appendToBuffer(code)+"}");//尝试直接执行
+        this.source.push("if(!Handlebars.Utils.isEmpty(depth0)){with(depth0){"+this.appendToBuffer(code)+"}}");//尝试直接执行
     },
     
     pushStringParam: function(string) {

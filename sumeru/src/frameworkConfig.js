@@ -10,11 +10,18 @@ var globalConfig = function(fw){
     // BAE CONFIG    
     if (typeof process !== 'undefined' && typeof process.BAE !== 'undefined'){
         socketPort = process.env.APP_PORT;
-        mongoServer = '10.50.147.16';
-        mongoPort = 43030;
+        mongoServer = '';
+        mongoPort = 0;
         httpServerPort = 0;
         whiteList = ['xhr-streaming'];
     }
+   
+    fw.config.defineModule('cluster');
+    fw.config.cluster({
+        enable : true,
+        cluster_mgr : '127.0.0.1',
+        cluster_mgr_port : 6379
+    });
    
     fw.config({
     	soketPort: socketPort,

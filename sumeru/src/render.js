@@ -301,6 +301,14 @@
         return tpl;
     },true);
     
+    tpls.__reg("getTplStatus",function(tplName){
+        var tplId = getTplId(tplName)
+        return tplMap[tplId];
+    });
+    tpls.__reg("delTpl",function(tplName){
+        var tplId = getTplId(tplName)
+        delete tplMap[tplId];
+    });
     // 从server端获取一个模版，并编译处渲染方法
     tpls.__reg("getTpl",function(tplName,session,oncomplete){
         var tplId = getTplId(tplName);

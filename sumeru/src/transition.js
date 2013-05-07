@@ -156,8 +156,9 @@
 	
 	//容器
 	var _warp = null;
+
 	var _createClassName = function(status,act){
-        var act_name = act[0]+(_act[act[0]][act[1]]>0?(act_direct_name[act[1]].length>0?("_"+act_direct_name[act[1]]):""):"")
+        var act_name = act[0]+(act_direct_name[act[1]].length>0?("_"+act_direct_name[act[1]]):"");
 		return _pattern[status].replace("{$}",act_name);
 	};
 	var _setting = {
@@ -200,11 +201,20 @@
         return _box;
     }
     var __dealTransitionAnim = function( target ) {
+
+        var act_direct_name = {"up":0,"right":1,"down":2,"left":3,"z":4,"none":4};
+
+        if(_act[target.anim[0]][act_direct_name[target.anim[1]]]<=0){
+            target.anim = ['push',1];
+        }
+        if(target.transitionOut&&_act[target.transitionOut[0]][act_direct_name[target.transitionOut[1]]]<=0){
+            target.transitionOut = ['push',1];
+        }
+
         if(!target.type){
             target.type = "common";
         }
         
-        var act_direct_name = {"up":0,"right":1,"down":2,"left":3,"z":4,"none":4};
         if ( target.anim && typeof target.anim[1] !== 'undefined' &&  typeof act_direct_name[target.anim[1]] !== 'undefined' ) {
             target.anim[1] = act_direct_name[target.anim[1]];
         }
@@ -240,6 +250,7 @@
      * 限制：前一场景和后一场景的dom不能有重复的。
 	 */
 	var _transition = function(target){
+
 		if(_isFristLode) _init();
         __dealTransitionAnim(target);
         
@@ -258,7 +269,7 @@
                 }
                 //console.log(show.dom == target.dom,show.dom, target.dom)
                 //有clonedom，说明是自己推自己，我要给他附加上去成背景图案，推完自己再抹去。
-                if ( target.cloneDom ) {
+                if (target.cloneDom ) {
                     show.dom.parentNode.appendChild( target.cloneDom );
                     show.dom.addEventListener("webkitTransitionEnd", function(){
                         if ( target.cloneDom && target.cloneDom.parentNode ) {

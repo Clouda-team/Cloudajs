@@ -85,81 +85,81 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
 	
 	var _checkLogin = function(clientId, sessionId, passportType, callback){
 	    getDbCollectionHandler('smrLoginModel',function(err,loginDbCollection){
-	        loginDbCollection.find({sessionId: sessionId}).toArray(function(err, items){
-    			if(items && items.length > 0){
-    				var userId = items[0].userId;
-    				var handler = getDbCollectionHandler('smrAuthModel',function(err1,handler){
-    				    /**
-    				     * FIXME BUG 
-    				     * 目前的实现，只在登陆的时候才会更新lastRequestTime.　
-    				     * 如果前端页面不刷新则会产生帐号每24小时或4小时(视登陆类型不同而不同)超时,
-    				     * 从而无法保持长时间活动的Bug.
-    				     */
-        				var timeGap = Date.now() - items[0].lastRequestTime;
-    				    
-        				if(passportType === passportTypeList.local){
-        					handler.find({smr_id: userId}).toArray(function(err, subItems){
-        						if(subItems && subItems.length > 0){
-        							//re-product new sessionId. 
-        							var newSessionId = subItems[0].token + subItems[0].secretKey + subItems[0].password + items[0].time;
-        							
-        							var sha1 = crypto.createHash('sha1');
-        							sha1.update(newSessionId);
-        							newSessionId = sha1.digest('hex');
-        							
-        							//sessionId 超过一天视为过期
-        							if(timeGap > items[0].expires){
-        								callback(authstatus.LOGIN_TIMEOUT, subItems[0]);
-        							//sessionid不一致的情况只有password更改的情况下才会出现。
-        							//目前只有本地账户才支持这一种情况。
-        							}else if(newSessionId !== sessionId){
-        								callback(authstatus.LOGIN_PASSWORD_UPDATE, subItems[0]);
-        							//isLogin标志为未登录状态, 退出会设置isLogin为0
-        							}else if(items[0].isLogin !== authstatus.LOGIN){
-        								callback(authstatus.LOGOUT);
-        							}else{
-        								callback(authstatus.LOGIN, subItems[0]);
-        							}
-        						}else{
-        							callback(authstatus.LOGOUT);
-        						}
-        					});
-        				}else if(passportType === passportTypeList.baidu){
-        				    //sessionId 超过一天视为过期
-        					var userinfo = {
-        					    token: items[0].token,
-        						info: items[0].info
-        					};
-        					if(timeGap > items[0].expires){
-        						callback(authstatus.LOGIN_TIMEOUT, userinfo);
-        					}else if(items[0].isLogin !== authstatus.LOGIN){
-        						callback(authstatus.LOGOUT, userinfo);
-        					}else{
-        						callback(authstatus.LOGIN, userinfo);
-        					}
-        				}else if(passportType === passportTypeList.tpa){
-                            var userinfo = {
-                                token: items[0].token,
-                                info: items[0].info
-                            };
-                            
-                            /**
-                             * 此处使用第三方的check,登陆状态的缓存及验证控制均交由第三方控制.
-                             */
-                            tpaAdap.checkAndKeepAlive(items[0],timeGap,function(err,userInfo){
-                                if(err == null){
-                                    callback(authstatus.LOGIN, userinfo);
-                                }else if(err === "LOGIN_TIMEOUT"){
-                                    callback(authstatus.LOGIN_TIMEOUT, userinfo);
+	        loginDbCollection.findOne({sessionId: sessionId , clientId:clientId}, function(err, items){
+    			if(items){
+    				var userId = items.userId;
+    				
+    				/**
+                     * FIXME BUG 
+                     * 目前的实现，只在登陆的时候才会更新lastRequestTime.　
+                     * 如果前端页面不刷新则会产生帐号每24小时或4小时(视登陆类型不同而不同)超时,
+                     * 从而无法保持长时间活动的Bug.
+                     */
+                    var timeGap = Date.now() - items.lastRequestTime;
+                    
+                    if(passportType === passportTypeList.local){
+                        getDbCollectionHandler('smrAuthModel',function(err1,handler){
+                            handler.find({smr_id: userId}).toArray(function(err, subItems){
+                                if(subItems && subItems.length > 0){
+                                    //re-product new sessionId. 
+                                    var newSessionId = subItems[0].token + subItems[0].secretKey + subItems[0].password + items.time;
+                                    
+                                    var sha1 = crypto.createHash('sha1');
+                                    sha1.update(newSessionId);
+                                    newSessionId = sha1.digest('hex');
+                                    
+                                    //sessionId 超过一天视为过期
+                                    if(timeGap > items.expires){
+                                        callback(authstatus.LOGIN_TIMEOUT, subItems[0]);
+                                        //sessionid不一致的情况只有password更改的情况下才会出现。
+                                        //目前只有本地账户才支持这一种情况。
+                                    }else if(newSessionId !== sessionId){
+                                        callback(authstatus.LOGIN_PASSWORD_UPDATE, subItems[0]);
+                                        //isLogin标志为未登录状态, 退出会设置isLogin为0
+                                    }else if(items.isLogin !== authstatus.LOGIN){
+                                        callback(authstatus.LOGOUT);
+                                    }else{
+                                        callback(authstatus.LOGIN, subItems[0]);
+                                    }
                                 }else{
-                                    callback(authstatus.LOGOUT, userinfo);
+                                    callback(authstatus.LOGOUT);
                                 }
                             });
-        				}else{
-        				    
-        				    callback(authstatus.LOGOUT);
-        				}
-    				});
+                        });
+                    }else if(passportType === passportTypeList.baidu){
+                        //sessionId 超过一天视为过期
+                        var userinfo = {
+                            token: items.token,
+                            info: items.info
+                        };
+                        if(timeGap > items.expires){
+                            callback(authstatus.LOGIN_TIMEOUT, userinfo);
+                        }else if(items.isLogin !== authstatus.LOGIN){
+                            callback(authstatus.LOGOUT, userinfo);
+                        }else{
+                            callback(authstatus.LOGIN, userinfo);
+                        }
+                    }else if(passportType === passportTypeList.tpa){
+                        var userinfo = {
+                            token: items.token,
+                            info: items.info
+                        };
+                        
+                        /**
+                         * 此处使用第三方的check,登陆状态的缓存及验证控制均交由第三方控制.
+                         */
+                        tpaAdap.checkAndKeepAlive(items,timeGap,function(err,userInfo){
+                            if(err == null){
+                                callback(authstatus.LOGIN, userinfo);
+                            }else if(err === "LOGIN_TIMEOUT"){
+                                callback(authstatus.LOGIN_TIMEOUT, userinfo);
+                            }else{
+                                callback(authstatus.LOGOUT, userinfo);
+                            }
+                        });
+                    }else{
+                        callback(authstatus.LOGOUT);
+                    }
     			}else{
     				callback(authstatus.LOGOUT);
     			}
@@ -181,9 +181,7 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
          * 在数据不完整的状态下，无法取到正确的passportType和info等信息.
          * 此问题可能导至刷新页面等情况后，server端与client端共同得到错误数据和响应.
          */
-	    var collection = this;
-	    clientId = clientId || fw.__random(12);
-		if(sessionId){
+		if(sessionId && clientId){
 		    _checkLogin(clientId, sessionId, passportType, function(status, userInfo){
 			    if(status === authstatus.LOGIN){
 				    callback([{ 
@@ -199,7 +197,7 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
 				}
 			});
 		}else{
-		    callback([{ clientId: clientId }]);
+		    callback([{ clientId:  clientId}]);
 		}
 	});
 	

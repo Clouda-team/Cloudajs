@@ -20,7 +20,8 @@ if(FILE_PORT > 0){
         
         filePath = filePath.replace(/\.\.\//g, '');
         localBase = path.normalize(localBase);
-
+        var view_from_cache = fw.config.get('view_from_cache');
+            
         if(filePath.indexOf('/unit/') > -1){
             localBase = __dirname + '/../..';
         }
@@ -32,7 +33,6 @@ if(FILE_PORT > 0){
             var sumerudir = /sumeru\//g;
             var viewdir = /\/view\//;
             var sumeruPath = path.join(localBase, fw.config.get('sumeruPath'));
-            var view_from_cache = fw.config.get('view_from_cache');
             
 
             if(sumerujs === filePath){
@@ -96,7 +96,7 @@ if(FILE_PORT > 0){
                         res.end();
                     } else {
                         //进行view partial的拼装，处理include逻辑
-                        if(filePath.indexOf('/view/') != -1 || filePath.indexOf('/viewEngine/') != -1){
+                        if(!view_from_cache && (filePath.indexOf('/view/') != -1 || filePath.indexOf('/viewEngine/') != -1)){
                             var asyncPartialMap = {},
                                 //partialCount = 0,
                                 //检测循环引用

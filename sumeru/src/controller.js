@@ -5,6 +5,7 @@
     //[{controller : controllerClass, renderFunc : renderFunc}, ...]
     //其中renderFunc主要是当服务器推送数据时，给MsgDispatcher使用的
     var activeController = [];
+    var activeControllerId;
     var cloneDom = null;
     var transitionOut = false;//如果为true，则表明此controller是反转出场
     var globalIsforce = null;
@@ -167,8 +168,13 @@
         setClockChecker : function(){
             var after = 8 * 1000;
             this.isWaitingChecker = setTimeout(function(){
-                throw 'NOT call env.start after ' + after / 1000 + ' seconds, do you forget it?';
+                //这个checker可能会重复，所以添加hack
+                if (this.isWaiting > 0)//hack
+                    throw 'NOT call env.start after ' + after / 1000 + ' seconds, do you forget it?';
             }, after);
+            // this.isWaitingChecker = setTimeout(function(){
+                // throw 'NOT call env.start after ' + after / 1000 + ' seconds, do you forget it?';
+            // }, after);
         },
         
         clearClockChecker : function(){
@@ -313,6 +319,7 @@
                     // 标记初始化结束
                     this.__isInited = true;
                 }
+                
             },
             __render:function(tapped_block){
                 var me = this;
@@ -490,14 +497,14 @@
                     return;
                 };
                 
-                this.destroy(true); // 销毁自身，但保留session
+                this.destroy(true,true); // 销毁自身，但保留session
                 
                 //创建一个新的controller,将自动使用未被销毁的旧session
                 instance = new MainController(identifier, fw.utils.uriParamToMap(arr[1]), constructor);
                 instance.__init();
                 
             },
-            destroy:function(isKeepSession){
+            destroy:function(isKeepSession,isKeepDomForTrans){
                 var id = this.__getID();
                 var uk = this.__UK;
                 //try {
@@ -506,7 +513,7 @@
                     
                     //销毁之前，我要 clonedom 一份用于转场
                     //自己转自己，没有 clonedom 会出错，所以添加容错
-                    if(!cloneDom) _cloneDom(this);
+                    if(!cloneDom && typeof this.getDom != 'undefined' && isKeepDomForTrans) _cloneDom(this);
                     
                     try {
                         env.ondestroy();                    // 通知用户controller将被销毁.
@@ -524,6 +531,10 @@
                     
                     env.__destroy();
                     
+                    //销毁dom
+                    //added view delete
+                    fw.render.delTpl(this.tplName);
+       
                     // 销毁子controller
                     if(this.__subControllerList){
                         for(var key in this.__subControllerList){
@@ -716,7 +727,6 @@
                             _transitionType = transitionType;
                         }
                     };
-                    
                     env.hide = function( transitionType ){
                          fw.transition._subrun({
                             "dom" : block,                               
@@ -733,13 +743,20 @@
                     };
                     
                     session.toBeCommited.length = 0;
-                        
+                    
+                    //FIXME 不能直接onready，还要判断是否FirstRender完成
                     env.onready(block);
                     
                     me.__isFirstRender = false;
                 }; //end dorender  
                 
+                //这里修复了一个可能出现死锁的BUG，当tpl已经加载，对象却destroy的时候会出现，永远都是__isFirstRender == true
+                //可能引起其他问题，另外不开控制台断点没问题,代码逻辑没问题，暂不修复 FIXME
+                // if ( fw.render.getTplStatus(tplName) === 'loaded' ) {
+                    // me.__isFirstRender = false;
+                // }
                 fw.render.getTpl(tplName,session,function(render){
+                    me.tplName = tplName;//加入tplName入口
                     doRender();
                 });
                 
@@ -762,8 +779,8 @@
         //FIXME 为了与给HP的代码一致，临时给出一个简单的eventMap实现。后续要与事件库一起考虑
         session.eventMap = fw.event.mapEvent;
         
-        env.callSubController = function(name,param){
-            return me.__callSubController(name,param);
+        env.callSubController = function(name,param,forceFresh){
+            return me.__callSubController(name,param,forceFresh);
         };
         
         // 确保session bind时数据项唯一的随机字符串key
@@ -868,7 +885,7 @@
          * 调用一个子controller
          * @param conNam {string} controller的名称
          */
-        __callSubController:function(conNam,params){
+        __callSubController:function(conNam,params,forceFresh){
             var constructor = findController(conNam), rootElement = this.__lastTransitionIn;
             
             if (constructor === false) {
@@ -887,8 +904,12 @@
             if(!constructor){
                throw 'can not find a sub controller';
             }
-            
-            if(instance = this.__subControllerList[subId]){
+            //这个判断添加一个feature，用于更新subcontroller add by sundong
+            instance = this.__subControllerList[subId];
+            if( instance && typeof forceFresh !== 'undefined' && forceFresh){
+                instance.destroy();
+            }
+            if( instance = this.__subControllerList[subId] ){
                 /**
                  * 重用子controller
                  */
@@ -1083,6 +1104,7 @@
             return;
         };
         console.log("dispatch " + identifier);
+        
         /*
          * 检测当前controller队列
          * 
@@ -1116,11 +1138,22 @@
 				//这里clone，在render时传入
 				//fixbug20121130,有时，不会走这里destroy，相反，他会直接进行转场,trans
 				//_cloneDom(instance);//挪到了destroy里面
-				
 				// queryPath匹配的，重用根DOM. 交由controller构造方法自己处理,此处仅 sleep被复用的controller即可。
-                instance.destroy();
-                item = false;
-                SUMERU_APP_FW_DEBUG && console.log("ROUTER SAME QUERY PATH: " + identifier);
+				
+                //！！！这里匹配有两种可能：1.当前active的是自身，则自身转自身。2.当前active的不是自身，则不cloneDom，而直接转场
+                if (activeControllerId === queryPath){//说明当前active的就是自身，所以对自身进行转场（clonedom）
+                    instance.destroy(false,true);
+                    item = false;
+                    SUMERU_APP_FW_DEBUG && console.log("ROUTER SAME QUERY PATH: " + identifier);
+                }else{//说明当前active的不是自身，所以对别人进行转场
+                    if(!instance.__transition() || isforce){
+                        instance.destroy();
+                        item = false;
+                        SUMERU_APP_FW_DEBUG && console.log("ROUTER FULL QUERY PATH: " + identifier);
+                    }
+                }
+                
+                
             }else{
                 // 完全不匹配的，创建新的controller.
                 item = false;
@@ -1132,6 +1165,8 @@
         if(!item){
             instance = new MainController(identifier, fw.utils.uriParamToMap(params) , constructor);
         }
+        //设置当前 activeControllerId
+        activeControllerId = queryPath;
         
         instance.__init();
         

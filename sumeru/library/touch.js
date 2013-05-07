@@ -316,7 +316,6 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         if(index > -1){
                             var h = handlers.splice(index, 1);
                             delete h.options;
-                            eventHanlderMap[uid][arguments[1]] = handlers.length === 0 ? null : handlers;
                         }
                     }
                 }
@@ -846,7 +845,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         triggerCustomEvent(el, ev.type, {
                             originEvent: ev
                         });
-                        if(!__touchStart)return; 
+                        if(!__touchStart  || !pos.start)return; 
                         pos.move = getPosOfEvent(ev);
                         
                         if(getFingers(ev) >= 2){

@@ -130,7 +130,12 @@
     };
     
     var redoAllPrioritySubscribe_ = function(callback){
-        cbHandler = Library.asyncCallbackHandler.create(callback);
+        cbHandler = Library.asyncCallbackHandler.create(function(){
+            callback();
+            fw.pubsub.__reg('_priorityAsyncHandler', undefined, true);
+        });
+        
+        fw.pubsub.__reg('_priorityAsyncHandler', cbHandler, true);
         cbHandler.add();
 
         //找出所有有优先级的订阅，发起并等待它们执行完毕
@@ -156,8 +161,7 @@
             },'subscribe' , function(err){
                 console.log("Err : redoPrioritySubscribe");
             } , function(){
-                cbHandler.decrease();
-                console.log("redo priority subscribe " + pubname);
+                console.log("sending redo priority subscribe " + pubname);
             });
         }
         

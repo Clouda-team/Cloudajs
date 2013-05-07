@@ -458,12 +458,8 @@
 				this.__smr__.saveType = 'none';
             }
 			if(!isSubSave){
-				console.log("save collection");
-				console.log(this);
 				var validationResult = this.validation();
 				if(validationResult.length>0){
-					console.log("validation faild");
-					console.log(validationResult);
 					return validationResult;
 				}
 				
@@ -494,7 +490,6 @@
 			for(var i = 0, l = this.length; i < l; i++){
 				var item = this[i];
 				var _snapshot = item._getSnapshot();
-				//console.log(JSON.stringify(_snapshot));
 				if(_snapshot['smr_id']){
 					item._setData(_snapshot);
 				}else{
@@ -528,6 +523,12 @@
 		},
 		isEnsureSave : function(){
 			return this.__smr__.saveType === 'ensure';
+		},
+		/**
+		 * @ispass true:'验证通过',false:'验证失败
+		 * @runat 'client':客户端验证结果,'server':服务端验证结果
+		 */
+		onValidation : function(ispass, runat, validationResult){
 		}
 	};
 	var collectionBase = function(){
