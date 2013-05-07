@@ -94,7 +94,20 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 	username = " ";
     password = " ";
+    
+（12）修改app/config/sumeru.js文件
 
+	将第7行
+	     location.hostname + ':' + socketPort + '/socket/' : '';
+	修改成：
+	     location.hostname + '/socket/' : '';
+	
+（13）修改根目录下的package.json文件
+
+	将弟5行：
+	     "main": "index.js"
+	修改成：
+	     "main": "app.js"
 （12）进入sumeru/build/，并运行 node runBuild.js
 
 
