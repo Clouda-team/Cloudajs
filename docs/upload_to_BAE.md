@@ -80,35 +80,40 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 	 require("./sumeru/server/run.js");
 	
-
-（10）修改Sumeru框架中sumeru/src/frameworkConfig.js文件，修改如下：
-
-	 //修改第7行，换成自己的dbname
-	 var dbname = '';
 	
 	 
-（11）修改sumeru/server/DbCollectionHandler.js
+（10）修改sumeru/server/DbCollectionHandler.js
 
 
-	修改该文件第136、137行的username、password，输入分配的username和password
+	//修改该文件第133 - 141行代码：
 
-	username = " ";
-    password = " ";
+	if(process && process.BAE){
+            host = process.env.BAE_ENV_ADDR_MONGO_IP;
+            port = parseInt(process.env.BAE_ENV_ADDR_MONGO_PORT);
+            username = process.env.BAE_ENV_AK;//fw.config.get('bae_user');
+            password = process.env.BAE_ENV_SK;//fw.config.get('bae_password');
+        }
+        
+        var server = new mongodb.Server(host, port, serverOptions);
+        //your dbname为分配的dbname
+        var db = new mongodb.Db('your dbname', server, {});
+        
+
     
-（12）修改app/config/sumeru.js文件
+（11）修改app/config/sumeru.js文件
 
 	将第7行
 	     location.hostname + ':' + socketPort + '/socket/' : '';
 	修改成：
 	     location.hostname + '/socket/' : '';
 	
-（13）修改根目录下的package.json文件
+（12）修改根目录下的package.json文件
 
 	将第5行：
 	     "main": "index.js"
 	修改成：
 	     "main": "app.js"
-（12）进入sumeru/build/，并运行 node runBuild.js
+（13）进入sumeru/build/，并运行 node runBuild.js
 
 
-（13）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
+（14）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
