@@ -44,7 +44,7 @@ sumeru是基于node.js的开发框架，所以我们首先需要安装node.js
 ** 注意： 在运行sumeru应用前必须启动mongoDB并运行在后台 **
 
 
-
+环境搭建到此已经结束，如何使用sumeru开发请参照[《step1_getting_started.md》](https://github.com/brandnewera/sumeru/blob/master/docs/step1_getting_started.md)
 
 
    
