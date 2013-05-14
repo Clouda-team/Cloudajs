@@ -16,7 +16,7 @@ sumeru是基于node.js的开发框架，所以我们首先需要安装node.js
 
 		node --help
 		
-	![](images/nodecommand.png)
+	![](images/nodecommand.PNG)
 	
 	出现上图所示，表明node.js已经安装成功。
 
@@ -30,7 +30,7 @@ sumeru是基于node.js的开发框架，所以我们首先需要安装node.js
 
 * 启动cmd.exe，进入解压后的目录，在根目录下创建"data"目录，并在创建的"data"目录下创建"db"文件夹
 
-![](images/mongodb.png)
+![](images/mongodb.PNG)
 
 
 * 进入根目录下的bin/，启动mongodb
@@ -38,7 +38,7 @@ sumeru是基于node.js的开发框架，所以我们首先需要安装node.js
 		mongod.exe -dbpath ../data/db	
 		
 
-![](images/startmongo.png)
+![](images/startmongo.PNG)
 
 
 ** 注意： 在运行sumeru应用前必须启动mongoDB并运行在后台 **
