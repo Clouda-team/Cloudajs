@@ -1,6 +1,6 @@
 {
   "name": "sumeru",
-  "version": "0.7.6",
+  "version": "0.7.8",
   "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
   "main": "index.js",
   "scripts": {
