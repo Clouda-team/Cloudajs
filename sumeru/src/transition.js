@@ -158,6 +158,9 @@
 	var _warp = null;
 
 	var _createClassName = function(status,act){
+        if(!(act instanceof Array && act.length>1)){
+            act = ['push',1];
+        }
         var act_name = act[0]+(act_direct_name[act[1]].length>0?("_"+act_direct_name[act[1]]):"");
 		return _pattern[status].replace("{$}",act_name);
 	};
@@ -360,11 +363,11 @@
                 if(isChangeAnim){//只有动画效果也发生改变时才需要修改show dom的class
                     if(_show){
                         _show.className = show.classname?(blockClassName+" "+show.classname):blockClassName;
-                        _addClass(_show,_createClassName("show",target["anim"],target["anim_dir"]));
+                        _addClass(_show,_createClassName("show",target["anim"]));
                     }
                 }
 
-                _addClass(_standby,[_createClassName("standby",target["anim"],target["anim_dir"]),blockClassName]);
+                _addClass(_standby,[_createClassName("standby",target["anim"]),blockClassName]);
 
 
                 //把dom移动到warp中
@@ -381,9 +384,9 @@
                         if(_show)_addClass(_show,"transi");
                         _addClass(_standby,"transi");
                     }
-                    if(_show)_arClass(_show,_createClassName("hide",target["anim"],target["anim_dir"]),_createClassName("show",target["anim"],target["anim_dir"]));
+                    if(_show)_arClass(_show,_createClassName("hide",target["anim"]),_createClassName("show",target["anim"]));
 
-                    _arClass(_standby,_createClassName("show",target["anim"],target["anim_dir"]),_createClassName("standby",target["anim"],target["anim_dir"]));
+                    _arClass(_standby,_createClassName("show",target["anim"]),_createClassName("standby",target["anim"]));
 
 
                     if(_act[target.anim[0]][target.anim[1]]==2){

@@ -94,17 +94,34 @@
 			}
 		},
 		
+		/**
+		* huangxin03
+		* 创建新model时检查model poll是否有此model。
+		*/
 		add : function(row){
 			var newModel;
+			var modelName = this._getModelName();
 			if (row._isModel) {
-				if(row._getModelName() == this._getModelName()){
+				if(row._getModelName() == modelName){
 			    	newModel = row;
 				}else{
 					console.log("collection.add arguments format error.")
 				}
 			}else{
-				newModel = fw.model.create(this._getModelName(), row);
+				if(fw.modelPoll.ENABLE){
+					var pool = fw.modelPoll.pollMap[modelName]; 
+					if(pool && pool.dataMap[row.smr_id]){
+						newModel = pool.dataMap[row.smr_id];
+					}else{
+						newModel = fw.model.create(modelName, row);
+						fw.modelPoll.pollMap[modelName].add(newModel);
+					}
+				} else {
+					newModel = fw.model.create(modelName, row);
+				}
+				
 			};
+			
 			this.push(newModel);
 			this._setSynced(false);
 			this._setNeedSort();
@@ -170,6 +187,9 @@
 						
 						
 						//destroy因为是删除，splice之后collection就不可知了，所以不需要collection自己调save了，destroy直接调用model的
+						if(fw.modelPoll.ENABLE){
+							fw.modelPoll.pollMap[this._getModelName()].destroy(item[0]);
+						}
 						item[0].save(function(){}, this.pubName, item[0]._getPilotId());
 						
 					}
@@ -467,10 +487,24 @@
 					this._setStorable();
 				}
 			}
-
-
+			
 			for(var i = 0, l = this.length; i < l; i++){
-				this[i].save(function(){}, this.pubName, this._getPilotId(), true);
+				this[i].save(function(data){//proxy save callback
+					if(!fw.modelPoll.ENABLE){ return ;}
+					//collection.add: 客户端生成smr_id后添加modelPoll
+					if(data.type === 'insert'){
+						var poll = fw.modelPoll.pollMap['Model.' + data.modelName];
+						var thisModel = poll.dataMap['0'];
+						if(thisModel){
+							poll.add(thisModel);
+							delete poll.dataMap['0'];
+						}else{
+							console.log('model["0"] does not exist!');
+						}
+					} else {
+						console.log("collection save", data);
+					}
+				}, this.pubName, this._getPilotId(), true);
 			}
 
 			//因为分配id的逻辑在model的save里，所以随动反馈在下面做，稍微晚了一点

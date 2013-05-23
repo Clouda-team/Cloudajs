@@ -22,7 +22,11 @@
             
             modelName = 'Model.' + modelName;
             
-            
+			//根据modelName创建model池
+			if(fw.modelPoll.ENABLE){
+				fw.modelPoll.createPoll(modelName);
+			}
+			
             var env = null;
             if ( typeof this === 'object' && typeof this.isWaiting !== 'undefined' ) {
                 env = this ;//this是env

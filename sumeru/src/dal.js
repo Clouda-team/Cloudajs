@@ -131,9 +131,9 @@ var fw = fw || {};
                 },function(){
                     
                 });
-                callback(data.cnt.smr_id);
+                callback(data);
 			}else{
-			    callback(data.cnt.smr_id);
+			    callback(data);
 			}
 		}
 	};

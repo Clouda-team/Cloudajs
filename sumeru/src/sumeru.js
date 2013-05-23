@@ -55,7 +55,7 @@
                     //var reg = /.css$|.js$/g;
                     if(dirname && dirname.indexOf('.js') > -1){
                         var url = baseDir + '/' + dirname;// + '?'+Date.now();
-                        document.write('<script src="'+ url +'"></script>');
+                        document.write('<script src="'+ url +'">\x3C/script>');
                     }else if(dirname && dirname.indexOf('.css') > -1){
                         var url = baseDir + '/' + dirname;// + '?'+Date.now();
                         document.write('<link rel="stylesheet" href="' + url + '" />');
@@ -95,7 +95,7 @@
             return null;
         }
         getThisScriptRoot(thisScript);
-        document.write('<script src="sumeru/src/package.js"></script>');
+        document.write('<script src="sumeru/src/package.js">\x3C/script>');
     }else{//if server model
     
         var fs = require('fs');

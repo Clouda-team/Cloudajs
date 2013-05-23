@@ -131,10 +131,10 @@ var runnable = function(fw){
             password = config.get('bae_password');
         
         if(process && process.BAE){
-            host = "";
-            port = 27017;
-            username = "";//fw.config.get('bae_user');
-            password = "";//fw.config.get('bae_password');
+            host = process.env.BAE_ENV_ADDR_MONGO_IP;
+            port = +process.env.BAE_ENV_ADDR_MONGO_PORT;
+            username = process.env.BAE_ENV_AK;
+            password = process.env.BAE_ENV_SK;
         }
         
         var server = new mongodb.Server(host, port, serverOptions);

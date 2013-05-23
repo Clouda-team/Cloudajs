@@ -10,8 +10,6 @@ var globalConfig = function(fw){
     // BAE CONFIG    
     if (typeof process !== 'undefined' && typeof process.BAE !== 'undefined'){
         socketPort = process.env.APP_PORT;
-        mongoServer = '';
-        mongoPort = 0;
         httpServerPort = 0;
         whiteList = ['xhr-streaming'];
     }
