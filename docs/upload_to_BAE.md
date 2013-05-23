@@ -82,7 +82,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	
 	
 	 
-（10）*如果使用0.7.10（含）以下版本，请执行本步骤* 修改sumeru/server/DbCollectionHandler.js
+**仅0.7.10（含）以下版本，需要执行本步骤** （10）修改sumeru/server/DbCollectionHandler.js
 
 
 	//修改该文件第133 - 141行代码：
