@@ -110,7 +110,8 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 **0.7.11（含）以上版本，修改第15行：**
       	
       在第15行修改dbname配置项
-      	dbname : 'ZOimsCLxRKfWyBDsYRWd',
+      	sumeru.config({
+      		dbname : 'ZOimsCLxRKfWyBDsYRWd',
       	
       		
 	
