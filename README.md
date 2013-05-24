@@ -60,6 +60,10 @@ or
 ### Update existing project to use the lastest version (with auto backup, of course)
 
 	sumeru update ./myproject
+	
+	or
+	
+	sudo sumeru update ./myproject
 
 
 
