@@ -82,7 +82,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	
 	
 	 
-（10）修改sumeru/server/DbCollectionHandler.js
+（10） **仅0.7.10（含）以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
 
 
 	//修改该文件第133 - 141行代码：
@@ -106,6 +106,14 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	     location.hostname + ':' + socketPort + '/socket/' : '';
 	修改成：
 	     location.hostname + '/socket/' : '';
+	 
+**0.7.11（含）以上版本，修改第15行：**
+      	
+      在第15行修改dbname配置项
+      	sumeru.config({
+      		dbname : 'ZOimsCLxRKfWyBDsYRWd',
+      	
+      		
 	
 （12）修改根目录下的package.json文件
 
