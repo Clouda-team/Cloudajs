@@ -61,7 +61,7 @@ var socket_count_reg = 0;
 var nope = function(){};
 
 //startup a server
-var PORT = config.get('soketPort');
+var PORT = config.get('socketPort');
 
 var idField = fw.idField;
 

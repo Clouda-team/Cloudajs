@@ -7,8 +7,8 @@ var clientSocketServer = typeof location !== 'undefined' ?
         location.hostname + ':' + socketPort + '/socket/' : '';
 
 sumeru.config({
-   httpServerPort: 8080,
-   sumeruPath: '/../sumeru',
-   soketPort: socketPort,
-   clientSocketServer : clientSocketServer
+	httpServerPort: 8080,
+	sumeruPath: '/../sumeru',
+	soketPort: socketPort,
+	clientSocketServer : clientSocketServer
 });

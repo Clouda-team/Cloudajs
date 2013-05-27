@@ -9,6 +9,7 @@ var globalConfig = function(fw){
     
     // BAE CONFIG    
     if (typeof process !== 'undefined' && typeof process.BAE !== 'undefined'){
+        dbname = "";
         socketPort = process.env.APP_PORT;
         httpServerPort = 0;
         whiteList = ['xhr-streaming'];
@@ -22,7 +23,7 @@ var globalConfig = function(fw){
     });
    
     fw.config({
-    	soketPort: socketPort,
+    	socketPort: socketPort,
 	    dbname : dbname,
     	mongoServer: mongoServer,
     	mongoPort: mongoPort,

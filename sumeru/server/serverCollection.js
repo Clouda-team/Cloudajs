@@ -183,7 +183,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
             return true;
         },
         insert: function(structData, successCallback, faildCallback, modelName){
-            var modelName = modelName||this.baseModel;
+            var modelName = modelName || this.baseModel;
 
             var doIt = (function(getDbCollectionHandler,modelName,faildCallback,successCallback,structData){
                 return function(){
@@ -206,7 +206,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
         },
         update: function(selector, structData, successCallback, faildCallback, modelName){
             //console.log("updata::",structData);
-            var modelName = modelName||this.baseModel;
+            var modelName = modelName || this.baseModel;
 
             var doIt = (function(getDbCollectionHandler,modelName,faildCallback,successCallback,structData){
                 return function(){
@@ -229,6 +229,9 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
             this.runWithValidation(structData, modelName, doIt, faildCallback);
         },
         remove: function(selector, successCallback, faildCallback, modelName){
+            
+            var modelName = modelName || this.baseModel;
+            
             getDbCollectionHandler(modelName, function onGetDBCollectionHandler(err, handler){
                 if (err != null) {
                     throw err;
