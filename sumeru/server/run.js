@@ -27,6 +27,7 @@ var path = require('path');
 var fs = require('fs');
 var log = require(__dirname + '/../src/log.js');
 var findDiff = require(__dirname + '/findDiff.js')(fw);
+var SnapshotMgrFactory = require(__dirname + '/snapshotMgr.js')(fw);
 
 
 //===================
@@ -46,6 +47,7 @@ var clientTracer = fw.addSubPackage("clientTracer");
 var SocketMgr = {};
 var SubscribeMgr = {};
 var PublishContainer = {};
+
 /*
  * 维护一个client与其所打开的所有socket的映射关系.
  * 结构为
@@ -192,7 +194,6 @@ clientTracer.__reg("socketCount",function(clientId){
  */
 clientTracer.__reg("SendGlobalMessageByClientId",function(msg,tag,clientId){
     var id = null, sockets = null;
-    debugger;
     if(!msg || !tag || !clientId){
         return;
     }
@@ -276,7 +277,8 @@ fw.publish = function(modelName, pubName, pubFunc, options) {
             pubFunc.apply(collection, _args);
         },
         options : options,
-        clients : {}
+        clients : {},
+		clientTracker : {}
     };
 
 };
@@ -863,7 +865,7 @@ var runStub = function(db) {
                 var modelchain = content.modelchain;
                 var pilotid = content.pilotid;
                 var socketId = conn._sumeru_socket_id;
-
+                var clientId = conn.clientId;
 
                 var struct = JSON.parse(JSON.stringify(content.data)),
                     structData = struct.cnt;
@@ -1016,8 +1018,9 @@ var runStub = function(db) {
                 
                 var pubname = content.name;
                 var socketId = conn._sumeru_socket_id;
-                
-                
+                var clientId = conn.clientId;
+                var clientVersion = content.version;
+
                 var byPageSegment = new RegExp('@@_sumeru_@@_page_[\\d]+');
                 //如果是对分页的订阅，拷贝出一个带有页码订pubname
                 if (pubname.match(byPageSegment)&&!PublishContainer[pubname]) {
@@ -1105,9 +1108,29 @@ var runStub = function(db) {
                     onComplete = function(dataArray){
                         
                         pubRecord.clients[socketId] = pubRecord.clients[socketId] || {snapshot : []};
-                        
-                        pubRecord.clients[socketId].snapshot = dataArray;                        
-                        
+						//clientTrack 用来追踪client, 缓存client历史snapshot
+                        pubRecord.clientTracker[clientId] = pubRecord.clientTracker[clientId] || { snapshotMgr : SnapshotMgrFactory.createSnapshotMgr(pubname) };
+						
+                        //首次subscribe时清空clientTracker.snapshotMgr
+                        if(!clientVersion){
+                            pubRecord.clientTracker[clientId].snapshotMgr.reset();
+                        }
+
+                        //通过 clientVersion 判断是first subscribe还是redo subscribe
+                        //如果有clientVersion && server端有记录，则增量传输
+                        var snapshot = pubRecord.clientTracker[clientId].snapshotMgr.get(clientVersion);
+                        var deltaFlag = clientVersion && snapshot;
+
+                        if(deltaFlag){
+                            var diffData = findDiff(dataArray, pubRecord.clientTracker[clientId].snapshotMgr.get(clientVersion), PublishContainer[pubname]["modelName"]);
+                            if(!diffData.length){
+                                //console.log(pubname, 'has NO DELTA, STOP!');
+                                return false;
+                            }
+                        }
+
+                        var dataVersion = pubRecord.clientTracker[clientId].snapshotMgr.add(dataArray);
+
                         //如果是分页请求，且为该页第一次请求，保存其左右边界
                         if (pubRecord.isByPage && 
                             typeof pubRecord.leftBound == 'undefined' &&
@@ -1133,13 +1156,19 @@ var runStub = function(db) {
                         };
                         
                         //start to write_data to client
-                        netMessage.sendMessage({
-                                pubname: pubname,
-                                modelName : modelName,
-                                data: dataArray,
-                                flag : 'full_ship'
-                            }, 'data_write_from_server', socketId, function(err){
-                                console.log('send data_write_from_server faile ' + err , socketId);
+
+                        var params = {
+                            pubname: pubname,
+                            modelName : modelName,
+                            data : deltaFlag ? diffData : dataArray,
+                            flag : deltaFlag ? 'live_data' : 'full_ship',
+                            version : dataVersion
+                        }
+
+                        var cmd = deltaFlag ? 'data_write_from_server_delta' : 'data_write_from_server';
+
+                        netMessage.sendMessage(params, cmd, socketId, function(err){
+                                console.log('send data_write_from_server fail ' + err , socketId);
                             }, function(){
                                 console.log('send data_write_from_server ok' , socketId);
                             }
@@ -1263,6 +1292,8 @@ var runStub = function(db) {
                 }
                 
                 var userinfo = SocketMgr[item.socketId].userinfo;
+				var clientId = SocketMgr[item.socketId].clientId;
+				
                 //FIXME 这里现在其实有性能问题，对每个subscriber都会重新运行一次pubFunc。但由于异步的问题，现在没有实现缓存其结果。
                 pubFunc.call(pubRecord.collection, item.args, function(dataArray){
                     
@@ -1271,30 +1302,33 @@ var runStub = function(db) {
                         return;
                     };
                     
-                    if(JSON.stringify(dataArray) === JSON.stringify(pubRecord.clients[item.socketId].snapshot)){
+                    if(JSON.stringify(dataArray) === JSON.stringify(pubRecord.clientTracker[clientId].snapshotMgr.getLatest())){
                         //如果这条增量没有导致实质的数据改变，就不推送了
                         stop = true;
                     };
                     
                     if (!stop) {
                         
+                        var diffData = findDiff(dataArray, pubRecord.clientTracker[clientId].snapshotMgr.getLatest(), PublishContainer[item.pubname]["modelName"]);
+
+                        var dataVersion = pubRecord.clientTracker[clientId].snapshotMgr.add(dataArray);
+						
                         netMessage.sendMessage({
                                 pubname : item.pubname,
-                                data : !PublishContainer[item.pubname].plainStruct?findDiff(dataArray, pubRecord.clients[item.socketId].snapshot,PublishContainer[item.pubname]["modelName"]):dataArray, //这里其实就是struct，不过传输的是没有删除过clientid，和id的版本
+                                data : !PublishContainer[item.pubname].plainStruct ? diffData :dataArray, //这里其实就是struct，不过传输的是没有删除过clientid，和id的版本
                                 //flag : 'full_ship'
-                                flag : 'live_data'
+                                flag : 'live_data',
+								version : dataVersion
                             },
                             'data_write_from_server_delta',
                             item.socketId,
                             function(err){
-                                console.log('send data_write_from_server_delta faile ' + err  , item.pubname , item.socketId);
+                                console.log('send data_write_from_server_delta fail ' + err  , item.pubname , item.socketId);
                             },function(){
-                               // console.log('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
+								console.log('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
                             }
                         );
                         
-                        pubRecord.clients[item.socketId].snapshot = dataArray;
-
                     };
                 }, userinfo);
             })(item, pubRecord);

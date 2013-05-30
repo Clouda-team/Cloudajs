@@ -6,6 +6,8 @@ var socketPort =
 var clientSocketServer = typeof location !== 'undefined' ? 
         location.hostname + ':' + socketPort + '/socket/' : '';
 
+clientSocketServer = clientSocketServer.replace('.duapp.com', '.sx.duapp.com'); 
+
 sumeru.config({
 	httpServerPort: 8080,
 	sumeruPath: '/../sumeru',

@@ -23,6 +23,7 @@
 			});
 		},
 	}
+
 	collectionPrototype = {
 		
 		_isCollection : true,
@@ -54,6 +55,12 @@
 		},
 		_setStorable : function(){
 			fw.msgpilot.setPilot(this);
+		},
+		setVersion : function(version){
+			this.__smr__.version = version;
+		},
+		getVersion : function(){
+			return this.__smr__.version;
 		},
 		/**
 		 * 将数据设置为clean状态，不触发保持的状态
@@ -94,10 +101,6 @@
 			}
 		},
 		
-		/**
-		* huangxin03
-		* 创建新model时检查model poll是否有此model。
-		*/
 		add : function(row){
 			var newModel;
 			var modelName = this._getModelName();
@@ -108,18 +111,7 @@
 					console.log("collection.add arguments format error.")
 				}
 			}else{
-				if(fw.modelPoll.ENABLE){
-					var pool = fw.modelPoll.pollMap[modelName]; 
-					if(pool && pool.dataMap[row.smr_id]){
-						newModel = pool.dataMap[row.smr_id];
-					}else{
-						newModel = fw.model.create(modelName, row);
-						fw.modelPoll.pollMap[modelName].add(newModel);
-					}
-				} else {
-					newModel = fw.model.create(modelName, row);
-				}
-				
+				newModel = fw.modelPoll.getModel(modelName, row);
 			};
 			
 			this.push(newModel);
@@ -186,10 +178,9 @@
 						this._setNeedSort();
 						
 						
+						//从modelPoll中删除此model
+						fw.modelPoll.destroyModel(this._getModelName(), item[0]);
 						//destroy因为是删除，splice之后collection就不可知了，所以不需要collection自己调save了，destroy直接调用model的
-						if(fw.modelPoll.ENABLE){
-							fw.modelPoll.pollMap[this._getModelName()].destroy(item[0]);
-						}
 						item[0].save(function(){}, this.pubName, item[0]._getPilotId());
 						
 					}
@@ -267,6 +258,7 @@
 				return cunitArr;
 			}
 		},
+
 		/**
 		 * 所有传入的条件，都要通过这个func进行转换
 		 */
@@ -489,21 +481,16 @@
 			}
 			
 			for(var i = 0, l = this.length; i < l; i++){
-				this[i].save(function(data){//proxy save callback
-					if(!fw.modelPoll.ENABLE){ return ;}
-					//collection.add: 客户端生成smr_id后添加modelPoll
+				this[i].save(function(data){
 					if(data.type === 'insert'){
-						var poll = fw.modelPoll.pollMap['Model.' + data.modelName];
-						var thisModel = poll.dataMap['0'];
-						if(thisModel){
-							poll.add(thisModel);
-							delete poll.dataMap['0'];
-						}else{
-							console.log('model["0"] does not exist!');
-						}
-					} else {
-						console.log("collection save", data);
+						var modelObj = this;
+						//1. 新增一条数据，更新smr_id
+						modelObj.set('smr_id', data.cnt.smr_id);
+						//2. 加入modelPoll中
+						var modelName = 'Model.' + data.modelName;
+						fw.modelPoll.addModel(modelName, modelObj);
 					}
+					
 				}, this.pubName, this._getPilotId(), true);
 			}
 
@@ -599,7 +586,8 @@
 			 * none:数据在没有验证完成，不确定是否能正确存入的时候就进行渲染
 			 * ensure:数据在验证通过后，再进行渲染
 			 */
-			saveType:'none'
+			saveType:'none',
+			version: ''
 		}
 		return this;
 	}

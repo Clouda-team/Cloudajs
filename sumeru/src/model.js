@@ -408,16 +408,20 @@ if(typeof module != 'undefined' && module.exports){
 					}
 					hasSaved = true;
 
-					var _callback = function(callback,isSubSave){
+					//保存成功的事件钩子，但是没用了
+					/*var _callback = function(callback,isSubSave){
 						return function(){
 							callback.apply(this,arguments);
-							/*if(!isSubSave){
+							if(!isSubSave){
 								if (typeof this.onSaved != 'undefined') {
 									this.onSaved.call(this);
 								};
-							}*/
+							}
 						};
-					}(callback,isSubSave);
+					}(callback,isSubSave);*/
+					var _callback = function(data){
+						callback.call(_self, data);
+					}
 
 					_self._proxy.save(_self, _callback, pubname, pilotid, _self._getModelChain().join('.'));
 				},
@@ -438,8 +442,8 @@ if(typeof module != 'undefined' && module.exports){
 					hasModel = true;
 					//save完后要把给原指针的id和dirty改掉
 					_model._save((function(_model){
-						    return function(model){
-								var id = model.cnt.smr_id;
+						    return function(data){
+								var id = data.cnt.smr_id;
 		                        _model.__smr_assist__.__sourcePointer[0].set(_model._idField, id);
 		                        _model.__smr_assist__.__sourcePointer[0]._setDirty(false);
 		                        

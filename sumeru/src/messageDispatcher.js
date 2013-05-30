@@ -96,7 +96,7 @@
      * Merge服务器下发的增量数据
      * 由syncCollection调用
      */
-    function mergeCollection(collection, delta){
+    function mergeCollection(collection, delta, serverVersion){
 
         //增量
         var doReactiveProcess = false;
@@ -124,8 +124,6 @@
                     collection.add(structData);
                     doReactiveProcess = true;    
                 }
-                
-                
             } else if (struct.type == 'delete'){
                 var structData = struct['cnt'];
                 //属于server下发的删除，只做remove即可，因为不知道到底是数据被删除，还是仅因为不符合pubfunc规则而被移除了
@@ -156,11 +154,14 @@
                 });*/
                 doReactiveProcess = true;
             }
+            //更新client collection version
+            collection.setVersion(serverVersion);
+            //console.log('collection version updated: ', collection);
         }
         return doReactiveProcess;
     }
 	
-	function syncCollection(type, pubname, val, item, isPlainStruct){
+	function syncCollection(type, pubname, val, item, isPlainStruct, serverVersion){
 	    var collection = item.collection,
             doReactiveProcess = false,
             delta = [];
@@ -171,11 +172,12 @@
         }else{
             if(type == 'data_write_from_server_delta'){
                 delta = val;
-                doReactiveProcess = mergeCollection(collection, delta);
+                doReactiveProcess = mergeCollection(collection, delta, serverVersion);
             } else {
                 //全量
                 if(!collection._isSynced() || collection.stringify() !== JSON.stringify(val)){
                     collection.setData(val);
+                    collection.setVersion(serverVersion);
                     doReactiveProcess = true;
                 }
             }
@@ -387,8 +389,8 @@
          */
         var pubName = data['pubname'];
         var pilotId = data['pilotid'],
-        val = data['data'];
-        
+            val = data['data'];
+            serverVersion = data['version'];
 
         if(pubName){
             if (!(pubName in fw.pubsub._subscribeMgr)) {
@@ -414,15 +416,15 @@
                 var collection = item.collection;
 
                 if(isPlainStruct){
-                    syncCollection(type, pubName, val, item, isPlainStruct);
+                    syncCollection(type, pubName, val, item, isPlainStruct, serverVersion);
                 }else{
                     if (collection.__smr__.isHolding) {
                         postponeQueue.push({
                             collection : collection,
-                            runner : function(){syncCollection(type, pubName, val, item);}
+                            runner : function(){syncCollection(type, pubName, val, item, false, serverVersion);}
                         });
                     } else {
-                        syncCollection(type, pubName, val, item);
+                        syncCollection(type, pubName, val, item, false, serverVersion);
                     }
                 }
             });
@@ -432,7 +434,7 @@
             if(_pilot.type==='model'){
 
             }else{
-                syncCollection(type, pilotId, val, item);
+                syncCollection(type, pilotId, val, item, false, serverVersion);
             }
         }
 

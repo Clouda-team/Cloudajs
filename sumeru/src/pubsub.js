@@ -21,11 +21,6 @@
             };
             
             modelName = 'Model.' + modelName;
-            
-			//根据modelName创建model池
-			if(fw.modelPoll.ENABLE){
-				fw.modelPoll.createPoll(modelName);
-			}
 			
             var env = null;
             if ( typeof this === 'object' && typeof this.isWaiting !== 'undefined' ) {
@@ -40,16 +35,18 @@
             
             var completeCallback = arrPop.call(arguments);
             var args = arrSlice.call(arguments,1);
-            //send the subscribe message
-            
+
+            //send the subscribe netMessage
+            var version = collection.getVersion();
             fw.netMessage.sendMessage({
                 name    :    pubName,
                 //去掉第一个pubname，去掉最后一个回调函数
-                args    :    args
+                args    :    args,
+                version :    version
             },'subscribe', function(err){
                 console.log("Err : subscribe " + err);
             },function(){
-                console.log("send subscribe " + pubName);
+                console.log("send subscribe " + pubName, version || 'no version');
             });
             
 
@@ -158,14 +155,17 @@
             
             cbHandler.add();
             
+            //redo all priority subscribe netMessage
+            var version = subscribeMgr[pubname].stub[0].collection.getVersion();
             fw.netMessage.sendMessage({
                 name    :    pubname,
                 //去掉第一个pubname，去掉最后一个回调函数
-                args    :    subscribeMgr[pubname]['args']
+                args    :    subscribeMgr[pubname]['args'],
+                version :    version
             },'subscribe' , function(err){
                 console.log("Err : redoPrioritySubscribe");
             } , function(){
-                console.log("sending redo priority subscribe " + pubname);
+                console.log("sending redo priority subscribe " + pubname, version || "no version(redo)");
             });
         }
         
@@ -188,14 +188,17 @@
                 continue;
             };
             
+            var version = subscribeMgr[pubname].stub[0].collection.getVersion();
+            //redo normal subscribe netMessage
             fw.netMessage.sendMessage({
                 name    :    pubname,
                 //去掉第一个pubname，去掉最后一个回调函数
-                args    :    subscribeMgr[pubname]['args']
+                args    :    subscribeMgr[pubname]['args'],
+                version :    version
             },'subscribe' , function(err){
                 console.log("Err : redoNormalSubscribe");
             } , function(){
-                console.log("redo subscribe " + pubname);
+                console.log("sending redo priority subscribe " + pubname, version || "no version(redo)");
             });
         }    
     };

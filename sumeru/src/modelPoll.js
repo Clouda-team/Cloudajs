@@ -10,54 +10,83 @@
 	
 	fw.addSubPackage('modelPoll');
 	
-	var ENABLE = false;
-	var pollMap = {};
-	
-	function Poll(key){
-		this.modelName = key;
-		this.dataMap = {};
+	var ENABLE = true; //modelPoll开关
+	var _pollMap = {};  //存modelPolls的实例
+
+	function Poll(modelName) {
+		this.modelName = modelName;
+		this.dataMap = {}; //存modelPoll中model实例
 	}
-	
-	Poll.prototype.add = function(model){
-		this.dataMap[model.smr_id] = model;
-	};
-	
-	Poll.prototype.destroy = function(model){
-		if(typeof model == 'undefined'){
-			this.dataMap = {}
-		} else {
-			delete this.dataMap[model.smr_id];
+
+	Poll.prototype = {
+
+		add : function(model){
+			this.dataMap[model.smr_id] = model;
+		},
+
+		destroy : function(model){
+			if(this.dataMap[model.smr_id]){
+				delete this.dataMap[model.smr_id];
+			} else {
+				console.log('Model', model, 'had been destroyed.');
+			}
+		},
+
+		get : function(smr_id){
+			return this.dataMap[smr_id];
 		}
-		console.log(this.dataMap);
-	};
-	
-	Poll.prototype.update = function(model, delta){
-		
-	};
-	
-	Poll.prototype.duplicated = function(model){
-		if(this.dataMap[model.smr_id]){
-			return true;
-		}
-		return false;
-	};
-	
-	Poll.prototype.getData = function(id){
-		return this.dataMap[id];
 	}
-	
+
+
 	/**
-	 * 在做subscribe的时候, 创建所有的ModelPoll(除特殊model)
+	 * 获得modelPoll, 没有相应的modelPoll就new一个
 	 */
-	function createPoll(modelName){
-		//新建本地Model池
-		if(!pollMap[modelName]){
-			pollMap[modelName] = new Poll(modelName);
+	function getPoll(modelName){
+		if(!_pollMap[modelName]){
+			_pollMap[modelName] = new Poll(modelName);
 		}
+		return _pollMap[modelName];
 	}
-	
-	fw.modelPoll.__reg('createPoll', createPoll, true);
-	fw.modelPoll.__reg('pollMap', pollMap, true);
-	fw.modelPoll.__reg('ENABLE', ENABLE, true);
+
+	function getModel(modelName, row){
+
+		if(!ENABLE){ return fw.model.create(modelName, row);}
+
+		var poll = getPoll(modelName);
+		var newModel;
+
+		if(poll.get(row.smr_id)){
+			//池中已有的数据直接返回
+			newModel = poll.get(row.smr_id);
+		}else{
+			//池中没有的数据, 新建model
+			newModel = fw.model.create(modelName, row);
+			//入池
+			if(row.smr_id){poll.add(newModel);}
+		}
+		return newModel;
+	}
+
+	function destroyModel(modelName, model){
+		if(!ENABLE){ return; }
+		if(modelName && model){
+			var poll = getPoll(modelName);
+			poll.destroy(model);
+		}else{
+			console.error('Please specify correct arugments.');
+		}
+		
+	}
+
+	function addModel(modelName, model){
+		if(!ENABLE){ return; }
+		var poll = getPoll(modelName);
+		poll.add(model);
+	}
+
+	fw.modelPoll.__reg('data', _pollMap); //DELETE
+	fw.modelPoll.__reg('getModel', getModel);
+	fw.modelPoll.__reg('addModel', addModel);
+	fw.modelPoll.__reg('destroyModel', destroyModel);
 	
 })(sumeru);
