@@ -29,7 +29,7 @@ myproject是项目所在目录，你可提前创建，也可由sumeru自动创�
 	
 	sumeru start
 	
-在运行应用之前，请确保已经安装并启动了mongodDB，然后在浏览器中输入 localhost:8080/debug.html#/itworks 第一次运行sumeru。
+在运行应用之前，请确保已经安装并启动了mongoDB，然后在浏览器中输入 localhost:8080/debug.html#/itworks 第一次运行sumeru。
 
 ![](images/itworks.png)
 
