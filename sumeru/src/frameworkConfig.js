@@ -1,6 +1,6 @@
 var globalConfig = function(fw){
     
-    var socketPort = 8081;
+    var socketPort = 8082;
     var mongoServer = '127.0.0.1';
     var mongoPort = 27017;
     var httpServerPort = 8080;
