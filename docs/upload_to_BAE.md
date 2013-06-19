@@ -82,7 +82,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	
 	
 	 
-（10） **仅0.7.10（含）以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
+（10） **仅0.7.14以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
 
 
 	//修改该文件第133 - 141行代码：
@@ -98,7 +98,11 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
         //your dbname为分配的dbname
         var db = new mongodb.Db('your dbname', server, {});
         
+** 0.7.14（含）以上版本，只需修改sumeru/src/frameworkConfig.js
 
+	//修改该文件的第12行，将申请的dbname填入
+	
+	dbname = "your dbname";
     
 （11）修改app/config/sumeru.js文件
 
@@ -106,13 +110,6 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	     location.hostname + ':' + socketPort + '/socket/' : '';
 	修改成：
 	     location.hostname + '/socket/' : '';
-	 
-**0.7.11（含）以上版本，修改第15行：**
-      	
-      在第15行修改dbname配置项
-      	sumeru.config({
-      		dbname : 'ZOimsCLxRKfWyBDsYRWd',
-      	
       		
 	
 （12）修改根目录下的package.json文件
@@ -121,6 +118,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	     "main": "index.js"
 	修改成：
 	     "main": "app.js"
+	     
 （13）进入sumeru/build/，并运行 node runBuild.js
 
 
