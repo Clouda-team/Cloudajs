@@ -130,9 +130,9 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 -------
 
-###contributor list
+###Contributor list
 
 ------
 
-魏旭
+* 魏旭
 
