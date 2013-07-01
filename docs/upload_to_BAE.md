@@ -9,7 +9,6 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 （2）使用BAE，如果是第一次使用，需要先发送邮件到dev_support@baidu.com申请开通node.js权限。
 
-
 ![](images/intro_4_2.png)
 
 （3）node.js权限开通后，点击 “创建应用” ，如图：
@@ -35,7 +34,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	handlers:
   		- url : ^/socket/(.*)
     		script: $1.nodejs
-
+    		
   		- url : ^/view/(.*)
     		script: /__bae__/bin/view/$1
 
@@ -80,31 +79,36 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 	 require("./sumeru/server/run.js");
 	
-	
-	 
-（10） **仅0.7.14以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
+（10）如果需要在BAE上使用MongoDB数据库，请按照下面方法创建MongoDB和获取数据库名
 
+* 在“版本管理”页面，点击“服务管理”并选择 “MongoDB”
+
+![](images/selectMongo.png)	
+
+* 在“MongoDB”页面点击“创建MongoDB”，创建一个新的MongoDB数据库并**获取数据名**
+
+![](images/createMongo.png)	
+
+	 
+（11） **仅0.7.14以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
 
 	//修改该文件第133 - 141行代码：
-
 	if(process && process.BAE){
             host = process.env.BAE_ENV_ADDR_MONGO_IP;
             port = parseInt(process.env.BAE_ENV_ADDR_MONGO_PORT);
             username = process.env.BAE_ENV_AK;//fw.config.get('bae_user');
             password = process.env.BAE_ENV_SK;//fw.config.get('bae_password');
-        }
-        
+        }       
         var server = new mongodb.Server(host, port, serverOptions);
-        //your dbname为分配的dbname
+        //your dbname为在第（10）步获取的数据库名
         var db = new mongodb.Db('your dbname', server, {});
         
-** 0.7.14（含）以上版本，只需修改sumeru/src/frameworkConfig.js
+** 0.7.14（含）以上版本**，只需修改sumeru/src/frameworkConfig.js
 
-	//修改该文件的第12行，将申请的dbname填入
-	
+	//修改该文件的第12行，将申请的dbname填入	
 	dbname = "your dbname";
     
-（11）修改app/config/sumeru.js文件
+（12）修改app/config/sumeru.js文件
 
 	将第7行
 	     location.hostname + ':' + socketPort + '/socket/' : '';
@@ -112,14 +116,14 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	     location.hostname + '/socket/' : '';
       		
 	
-（12）修改根目录下的package.json文件
+（13）修改根目录下的package.json文件
 
 	将第5行：
 	     "main": "index.js"
 	修改成：
 	     "main": "app.js"
 	     
-（13）进入sumeru/build/，并运行 node runBuild.js
+（14）进入sumeru/build/，并运行 node runBuild.js
 
 
-（14）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
+（15）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
