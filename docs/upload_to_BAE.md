@@ -89,6 +89,8 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 ![](images/createMongo.png)	
 
+（**在此感谢四川大学软件学院魏旭提供更新和关注我们的Framework，也欢迎更多的开发者给我们提供宝贵的意见，再次感谢！**）
+
 	 
 （11） **仅0.7.14以下版本，需要执行本步骤**  修改sumeru/server/DbCollectionHandler.js
 
