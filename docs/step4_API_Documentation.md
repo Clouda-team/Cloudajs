@@ -573,16 +573,19 @@ sumeru对handlebars的语法做了一些扩展：
 		没有转场效果
 
 
-		* 方向
+		* 方向参数
 	
-			* z-index
+			* z
 		
-				垂直方向
+				默认参数
 	
 	实例：
 		
 		env.onrender = function(doRender){
 	 		doRender('student', ['push', 'down']);
+		};
+		env.onrender = function(doRender){
+	 		doRender('student', ['none', 'z']);
 		};
 
 ## Controller
