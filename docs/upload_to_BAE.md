@@ -130,6 +130,14 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 
 -------
 
+### FAQ
+
+------
+
+(1)数据库连接数超限，{ [MongoError: Connect Number Excceed] name: 'MongoError', errmsg: 'Connect Number Excceed', ok: 0 }
+
+
+
 ###Contributor list
 
 ------
