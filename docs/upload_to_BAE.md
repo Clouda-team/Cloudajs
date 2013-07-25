@@ -125,8 +125,9 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
 	     
 （14）进入sumeru/build/，并运行 node runBuild.js
 
+（15）进入node_modules/，删除mongodb
 
-（15）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
+（16）使用SVN上传代码，并在BAE上上线该应用，访问您自己的应用地址，如果您是使用示例程序，可以访问 域名+index.html#/itworks
 
 -------
 
