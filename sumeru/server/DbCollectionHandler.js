@@ -122,7 +122,7 @@ var runnable = function(fw){
         var mongodb = require('mongodb');
         var serverOptions = {
             'auto_reconnect': true,
-            'poolSize': 25         //MAX IS 2000
+            'poolSize': 10         //MAX IS 2000
           };
         
         var host = config.get('mongoServer'),
