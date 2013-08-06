@@ -75,7 +75,7 @@ Framework是基于node.js开发的，所以需要node.js环境以及需要数据
   		
   也可点击<http://pan.baidu.com/share/link?shareid=474214&uk=1077217927>下载该文件
 	
-（9）修改app.js文件
+（9）修改app.js文件，使用下面的代码替代app.js文件中的全部内容
 
 	 require("./sumeru/server/run.js");
 	
