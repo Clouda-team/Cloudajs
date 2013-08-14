@@ -1,0 +1,22 @@
+{
+	"PASSPORT" : {
+		"url" : "passport.baidu.com",
+		"path" : "/v2/sapi/login",
+		"isphone" : "0",
+		"crypttype" : "1",
+		"login_type" : "2",
+		"tpl" : "pp",
+		"appid" : "1",
+		"sapiKey" : ""
+	},
+
+	"PCS" :
+	{
+		"url" : "pcs.baidu.com",
+		"path" : "/rest/2.0/pcs",
+		"app_id" : "403798",
+		"dir" : "/apps/Sumeru",
+		"type" : "image",
+		"height" : 2000
+	}
+}
