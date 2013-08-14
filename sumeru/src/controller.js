@@ -1,4 +1,4 @@
-(function(fw){
+var runnable = function(fw){
     var _controller = fw.addSubPackage('controller');
    
     //所有当前活跃的控制器的容器
@@ -98,10 +98,31 @@
                 eventMap    :   {}
             };
         }
-        
-        var self = this;
-        
-        _bindingMap[widgetId].eventMap['__default_key__'] = function(){eventFunc.call(self);};
+        _bindingMap[widgetId].eventMap['__default_key__'] = eventFunc;
+//         
+        // var self = this;
+//         
+        // _bindingMap[widgetId].eventMap['__default_key__'] = function(){
+        	// eventFunc.call(self);
+        	// //event之后，检查a标签,通过history.js实现非刷新页面
+        	// if (typeof document != 'undefined'){
+        		// var anchors = document.querySelectorAll('a');
+	            // for(var i=0,len=anchors.length;i<len;i++){
+	            	// if (anchors[i].href.indexOf(location.origin) != -1 && !anchors[i].getAttribute("link-ajax")){//已？或者/开头的链接将阻止跳转
+	            		// (function(item){
+	            			// item.addEventListener("click", function(e){
+	            				// var _this = this;
+	            				// sumeru.router.redirect(_this.href.substr(location.origin.length));
+	            				// e.preventDefault();
+	            			// });
+	            			// item.setAttribute("link-ajax",true)
+	            		// })(anchors[i]);
+// 	            		
+	            	// }
+	            // }
+        	// }
+//             
+    	// };
         //立即执行一次
         _bindingMap[widgetId].eventMap['__default_key__']();
     };
@@ -170,7 +191,7 @@
             this.isWaitingChecker = setTimeout(function(){
                 //这个checker可能会重复，所以添加hack
                 if (this.isWaiting > 0)//hack
-                    throw 'NOT call env.start after ' + after / 1000 + ' seconds, do you forget it?';
+                    throw 'NOT call env.start after ' + after / 1000 + ' seconds, did you forget it?';
             }, after);
             // this.isWaitingChecker = setTimeout(function(){
                 // throw 'NOT call env.start after ' + after / 1000 + ' seconds, do you forget it?';
@@ -259,7 +280,7 @@
          * 当前controller收到错误消息时被触发
          */
         onerror : function(msg){
-            console.log(msg);
+            sumeru.log(msg);
         },
         
         subscribe : _pubSubObject.subscribe,
@@ -321,7 +342,7 @@
                 }
                 
             },
-            __render:function(tapped_block){
+            __render:function(tapped_block,increment){
                 var me = this;
                 var item = tapped_block.widgetId;
                 var env = this.getEnvironment();
@@ -389,6 +410,7 @@
                             if (container = target.querySelector('[__page-unit-rendered-page="' + page + '"]')) {
                                 //如果已经存在容器
                                 container.innerHTML = onePageDom.innerHTML;
+                                
                             } else {
                                 onePageDom.innerHTML = onePageDom.innerHTML.replace(/tpl-role[\s]*=[\s]*['"]page_unit['"]/, '__page-unit-rendered-page="' + page + '"');
                                 
@@ -417,7 +439,13 @@
                     
                     for(var i = 0, l = targets.length; i < l; i++){
                         var target = targets[i];
-                        target.innerHTML = me.__templateBlocks[item](data);
+                        
+                        if(increment&&typeof nodomdiff== 'undefined'){
+                            target.innerHTML = target.innerHTML;
+                            fw.domdiff.convert(me.__templateBlocks[item](data),target);
+                        }else{
+                            target.innerHTML = me.__templateBlocks[item](data);
+                        }
                     }
                     
                     var blockEvents = _bindingMap[item]['eventMap'];
@@ -441,7 +469,14 @@
                             var targets = queryElementsByTplId(i);
                             for (var x = 0, y = targets.length; x < y; x++){
                                 var target = targets[x];
-                                target.innerHTML = me.__templateBlocks[i](data);
+                                
+
+                                if(increment&&typeof nodomdiff== 'undefined'){
+                                    target.innerHTML = target.innerHTML;
+                                    fw.domdiff.convert(me.__templateBlocks[i](data),target);
+                                }else{
+                                    target.innerHTML = me.__templateBlocks[i](data);
+                                }
                             }
                             
                             var blockEvents = _bindingMap[i]['eventMap'] || {};
@@ -457,7 +492,7 @@
             __renderEnyo: function( tapped_block ) {
                 var enyoapp = session.get('enyoapp');
                 if ( !enyoapp ) {
-                    console.log("__renderEnyo -> no enyoapp detacted!");
+                    sumeru.log("__renderEnyo -> no enyoapp detacted!");
                     return false;
                 }
                     
@@ -504,6 +539,24 @@
                 instance.__init();
                 
             },
+            rewriteUri:function(dom){
+            	if (typeof dom != 'undefined'){
+            		var checkRedirect = function(e){
+            			if (e.target.nodeName.toLowerCase() =='a' && e.target.href.indexOf(location.origin) != -1) {//站内的链接，阻止跳转 已？或者/开头的链接将阻止跳转
+            				if (!e.defaultPrevented) {
+            					sumeru.router.redirect(e.target.href.substr(location.origin.length));
+        						e.preventDefault();
+            				}
+            			}
+            		}
+            		if (!dom.getAttribute("link-ajax") && !dom.getAttribute("data-rel")) {
+            			dom.addEventListener("click", checkRedirect);
+            			dom.addEventListener("touchstart", checkRedirect);
+            			dom.setAttribute("link-ajax",true);
+            		}
+            		
+	        	}
+		    },
             destroy:function(isKeepSession,isKeepDomForTrans){
                 var id = this.__getID();
                 var uk = this.__UK;
@@ -574,7 +627,7 @@
                     // 清空旧数组
                     old.length = 0;
                     
-                    SUMERU_APP_FW_DEBUG && console.log('destory ["' + id + '"]');
+                    fw.dev('destory ["' + id + '"]');
                 //}
             }
     };
@@ -646,7 +699,7 @@
             return me;
         };
         
-        SUMERU_APP_FW_DEBUG && console.log("create new : " + id);
+        fw.dev("create new : " + id);
     };
     
     SubControler.prototype = fw.utils.extendFrom(controllerBase,{
@@ -726,6 +779,7 @@
                         if (!_transitionType && transitionType ) {
                             _transitionType = transitionType;
                         }
+                        me.rewriteUri(block);
                     };
                     env.hide = function( transitionType ){
                          fw.transition._subrun({
@@ -767,12 +821,15 @@
     /**
      * controller
      */
-    var MainController =  function(id, params , constructor){
+    var MainController =  function(id, contr_argu , constructor){
         var me = this;
         var env , session;
         env= new _Environment();
         
+        var isFirstPage = (activeController.length==0);
+        
         session = fw.session.create(id);  // 相同的id会返回相同的session
+        
         session.bind = _bindingData;
         session.bindByPage = _bindingDataByPage;
         session.event = _bindingEvent;
@@ -807,13 +864,14 @@
         this.__templateBlocks = false;
         
         this.__subControllerList = {};
-        constructor( env, session , params);
+        // constructor( env, session , params);
+        constructor( env, session , session.getContainer());//兼容老式写法,仅限maincontroller和servercontroller
         
         env.__getControllerInstance = function(){
             return me;
         };
         
-        SUMERU_APP_FW_DEBUG && console.log("create new : " + id);
+        fw.dev("create new : " + id);
     };
     
     MainController.prototype = fw.utils.extendFrom(controllerBase,{
@@ -844,7 +902,7 @@
                         }
                         for (var i = 0, l = tapped_blocks.length; i < l; i++){
                             //=====================
-                            controllerBase.__render.call(me,tapped_blocks[i]);
+                            controllerBase.__render.call(me,tapped_blocks[i],true);
                             //=====================
                         };
                         return;
@@ -866,14 +924,26 @@
                         }
                     });
                     
-                    me.__transition(tplName,transitionType,function() {
-                        session.toBeCommited.length = 0;
-                        env.onready(tplContentDom);
-                    });
+                    // if (me._isFirstPage && (fw.config.get("runServerRender")!==false) ) {//开启server渲染，且是首页，则不进行转场（转场会销毁dom）
+                        // me.__transition(tplName,["none","none"],function() {
+	                        // session.toBeCommited.length = 0;
+	                        // env.onready(tplContentDom);
+	                    // });
+	                    // me._isFirstPage = false;
+                    // }else{
+                    	me.__transition(tplName,transitionType,function() {
+	                        session.toBeCommited.length = 0;
+	                        env.onready(tplContentDom);
+	                    });
+                    // }
+                    me.rewriteUri(tplContentDom);
+                    
                     if ( env.withEnyo && me.__isFirstRender ) {//初始化enyo render,确保只执行一次!
                         controllerBase.__renderEnyo();
                     }
                     me.__isFirstRender = false;
+                    
+                    
                 }; //end dorender  
                 
                 fw.render.getTpl(tplName,session,function(render){
@@ -957,6 +1027,7 @@
         __transition:function(tplName,transitionType,oncomplete){
             
             var lastTransitionIn , rv,tmp;
+            var me = this;
             /*
              * 偷偷记录，当前url，session与使用dom的历史关系，用于返回,
              * 由于controller的id，由controllerPath + params组成，
@@ -997,19 +1068,24 @@
                     return false;       
                 }
             }
+            var anim = transitionType || this.__lastTransitionType;// 如果没指明，则使用上一次的
             
+            if (me._isFirstPage && (fw.config.get("runServerRender")!==false) ) {//开启server渲染，且是首页，则不进行转场（转场会销毁dom）
+            	me._isFirstPage = false;
+            	anim=["none","none"]
+            }
             
             //before转场，let's 对历史记录进行一下操作，
             //由于现在的逻辑是，无论是否为activecontroller，都必须走这里
             //这里很悲剧，我得不到 render 的 transiton 方法。
             if ( tmp = fw.historyCache.hitUrl([index ,(transitionType || this.__lastTransitionType)], globalIsforce) ) {
-                transitionOut = tmp[1];
+                // transitionOut = tmp[1];
             }
             rv = fw.transition._run({
                 "dom" : lastTransitionIn,                               
                 "cloneDom" : cloneDom,
                 "transitionOut" : transitionOut,
-                "anim" : transitionType || this.__lastTransitionType,   // 如果没指明，则使用上一次的
+                "anim" : anim,
                 "callback" : {
                     "load" : oncomplete || function(){}                 // 如果不指明，则什么都不做
                 }
@@ -1031,9 +1107,308 @@
         },
         getDom : function() {
             return fw.render.getTplContent(this.getSession());
+        },
+        setFirstPage : function(isFirstPage){
+        	this._isFirstPage = isFirstPage;
         }
     });
     
+    //server begin
+    var _bindingServerEvent = function(key,eventFunc){
+        var widgetId = this.__UK + "_" + key;
+        if(!_bindingMap[widgetId]){
+            _bindingMap[widgetId] = {
+                view_data   :   {},
+                eventMap    :   {}
+            };
+        }
+        _bindingMap[widgetId].eventMap['__default_key__'] = function(){};
+    }
+    var serverController = function(id, contr_argu , constructor){
+        var me = this;
+        var env , session;
+        env= new _Environment();
+        
+        var uk = "T" + fw.utils.randomStr(10);
+        
+        session = fw.session.create(uk);  // 相同的id会返回相同的session
+        session.bind = _bindingData;
+        session.bindByPage = _bindingDataByPage;
+        session.event = _bindingServerEvent;
+        //FIXME 为了与给HP的代码一致，临时给出一个简单的eventMap实现。后续要与事件库一起考虑
+        session.eventMap = fw.event.mapEvent;
+        
+        env.callSubController = function(name,param,forceFresh){
+            return me.__callSubController(name,param,forceFresh);
+        };
+        
+        // 确保session bind时数据项唯一的随机字符串key
+        env.__UK = session.__UK = this.__UK = uk;//"T" + fw.utils.randomStr(10);
+        
+        session.__isSubController = false;
+        // 添加取得当前对像的get方法，
+        // 保证值在controller的生命周期中是唯一，并且不可变更.
+        
+        this.getSession = function(){
+            return session;
+        };
+        
+        this.getEnvironment = function(){
+            return env;
+        };
+        
+        this.__getID = function(){
+            return id;
+        };
+        
+        this.__isFirstRender = true;
+        this.__isInited = false;
+        this.__templateBlocks = false;
+        
+        this.__subControllerList = {};
+        constructor( env, session , session.getContainer());
+        
+        env.__getControllerInstance = function(){
+            return me;
+        };
+        
+        // activeController.push(me);
+        
+        fw.dev("create new : " + id);
+    };
+    
+    serverController.prototype = fw.utils.extendFrom(controllerBase,{
+        __render:function(tapped_blocks){
+            var me = this;
+            if (!me.getEnvironment){
+            	console.warn("render... error...   @controller on line 1179");
+            	return ;
+            }
+            var env = me.getEnvironment();
+            var session = me.getSession();
+            //此处env是在构造方法中创建，并在用户controller的构造方法执行时被替换了真正的生命周期方法.
+            env.onrender(function( tplName, transitionType ){
+                 session.__currentTplName = tplName;          // 记录到session
+                 // var tplContentDom;
+                 var doRender  = function(render){
+                    //pub sub触发的局部渲染
+                    var uk = me.__UK;
+                    try{
+                    
+	                    if ( me.__isFirstRender ) {//first render 之前应该先初始化模板
+	                    	// 只记录模版的更新方法，模版骨架的创建方法，会在getTpl的时候，首次返回时解析.如果实在必须重新渲染骨架，使用 render.renderBone
+		                    var renderObject = fw.render.buildRender(session,render);
+		                    me.tplContent = renderObject.tplContent;
+		                    me.domId = renderObject.domId;
+		                    
+		                    me.__templateBlocks = renderObject.renderBlock;
+		                    me.__templateRelation = renderObject.blocksRelation;
+		                    
+		                    me.__isFirstRender = false;
+		                }
+	                    if (typeof tapped_blocks != 'undefined'){ //如果定义了tapped_blocks，那么就一定是来自msgDispater的局部渲染调用
+	                        
+	                        //优先抛弃length == 0的情况
+	                        if(!tapped_blocks.length){
+	                            return;
+	                        }
+	                        
+	                        for (var i = 0, l = tapped_blocks.length; i < l; i++){
+	                            //=====================
+	                            me.__renderData.call(me,tapped_blocks[i]);
+	                            //=====================
+	                        };
+	                        return;
+	                    }
+	                    
+	                    //销毁前渲染
+                		var finishhtml = '<div class="_smr_runtime_wrapper" id="_smr_runtime_wrapper"><section id="'+me.domId+'" class="__viewBlock__">'+me.tplContent+'</section></div>';
+               			env.__onFinish && env.__onFinish(finishhtml);
+	                    me.server_destroy();
+                    	
+	                }catch(e){
+                    	console.warn("controller do render error on line 1226 "+uk);
+                    	env.__onFinish && env.__onFinish();
+                    	me && me.server_destroy();
+                    }
+                    
+                    
+                }; //end dorender  
+                
+                fw.render.getTpl(tplName,session,function(render){
+                   
+                    doRender(render);
+                });
+                //onready
+            });
+        },
+        server_destroy:function(){
+        	if (!this || !this.__UK) {
+        		console.warn("server destroy already... on line 1242 controller.js");
+        		return;
+        	}
+    	    var id = this.__getID();
+            var uk = this.__UK;
+            var session = this.getSession();
+            var env = this.getEnvironment();
+            
+            
+            
+            fw.session.destroy(session);
+            
+            // env.__destroy();
+            
+            fw.utils.cleanObj(env);
+	        env.isDestroy = true;
+	        fw.pubsub.clearClient(uk);//根据uk进行移除
+            
+            // 清理_bindingMap
+            for(var key in _bindingMap){
+                if(key.indexOf(uk) === 0){
+                    fw.utils.cleanObj(_bindingMap[key].view_data);
+                    fw.utils.cleanObj(_bindingMap[key].eventMap);
+                    fw.utils.cleanObj(_bindingMap[key]);
+                    delete _bindingMap[key];
+                }
+            }
+            
+            fw.utils.cleanObj(this);
+            //close socket...
+            
+            // 外引对像　&　闭包方法
+            // this.getSession = null;
+            // this.getEnvironment = null;
+            // this.__getIdentifier = null;
+//                 
+            // delete this.getSession;
+            // delete this.getEnvironment;
+            // delete this.__getIdentifier;
+            
+            fw.dev('destory ["' + id + '"]');
+        },
+        __renderData:function(tapped_block){
+            var me = this;
+            if (typeof me == 'undefined'){
+            	console.warn("error ,no controller");
+            	return ;
+            }
+            var item = tapped_block.widgetId;
+            var env = this.getEnvironment();
+            if(typeof _bindingMap[item] == 'undefined' || me.__templateBlocks[item] == undefined){
+                return false;
+            }
+            
+            var data,record = _bindingMap[item];
+            
+            if (record.isByPage) {
+            	data = _bindingMap[item]['view_data'][tapped_block.page];
+            }else{
+            	data = _bindingMap[item]['view_data'];
+            }
+            //TODO 分页问清楚再改
+            //检查是否已被渲染的分页区域 page-unit-rendered-page
+                    
+            var tplReg = new RegExp("("+item + "[^>]*>)[\\s\\S]*?(<\/block>)")
+            //把 item 里面的内容进行替换，替换成有内容的
+            me.tplContent = me.tplContent.replace(tplReg,"\$1"+me.__templateBlocks[item](data)+"\$2");
+           
+        },
+        __init:function(){
+            var env = null;
+            var tapped_block = [];
+            if(this.__isInited === false || this.pathChange){
+            	this.__isInited = 'waiting';
+            	this.pathChange = false;
+                env = this.getEnvironment();
+                session = this.getSession();
+                
+                var that = this;
+                // 构建空的tapped_blocks用于触发不使用subscribe时的block的渲染
+                fw.controller.__reg('_tapped_blocks', tapped_block, true); 
+                
+                var toLoad = env.onload();
+                var finalCallback = function(error){//放在callback中
+                	// 触发页面渲染
+            		that.__render();
+                   // 标记初始化结束
+                    that.__isInited = true;
+                    env.isWaiting = 0;
+                }
+                //@params i number
+                var t=0;
+                var doLoad = function(i,callbackfunc) {
+                	//确保onload是按顺序执行的
+                	//这里可能有死循环，所以进行超时设定
+                	if (env.isWaiting > 0){
+                		setTimeout(function(){
+                			if (t>=80){//4s超时
+                				sumeru.log('doLoad超时，'+t*50+"ms，server渲染结束，是否缺少env.start() ?");
+                				finalCallback();
+                				return false;
+                			}
+                			doLoad(i,callbackfunc);
+                			t++;
+                		},50);
+                		return ;
+                	}
+                	//实践：只有当subscribe的结果回来，env.start之后，，才会执行doLoad的callbackfunc
+                	callbackfunc && callbackfunc();
+                	
+                    if (i >= toLoad.length) {
+                		env.setCallback(null);
+                    	finalCallback && finalCallback();
+                        return;
+                    }
+                    //说明：只有当subscribe的结果回来，env.start之后，才会执行doLoad的callbackfunc
+                    env.setCallback(function() {
+                    	doLoad(++i,function(){
+                        	that.__render(fw.controller._tapped_blocks);
+                        });
+                    });
+                    
+                    //hack no need 注册
+                    fw.controller.__reg('_tapped_blocks', [], true);
+                    try{
+                    	toLoad[i].call({});
+                    }catch(e){
+                    	fw.log(e,'toLoadEror...');
+                    }
+                    
+                    env.fireCallback();
+                    
+                };
+                // 开始初始化记载数据
+                doLoad(0);
+            }else if (this.__isInited === 'waiting' ){
+            	this.__render();
+            }else{
+            	this.__render(fw.controller._tapped_blocks);
+            	this.__render();
+            }
+        },
+        setPath:function(path){
+        	if (this.path != path){
+        		this.path = path;
+        		this.pathChange = true;
+        	}
+        }
+    });
+    _controller.__reg('serverController',serverController);
+    
+    _controller.__reg('getServerInstance',function(identifier, uriParts,path,constructor,__onFinish){
+    	
+    	var instance = new fw.controller.serverController(identifier, uriParts.contr_argu,constructor);
+    	//处理session
+    	// uriParts.contr_argu
+    	fw.session.setResumeNew(uriParts.session,instance.__UK);
+        var env = instance.getEnvironment();
+    	env.__onFinish = __onFinish;
+    	env.arguments = uriParts.contr_argu;//HERE, controller arguments here
+    	
+    	instance.setPath(path);//HERE 设置path，用于判断是否重新加载load
+    	
+    	instance.__init();
+    });
     _controller.__reg('create',function(constructor){
         return constructor;
     });
@@ -1054,7 +1429,7 @@
                     return find; 
                 }else{
                     // 如果找到匹配的path，但是结果是undefined或null等，说明controller载入不成功或配置内容错误.
-                    throw "find a controller [" + path +"], but undefined.";
+                    throw "found a router record for controller [" + path +"], but the controller is undefined.";
                 }
             }
         }
@@ -1079,7 +1454,7 @@
        
        throw "Can NOT find a controller [" + path +"]";
        
-    }, SUMERU_APP_FW_DEBUG ? false : true);
+    }, fw.SUMERU_APP_FW_DEBUG ? false : true);
     
     
     var _testReusing = function(item,queryPath){
@@ -1093,17 +1468,19 @@
      * @param params {string} 调用参数的字符串表示
      * @param onFound {function} 当找到controller时,触发该回调.
      */
-    var dispatch = _controller.__reg('dispatch',function(queryPath,params,isforce){
+    var dispatch = _controller.__reg('dispatch',function(queryPath,contr_argu,isforce){
         
-        var identifier = queryPath + "!" + (typeof(params) != 'string' ? "" : params);
+        var identifier = queryPath + "!" + (typeof(contr_argu) != 'string' ? "" : contr_argu);
         var constructor, instance = null , item = false;
         constructor = findController(queryPath);
+        
+        var isFirstPage = (activeController.length==0);
         
         if (constructor === false) {
             //可能由第三方程序接管，framework停止响应
             return;
         };
-        console.log("dispatch " + identifier);
+        fw.dev("dispatch " + identifier);
         
         /*
          * 检测当前controller队列
@@ -1126,11 +1503,11 @@
                 
                 // 如果转场失败，则认为dom被销毁，此时，销毁找到的controller实例，进入创建新controller的过程.
                 if(!instance.__transition() || isforce){
-                    instance.destroy();
+                    instance.destroy(true,false);
                     item = false;
                 };
                 
-                SUMERU_APP_FW_DEBUG && console.log("ROUTER FULL QUERY PATH : " + identifier);
+                fw.dev("ROUTER FULL QUERY PATH : " + identifier);
                 break;
             }else if(_testReusing(instance = item , queryPath)){
 				//@patchbysundong20121127:
@@ -1144,12 +1521,12 @@
                 if (activeControllerId === queryPath){//说明当前active的就是自身，所以对自身进行转场（clonedom）
                     instance.destroy(false,true);
                     item = false;
-                    SUMERU_APP_FW_DEBUG && console.log("ROUTER SAME QUERY PATH: " + identifier);
+                    fw.dev("ROUTER SAME QUERY PATH: " + identifier);
                 }else{//说明当前active的不是自身，所以对别人进行转场
                     if(!instance.__transition() || isforce){
                         instance.destroy();
                         item = false;
-                        SUMERU_APP_FW_DEBUG && console.log("ROUTER FULL QUERY PATH: " + identifier);
+                        fw.dev("ROUTER FULL QUERY PATH: " + identifier);
                     }
                 }
                 
@@ -1157,21 +1534,26 @@
             }else{
                 // 完全不匹配的，创建新的controller.
                 item = false;
-                SUMERU_APP_FW_DEBUG && console.log("ROUTER NOT MATCH : " + identifier);
+                fw.dev("ROUTER NOT MATCH : " + identifier);
             }
         }
         
         // 找到已存在的controller实例，则直接使用，不再创建新的
         if(!item){
-            instance = new MainController(identifier, fw.utils.uriParamToMap(params) , constructor);
+            instance = new MainController(identifier, contr_argu , constructor);
+            instance.setFirstPage(isFirstPage);
         }
+    	
+    	var env = instance.getEnvironment();
+    	env.arguments = contr_argu;
+    	
         //设置当前 activeControllerId
         activeControllerId = queryPath;
         
         instance.__init();
         
         return;
-    }, SUMERU_APP_FW_DEBUG ? false : true);
+    }, fw.SUMERU_APP_FW_DEBUG ? false : true);
     
     /**
      * 在数据push到之后，对于所有当前活跃的控制器，都调用其render方法（主要考虑三屏的场景）
@@ -1183,6 +1565,15 @@
         });
     });
     
-    return;
+   
     
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+	module.exports = function(fw){
+    	runnable(fw);
+    }
+    
+    // fw.config.set('runServerRender',true);
+}else{//这里是前端
+    runnable(sumeru);
+}

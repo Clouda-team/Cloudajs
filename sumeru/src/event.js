@@ -1,4 +1,4 @@
-(function(fw){
+var runnable = function(fw){
 	
 	fw.event = fw.event || {};
 	
@@ -41,4 +41,9 @@
 	    
 	}
 	
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+}else{//这里是前端
+    runnable(sumeru);
+}

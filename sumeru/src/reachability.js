@@ -60,10 +60,11 @@ var runnable = function(sumeru){
         //前端绑定
         window.addEventListener("offline", function(){
             sumeru.reachability.setStatus_(STATUS_OFFLINE);
+            sumeru.closeConnect && sumeru.closeConnect();//重连
         }, false);
         window.addEventListener("online", function(){
             //trigger socket reconnect...
-            sumeru.reconnect();//重连
+            sumeru.reconnect && sumeru.reconnect();//重连
         }, false);
     }
     

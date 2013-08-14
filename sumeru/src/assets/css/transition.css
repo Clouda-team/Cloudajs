@@ -4,7 +4,7 @@ html,body{
     margin:0;
     padding:0;
 }
-.warp{
+.wrap,._smr_runtime_wrapper{
 	position: relative;
 	text-align:left;
 	margin:0 auto;
@@ -89,7 +89,7 @@ html,body{
 	display:block;
 }
 ._g_none_sb {
-	display:none;
+	display:block;
 }
 ._g_none_hd {
 	display:none;

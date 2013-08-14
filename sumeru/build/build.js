@@ -7,11 +7,16 @@ var dstDir = '';//加注释
 var buildConfig = require(path.join(__dirname, 'buildList.json'));
 
 
+var sumeru = require(__dirname + '/../src/newPkg.js')();
+
+require(__dirname + '/../src/log.js')(sumeru);
+
 /**BAE环境模拟测试用**/
 //process.BAE = 'bae';
 
 if (typeof process.BAE !== 'undefined'){
-console.log('BAE MODE');
+    sumeru.dev('BAE MODE');
+    
     dstDir = path.join(baseDir, '/__bae__');
     var serverDir = path.join(dstDir, '/server');
     var binDir = path.join(dstDir, '/bin');
@@ -24,11 +29,12 @@ console.log('BAE MODE');
     !fs.existsSync(binDir) && fs.mkdirSync(binDir);
     !fs.existsSync(staticDir) && fs.mkdirSync(staticDir);
 }else{
-console.log('NON BAE MODE');
+    sumeru.dev('NON BAE MODE');
     dstDir = path.join(__dirname, '/../../app' + (process.argv[2] ? '/' +process.argv[2] : ''));
 }
-console.log('BaseDir :' + baseDir);
-console.log('DstDir :' + dstDir);
+    
+sumeru.dev('build from :' + baseDir);
+sumeru.dev('to :' + dstDir);
 
 process.baseDir = baseDir;
 process.dstDir = dstDir;
@@ -89,14 +95,60 @@ var buildAppResource = function(appDir, theBinDir){
 
     readPackage(appDir);
     
+    var UglifyJS = require('uglify-js');
+  
+    //压缩js代码
+    var orig_code = buildAppContent;
+    var ast = UglifyJS.parse(orig_code); // parse code and get the initial AST
+    
+    /*     
+     * Compressor options
+     * 
+     * sequences     : true,  // join consecutive statemets with the “comma operator”
+     * properties    : true,  // optimize property access: a["foo"] → a.foo
+     * dead_code     : true,  // discard unreachable code
+     * drop_debugger : true,  // discard “debugger” statements
+     * unsafe        : false, // some unsafe optimizations (see below)
+     * conditionals  : true,  // optimize if-s and conditional expressions
+     * comparisons   : true,  // optimize comparisons
+     * evaluate      : true,  // evaluate constant expressions
+     * booleans      : true,  // optimize boolean expressions
+     * loops         : true,  // optimize loops
+     * unused        : true,  // drop unused variables/functions
+     * hoist_funs    : true,  // hoist function declarations
+     * hoist_vars    : false, // hoist variable declarations
+     * if_return     : true,  // optimize if-s followed by return/continue
+     * join_vars     : true,  // join var declarations
+     * cascade       : true,  // try to cascade `right` into `left` in sequences
+     * side_effects  : true,  // drop side-effect-free statements
+     * warnings      : true,  // warn about potentially dangerous optimizations/code
+     * global_defs   : {}     // global definitions
+     * 
+     * */
+    
+    var compressor = UglifyJS.Compressor({
+        unused : false
+    });
+    ast.figure_out_scope();
+    var compressed_ast = ast.transform(compressor);
+    compressed_ast.figure_out_scope();
+    compressed_ast.compute_char_frequency();
+    compressed_ast.mangle_names(); // get a new AST with mangled names
+    var packedAppContent = compressed_ast.print_to_string(); // compressed code here
+
+    //clean css
+    var cleanCSS = require('clean-css');
+    var packedAppCssContent = cleanCSS.process(buildAppCssContent);
+    
+    
     if(typeof process.BAE !== 'undefined'){
-        fs.writeFileSync(binDir + '/app.js', buildAppContent, 'utf-8');
-        fs.writeFileSync(binDir + '/app.css', buildAppCssContent, 'utf-8');
+        fs.writeFileSync(binDir + '/app.js', packedAppContent, 'utf-8');
+        fs.writeFileSync(binDir + '/app.css', packedAppCssContent, 'utf-8');
         buildView(appDir, binDir);
         buildManifest(appDir, path.join(dstDir, 'bin'));
     }else{
-        fs.writeFileSync(theBinDir + '/app.js', buildAppContent, 'utf-8');
-        fs.writeFileSync(theBinDir + '/app.css', buildAppCssContent, 'utf-8');
+        fs.writeFileSync(theBinDir + '/app.js', packedAppContent, 'utf-8');
+        fs.writeFileSync(theBinDir + '/app.css', packedAppCssContent, 'utf-8');
         buildView(appDir, theBinDir);
         buildManifest(appDir, theBinDir);
     }
@@ -171,7 +223,7 @@ var buildManifest = function(appDir, theBinDir){
         }
     }
 
-    var cache_res_list = '../index.html\nsumeru.css\n';
+    var cache_res_list = 'sumeru.css\n';
     cache_res_list += 'sumeru.js\napp.js\n';
     cache_res_list += cacheViewStr;
     cache_res_list += appCache;

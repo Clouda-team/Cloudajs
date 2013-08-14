@@ -65,31 +65,13 @@ var rmdirx = function(dir) {
 
 
 var basedir = path.join(__dirname, '../../');
-console.log('Home Dir =' +  basedir);
 
 require('./build.js');
 setTimeout(function(){
 	rmdir(path.join(basedir, '__bae__'));
-	if (fs.existsSync(path.join(basedir,'__bae__/bin/cache.manifest')))
-	{
- 		fs.unlinkSync(path.join(basedir,'__bae__/bin/cache.manifest'));	
-	}
+	// if (fs.existsSync(path.join(basedir,'__bae__/bin/cache.manifest')))
+	// {
+ 		// fs.unlinkSync(path.join(basedir,'__bae__/bin/cache.manifest'));	
+	// }
 },4000);
-
-var hiUpload = path.join(basedir,'__bae__/static/hiUpload');
-console.log(hiUpload);
-if (!fs.existsSync(hiUpload)){
-    fs.mkdirSync(hiUpload);
-};
-var head = path.join(hiUpload,'head');
-if (!fs.existsSync(head)){
-    fs.mkdirSync(head);
-};
-var cface = path.join(hiUpload,'cface');
-if (!fs.existsSync(cface)){
-    fs.mkdirSync(cface);
-};
-
-
-
 

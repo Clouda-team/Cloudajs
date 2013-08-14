@@ -14,11 +14,11 @@ Library.transition = sumeru.Library.create(function(exports){
 //			if(target.id == 'view//helloworld/list@@content'){
 //				target.style.height = '708px';
 //			}
-			document.getElementById('Runtime@@Wrapper').className = 'animate';
+			document.getElementById('_smr_runtime_wrapper').className = 'animate';
 			if(disableAnimation){
-				document.getElementById('Runtime@@Wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
+				document.getElementById('_smr_runtime_wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
 			} else {
-	            document.getElementById('Runtime@@Wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
+	            document.getElementById('_smr_runtime_wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
 			}
 		} else { //后退
 			fw.__currentBodyPos += 480;
@@ -29,7 +29,7 @@ Library.transition = sumeru.Library.create(function(exports){
 			target.style.left = fw.__currentBodyPos * -1 + 'px';
 			
 			setTimeout(function(){
-			   document.getElementById('Runtime@@Wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
+			   document.getElementById('_smr_runtime_wrapper').style.webkitTransform = 'translateX(' + fw.__currentBodyPos + 'px)';
 			}, 0);
 		}
 		

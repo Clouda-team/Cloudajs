@@ -1,4 +1,4 @@
-(function(fw){
+var runnable = function(fw){
 	
 fw.addSubPackage('oquery');
 var oQuery = {};
@@ -108,4 +108,9 @@ fw.oquery.__reg('_query', oQuery.query, 'private');
 fw.oquery.__reg('_queryop', oQuery.OPENOPERATORS, 'private');
 
 	
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+	module.exports = runnable;
+}else{
+    runnable(sumeru);
+}

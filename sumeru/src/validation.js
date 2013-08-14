@@ -19,7 +19,7 @@ oValidation.validations = {};
  * $3  ->  按上例类推
  */
 oValidation.getErrorMsg = function(result,label,validation){
-	console.log(JSON.stringify(arguments));
+	//console.log(JSON.stringify(arguments));
 	var _msgTemp="";
 	if(oValidation.validations[validation]&&oValidation.validations[validation]["msg"]){
 		if(Library.objUtils.isNumber(result)&&result>=0){

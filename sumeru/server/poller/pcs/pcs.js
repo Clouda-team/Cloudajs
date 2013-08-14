@@ -1,5 +1,5 @@
 var applog = require('../../driver/applog.js');
-var log = require(__dirname  + '/../../../sumeru/log.js');
+//var log = require(__dirname  + '/../../../sumeru/log.js')(fw);
 module.exports = function (fw){
     var query = require('querystring');
 //    var conf = require('./conf.js');
@@ -244,7 +244,6 @@ module.exports = function (fw){
 	if(timelineData.length>0){
 	    for(var i=0,ilen = timelineData.length;i<ilen;i++){
 		console.log('------timelineData insert----');
-		//log.swrite(timelineData[i]);
 		fw.insert('picsTimeline', timelineData[i]);
 	    };
 	}
@@ -274,11 +273,11 @@ module.exports = function (fw){
 	    if(pollEnd&&removedLen==removeList.length
 	       &&
 	       insertedLen==newData.length){
-		/*log.swrite("trigger model push++++");
-		  log.swrite("removedLen:"+removedLen);
-		  log.swrite("insertedLen:"+insertedLen);
-		  log.swrite("removeList.length:"+removeList.length);
-		  log.swrite("newData.length:"+newData.length);*/
+		/*log.write("trigger model push++++");
+		  log.write("removedLen:"+removedLen);
+		  log.write("insertedLen:"+insertedLen);
+		  log.write("removeList.length:"+removeList.length);
+		  log.write("newData.length:"+newData.length);*/
 		console.log('----------------------Callback啦------------------');
 		callback(fw.getOpData());
 		

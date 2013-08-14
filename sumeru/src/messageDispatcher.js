@@ -1,5 +1,4 @@
-(function(fw){
-	
+var runnable = function(fw){	
 	
     var _controller = fw.controller;
     var _model = fw.model;
@@ -156,9 +155,42 @@
             }
             //更新client collection version
             collection.setVersion(serverVersion);
-            //console.log('collection version updated: ', collection);
         }
         return doReactiveProcess;
+    }
+
+
+    function deltaProcess (collection, delta) {
+        
+        var i = [];   //inserted item
+        var d = [];   //deleted item
+        var u = [];   //updated item
+
+        delta.forEach(function(item){
+
+            if (item.type === 'insert') {
+                i.push(item.cnt);
+            } else if (item.type === 'delete') {
+                item.cnt.forEach(function(smr_id){
+                    d.push(smr_id);    
+                });
+            } else if (item.type === 'update') {
+                var cnt = item.cnt;
+                var smr_id = item.id;
+                item.cnt.forEach(function(upd){
+                    u.push({
+                        cnt : upd.cnt,
+                        smr_id : smr_id
+                    });
+                });
+            }
+
+        });
+
+        if(i.length){ collection.onInsert && collection.onInsert(i); }
+        if(d.length){ collection.onDelete && collection.onDelete(d); }
+        if(u.length){ collection.onUpdate && collection.onUpdate(u); }
+
     }
 	
 	function syncCollection(type, pubname, val, item, isPlainStruct, serverVersion){
@@ -184,7 +216,11 @@
         }
         
         if(!isPlainStruct)collection._takeSnapshot();
-        
+
+
+        //onInser, onUpdate, onDelete callback
+        deltaProcess(collection, delta);
+
         if(doReactiveProcess === true){
             
             //因为JS的单线程执行，只要callback中没有setTimeout等异步调用，全局变量tapped_blocks就不会产生类似多进程同时写的冲突。
@@ -201,7 +237,8 @@
             } else {
                 item.callback(collection, {
                     delta : delta //FIXME 待端=>云的协议与云=>端的协议统一后，统一提供增量的delta给subscribe
-                });    
+                });
+
             }
             
             //每个Controller的render方法会保证局部渲染一定等待主渲染流程完成才开始。
@@ -232,7 +269,7 @@
         if (fw.onGlobalMessage) {
             fw.onGlobalMessage(data);
         } else {
-            console.log("GLOBAL MESSAGE : " + data);
+            fw.dev("GLOBAL MESSAGE : " + data);
         }
     };
     
@@ -244,7 +281,7 @@
 	if(fw.onGlobalError ){
 	    fw.onGlobalError(msg);
 	}else{
-	    console.log("GLOBAL ERROR : " + msg);
+	    fw.log("GLOBAL ERROR : " + msg);
 	}
     };
     
@@ -362,7 +399,7 @@
     	
     	if (typeof data.swappk !="undefined"){
     	    fw.myrsa.setPk2(data.swappk);
-    	    console.log('从server获得新pk2',data.swappk);
+    	    //fw.log('从server获得新pk2',data.swappk);
         }
     	var getTimeStamp = function(){
     	    var now = (new Date()).valueOf(),
@@ -389,7 +426,8 @@
          */
         var pubName = data['pubname'];
         var pilotId = data['pilotid'],
-            val = data['data'];
+        	uk = data['uk']||"",
+            val = data['data'],
             serverVersion = data['version'];
 
         if(pubName){
@@ -411,9 +449,12 @@
             var isPlainStruct = sumeru.pubsub._publishModelMap[pubName.replace(/@@_sumeru_@@_page_([\d]+)/, '')]['plainstruct'];
             //each stub
             //[{collection:@, onComplete : @}]
-            candidates.forEach(function(item, i){
-                
-                var collection = item.collection;
+            for(var i=0,len=candidates.length,item;i<len;i++){
+        		item = candidates[i];
+        		if (uk && uk!=item.id) {
+                	continue;
+                }
+        	    var collection = item.collection;
 
                 if(isPlainStruct){
                     syncCollection(type, pubName, val, item, isPlainStruct, serverVersion);
@@ -427,7 +468,7 @@
                         syncCollection(type, pubName, val, item, false, serverVersion);
                     }
                 }
-            });
+            };
         }else{
             /*暂无此类调用*/
             var _pilot = sumeru.msgpilot.getPilot(pilotId);
@@ -474,7 +515,7 @@
      * 从本地发来的消息
      */
     var onLocalMessage_data_write_latency = function(data,type){
-	var pubName = data['pubname'];
+	   var pubName = data['pubname'];
         //candidates is array of collections
         var candidates = fw.pubsub._subscribeMgr[pubName].stub;        
         //each stub
@@ -485,7 +526,7 @@
             //因为JS的单线程执行，只要callback中没有setTimeout等异步调用，全局变量tapped_blocks就不会产生类似多进程同时写的冲突。
             var tapped_blocks = [];
             _controller.__reg('_tapped_blocks', tapped_blocks, true);
-            item.callback(collection);
+            item.callback(collection, { delta : [] });
             
             //每个Controller的render方法会保证局部渲染一定等待主渲染流程完成才开始。
             _controller.reactiveRender(tapped_blocks);
@@ -511,6 +552,10 @@
     	onMessage : {
     	    target : 'config_write_from_server',
     	    handle : onMessage_config_write_from_server
+    	},
+    	onLocalMessage : {
+    		target : 'config_write_from_server',
+    	    handle : onMessage_config_write_from_server
     	}
     });
 
@@ -519,6 +564,10 @@
     	onMessage : {
     	    target : 'echo_from_server',
     	    handle : onMessage_echo_from_server
+    	},
+    	onLocalMessage:{
+    	    target : ['data_write_latency'],
+    	    handle : onLocalMessage_data_write_latency
     	}
     });
     
@@ -529,8 +578,8 @@
     	    handle : onMessage_data_write_from_server
     	},
     	onLocalMessage:{
-    	    target : ['data_write_latency'],
-    	    handle : onLocalMessage_data_write_latency
+    	    target:['data_write_from_server','data_write_from_server_delta'],
+    	    handle : onMessage_data_write_from_server
     	},
     	onError:onError,
     	onGlobalError:onGlobalError,
@@ -558,4 +607,9 @@
             handle : onError_data_write_from_server_validation
         },
     });
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+}else{//这里是前端
+    runnable(sumeru);
+}

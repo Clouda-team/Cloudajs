@@ -127,7 +127,7 @@ var fw = fw || {};
                     modelchain : modelchain,
                     data    : data
                 },'data_write_from_client',function(err){
-                    console.log('Err : data_write_from_client ' + err);
+                    fw.log('Err : data_write_from_client ' + err);
                 },function(){
                     
                 });
@@ -145,7 +145,7 @@ var fw = fw || {};
 	__proxy.network.prototype = {
 		save :function(data, callback){
 			var url = this.config.url;
-			console.log('network layer saving : ' , url + ' ' , data);
+			fw.dev('network layer saving : ' , url + ' ' , data);
 			var id = data.id;
 			callback(id);
 		},
@@ -166,7 +166,7 @@ var fw = fw || {};
 	}
 	__proxy.localstorage.prototype = {
 		save : function(data){
-			console.log('localstorage layer saving : ' + data);
+			fw.dev('localstorage layer saving : ' + data);
 		},
 		
 		get : function(param){
@@ -191,7 +191,7 @@ var fw = fw || {};
 	__proxy.memory.prototype = {
 		save : function(data, callback){
 			this.data = data;
-			console.log('memory layer save done' , data);
+			fw.dev('memory layer save done' , data);
 			callback(this.proxyid);
 			return true;
 		},

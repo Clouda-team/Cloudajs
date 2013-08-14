@@ -2,7 +2,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
 
     //FIXME 引入library库能力
     //var objUtils = require(__dirname  + '/../library/obj.js');
-    
+
     var serverCollection = function(modelName){
         if (typeof modelName == 'undefined') {
             return null;
@@ -12,6 +12,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
     }
     
     serverCollection.prototype = {
+        ObjectId : ObjectId,
         _getWhereCondition : function(whereMap){
             var _whereMap = {};
                 
@@ -152,13 +153,32 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
                     if (err) {
                         return callback(err, []);
                     };
-                    //console.log('before resolve', JSON.stringify(items));
+                    //fw.dev('before resolve', JSON.stringify(items));
                     that.resolveRef(items, callback);
                 });
             });
                 
             return true;
         },
+
+        /**
+         * External Find, 三方数据查询
+         *  
+         */
+
+        extfind : function(/** pubname, arg1, arg2, arg3, callback */){
+
+            var args = Array.prototype.slice.call(arguments);
+            
+            var modelName = this.baseModel;
+            var pubname = args.shift();
+            var callback = args.pop();
+            var params = args;
+
+            fw.external.fetch(modelName, pubname, params, callback);
+
+        },
+
         count : function(whereMap, callback, modelName){
             var where = this._getWhereCondition.call(this, whereMap),
                 that = this;
@@ -205,7 +225,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
             
         },
         update: function(selector, structData, successCallback, faildCallback, modelName){
-            //console.log("updata::",structData);
+            //fw.dev("updata::",structData);
             var modelName = modelName || this.baseModel;
 
             var doIt = (function(getDbCollectionHandler,modelName,faildCallback,successCallback,structData){
@@ -262,11 +282,11 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
                             for(var i=0,ilen=faildObjs.length;i<ilen;i++){
                                 faildObjs[i][fw.idField] = dataMap[fw.idField];
                             }
-                            console.log("validation faild");
+                            fw.log("validation faild");
                             faildCallback.call(this, "data_write_from_server_validation", faildObjs);
                             
                         }else{
-                            console.log("validation success");
+                            fw.dev("validation success");
                             faildCallback.call(this, "data_write_from_server_validation", faildObjs);
                             successCallback();
                         }
@@ -277,7 +297,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
 
             var oneField,label,validations,validation,validationMsg,type,value,resultObj;
 
-            var _model = fw.model.getModelTemp(modelName);
+            var _model = fw.server_model.getModelTemp(modelName);
             var createFaildObj = function(key,value,validationResult){
                 var _obj = {};
                 _obj["key"] = key;
@@ -336,8 +356,7 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
                                                 fw.validation._svalidation.call(handler,label,p,value,_validation, function(err,validationResult){
                                                   
                                                     if(!err){
-                                                        console.log("asyn validation end");
-                                                        //console.log(validationResult);
+                                                        fw.dev("asyn validation end");
                                                         if(validationResult === true){
                                                             //验证通过
                                                             //faildCallback.call(this, "data_write_from_server_validation", validationResult);
@@ -374,12 +393,12 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
                     */
                     delete dataMap[p];
 
-                    console.log("validation engine delete the undefined field "+p);
+                    fw.dev("validation engine delete the undefined field "+p);
                 }
             };
-            console.log("_+_+______________________+_+_+_+_+_+_+__++");
-            console.log(JSON.stringify(cbHandler));
-            console.log("_+_+______________________+_+_+_+_+_+_+__++");
+            fw.dev("_+_+______________________+_+_+_+_+_+_+__++");
+            fw.dev(JSON.stringify(cbHandler));
+            fw.dev("_+_+______________________+_+_+_+_+_+_+__++");
             cbHandler.enableCallback();
             cbHandler.decrease();
         }

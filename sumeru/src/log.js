@@ -1,29 +1,33 @@
 
-var LOG_LEVEL = 'dev'; //off, normal, dev
-
 var _log = function(){
 	console && console.log.apply(this, arguments);
 }
 
-var log = {
-	dev	: function(){
-		if(LOG_LEVEL == 'dev'){
-			_log.apply(this, (arguments));
-		}
-	},
-	
-	write : function(){
-		if(LOG_LEVEL != 'off'){
-			_log.apply(this, arguments);
-		}
-	},
-	swrite : function(){
-		if(LOG_LEVEL != 'off'){
-			_log.apply(this, ["----------------------------"]);
-			_log.apply(this, arguments);
-			_log.apply(this, ["----------------------------"]);
-		}
-	}
+var runnable = function(sumeru){
+    
+    var log_level = sumeru.SUMERU_APP_FW_DEBUG || false;
+    
+    var log = {
+        
+        log : function(){
+            _log.apply(console, arguments);
+        },
+        
+        dev : function(){
+            if(log_level !== false){
+                _log.apply(console, arguments);
+            }
+        }
+    };
+    
+    sumeru.__reg('log', log.log);
+    sumeru.__reg('dev', log.dev);
+    
+    return log;
 };
 
-module.exports = log;
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+}else{
+    runnable(sumeru);
+}

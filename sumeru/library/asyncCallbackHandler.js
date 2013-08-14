@@ -1,25 +1,25 @@
-var runnable = function(sumeru){
+ï»¿var runnable = function(sumeru){
     Library.asyncCallbackHandler = sumeru.Library.create(function(exports){
         /**
-         * ÓÃÓÚ½â¾ö¶à¸öÒì²½ÇëÇó£¬¹²ÓÃÒ»¸öcallback
-         * callback Õâ¸ö»¹²»ÖªµÀÔÚÄÄÀïÔËĞĞÄØ£¬ËùÒÔ£¬ÀïÃæÓÃµ½µÄ±äÁ¿Ò»¶¨Òª·Åµ½Õâ¸öº¯ÊıµÄ±Õ°üÖĞ¡£
-         * timeout Èç¹ûÓĞÉèÖÃtimeout£¬ÔòÔÚenableCallbackÖ®ºóÉèÖÃ¶¨Ê±Æ÷£¬Èç¹ûÊ±¼äµ½ÁËÒì²½µ÷ÓÃ»¹Ã»ÓĞÖ´ĞĞÍê£¬¾ÍÖ±½Óµ÷ÓÃcallback¡£callbackÖ»ÄÜ±»µ÷ÓÃÒ»´Î¡£
-         * useage£º
+         * ç”¨äºè§£å†³å¤šä¸ªå¼‚æ­¥è¯·æ±‚ï¼Œå…±ç”¨ä¸€ä¸ªcallback
+         * callback è¿™ä¸ªè¿˜ä¸çŸ¥é“åœ¨å“ªé‡Œè¿è¡Œå‘¢ï¼Œæ‰€ä»¥ï¼Œé‡Œé¢ç”¨åˆ°çš„å˜é‡ä¸€å®šè¦æ”¾åˆ°è¿™ä¸ªå‡½æ•°çš„é—­åŒ…ä¸­ã€‚
+         * timeout å¦‚æœæœ‰è®¾ç½®timeoutï¼Œåˆ™åœ¨enableCallbackä¹‹åè®¾ç½®å®šæ—¶å™¨ï¼Œå¦‚æœæ—¶é—´åˆ°äº†å¼‚æ­¥è°ƒç”¨è¿˜æ²¡æœ‰æ‰§è¡Œå®Œï¼Œå°±ç›´æ¥è°ƒç”¨callbackã€‚callbackåªèƒ½è¢«è°ƒç”¨ä¸€æ¬¡ã€‚
+         * useageï¼š
             cbHandel = Library.asyncCallbackHandler.create(callback);
             cbHandel.add();
             cbHandel.decrease();
-            cbHandel.enableCallback();//ËùÓĞµÄÇëÇó¶¼·¢ËÍÍê±Ïºóµ÷ÓÃ
+            cbHandel.enableCallback();//æ‰€æœ‰çš„è¯·æ±‚éƒ½å‘é€å®Œæ¯•åè°ƒç”¨
          */
         var _asyncCallbackHandler = function(callback,timeout){
             this.counter = 0;
             this.callbacked = false;
-            this.callback = function(){//±£Ö¤callbackÖ»±»µ÷ÓÃÒ»´Î
+            this.callback = function(){//ä¿è¯callbackåªè¢«è°ƒç”¨ä¸€æ¬¡
                 if(!this.callbacked){
                     callback();
                     this.callbacked = true;
                 }
             };
-            this._enableCallback = false;//±íÊ¾ËùÓĞÇëÇó¶¼ÒÑ¾­·¢ËÍ£¬¿ÉÒÔcallbackÁË
+            this._enableCallback = false;//è¡¨ç¤ºæ‰€æœ‰è¯·æ±‚éƒ½å·²ç»å‘é€ï¼Œå¯ä»¥callbackäº†
             if(timeout)this.timeout = timeout;
             this.timeoutFunc = null;
         };

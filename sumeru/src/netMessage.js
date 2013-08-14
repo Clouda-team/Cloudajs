@@ -48,7 +48,7 @@ var runnable = function(fw){
      * 如果存在当前包空间，则直接跳出，防止重复创建对像
      */
     if(fw.netMessage){
-        console.log('netMessage is exist.');
+        fw.dev('netMessage already existed.');
         return;
     }
     
@@ -68,8 +68,10 @@ var runnable = function(fw){
     var currentACL = Object.create(Default_Message_ACL);
     var receiver = null;
     var output = null;
+    
     var outputToServer = null;
-    var inFilter = [] , inFilterRun = [];
+    
+	var inFilter = [] , inFilterRun = [];
     var outFilter = [] , outFilterRun = [];
     
     var filterToArray = function(filterArr){
@@ -86,7 +88,6 @@ var runnable = function(fw){
     var decodeMessage = function(msgStr){
         // 解密并还原json对像
         var message = sumeru.utils.parseJSON(msgStr);
-        // console.log(message.content,typeof message.content)
         // 如有结构丢失，则返回false
         if(message.number === undefined || message.type === undefined || message.content === undefined){
             return false;
@@ -120,7 +121,7 @@ var runnable = function(fw){
     var send = function(msg){
         var __out = null;
         
-        if(msg.number === "0"){                         // 本地派发
+        if(msg.number === "0" ){                         // 本地派发
             return dispatch(msg);
         }
         
@@ -239,7 +240,7 @@ var runnable = function(fw){
             try{
                 rv = fun(msg,conn);
             }catch(e){
-                console.log(e);
+                fw.log(e);
                 return ;
             }
             onsuccess(rv,conn);
@@ -416,10 +417,10 @@ var runnable = function(fw){
         }
         
         if((handleName = currentACL[data.number]) === undefined){
-            console.log("unidentifiable message number");               // 无有效派发方法，直接返回false表示失败;
+            fw.log("unidentifiable message number");               // 无有效派发方法，直接返回false表示失败;
             return false;                                               // 未指定派发方法名称，直接返回false表示失败
         }else if(receiver[handleName] === undefined){
-            console.log("no receiver handle");                          // 无有效派发方法，直接返回false表示失败;
+            fw.log("no receiver found");                          // 无有效派发方法，直接返回false表示失败;
             return false;
         }
         
@@ -487,7 +488,7 @@ var runnable = function(fw){
         };
     }
     
-    console.log("runing [NetMessage] in " + ( fw.IS_SUMERU_SERVER ? "server" : "client"));
+    fw.dev("runing [NetMessage] in " + ( fw.IS_SUMERU_SERVER ? "server" : "client"));
     
 };
 

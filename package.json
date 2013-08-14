@@ -1,10 +1,10 @@
 {
   "name": "sumeru",
-  "version": "0.7.14",
+  "version": "0.8.1",
   "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test-cov"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,12 @@
     "shelljs": "0.0.8",
     "sockjs": "0.3.5",
     "uglify-js": "2.3.4",
-    "redis" : "0.8.2"
+    "redis" : "0.8.2",
+    "clean-css" : "1.0.12"
+  },
+  "devDependencies": {
+    "mocha": "1.8.1",
+    "chai": "1.7.2"
   },
   "bin": {
     "sumeru": "./sumeru/npm-tools/sumeru"

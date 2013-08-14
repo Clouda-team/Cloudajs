@@ -46,7 +46,14 @@ var runnable = function(sumeru){
     		isObject = exports.isObject = function(obj){
     			return type(obj) === 'object';
     		},
-    		
+    		isEmpty = exports.isEmpty = function(obj){
+    			var empty = true, fld;
+				for (fld in obj) {
+				  empty = false;
+				  break;
+				}
+				return empty;
+    		},
     		isArray = exports.isArray = function(obj){
     			return type(obj) === 'array';
     		},

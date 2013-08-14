@@ -4,7 +4,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var log = require(__dirname  + '/../../sumeru/log.js');
+var fw = require(__dirname + '/../../src/newPkg.js')();
 
 
 //遍历删除一个目录中的所有内容

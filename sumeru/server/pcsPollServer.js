@@ -2,7 +2,7 @@
 
 var pcs = require(__dirname  + '/driver/pcs.js');
 var applog = require('./driver/applog.js');
-var log = require(__dirname  + '/../sumeru/log.js');
+// var log = require(__dirname  + '/../sumeru/log.js')(fw);
 
 module.exports = function(fw, getDbCollectionHandler){
     
@@ -82,7 +82,6 @@ module.exports = function(fw, getDbCollectionHandler){
 
     //offset目前只支持d，m
     var getDateFromTime = function(timestamp,offset){
-        // console.log(timestamp,offset)
         var d,dd;
         d = new Date(timestamp*1000);
         dd = new Date(d.getFullYear()+"-"+(d.getMonth()+1)+'-'+d.getDate());//去掉小时分钟和秒
@@ -132,7 +131,7 @@ module.exports = function(fw, getDbCollectionHandler){
 	    pcs.GetFileList(function(err,data){
 	        
 	        if (err) {
-	            console.log('get file list error', err);
+	            fw.log('get file list error', err);
 	            return;
 	        };
 	        
@@ -150,14 +149,10 @@ module.exports = function(fw, getDbCollectionHandler){
 				try{
 	               	//根据新数据重新生成timeline
 					var dbTimeline = getDbCollectionHandler(timelineModelName);
-					//log.swrite(newData);
 					dbTimeline.find({"username":username}).toArray(function(err, items){
 
 
 						var timelineData = createTimelineData(username,newData);
-
-						//log.swrite(timelineData);
-						//log.swrite(items);
 
 	                	//diff新老数据
 						for(var i=0,ilen = items.length;i<ilen;i++){
@@ -179,8 +174,6 @@ module.exports = function(fw, getDbCollectionHandler){
 						}
 						if(timelineData.length>0){
 							for(var i=0,ilen = timelineData.length;i<ilen;i++){
-								log.swrite('timelineData insert');
-								//log.swrite(timelineData[i]);
 								dbTimeline.insert(timelineData[i]);
 							};
 						}
@@ -205,11 +198,11 @@ module.exports = function(fw, getDbCollectionHandler){
 	                		if(removedLen>=removeList.length
 	                			&&
 	                			insertedLen>=newData.length){
-			                		/*log.swrite("trigger model push++++");
-			                		log.swrite("removedLen:"+removedLen);
-			                		log.swrite("insertedLen:"+insertedLen);
-			                		log.swrite("removeList.length:"+removeList.length);
-			                		log.swrite("newData.length:"+newData.length);*/
+			                		/*log.write("trigger model push++++");
+			                		log.write("removedLen:"+removedLen);
+			                		log.write("insertedLen:"+insertedLen);
+			                		log.write("removeList.length:"+removeList.length);
+			                		log.write("newData.length:"+newData.length);*/
 									callback();
 	                		}
 	                	}
@@ -234,10 +227,10 @@ module.exports = function(fw, getDbCollectionHandler){
 
 						if(newData.length>0){
 
-							/*log.swrite("dbitems:"+items.length);
-							log.swrite("newData:"+newData.length);
-							log.swrite(items[0]);
-							log.swrite(newData[0]);*/
+							/*log.write("dbitems:"+items.length);
+							log.write("newData:"+newData.length);
+							log.write(items[0]);
+							log.write(newData[0]);*/
 							for(var i=0,ilen = newData.length;i<ilen;i++){
 
 								var picObj = formatPcsData(userinfo,newData[i]);
@@ -275,7 +268,7 @@ module.exports = function(fw, getDbCollectionHandler){
 				}
 				
 	    	}else{
-				console.log("error:"+err);
+				fw.log("error:"+err);
 	    	}
 		},
 		username,bduss);

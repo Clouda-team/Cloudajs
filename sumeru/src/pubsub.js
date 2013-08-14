@@ -1,7 +1,8 @@
-(function(fw){
+var runnable = function(fw,PublishContainer){
+
     fw.addSubPackage('pubsub');
 
-    var subscribeMgr = {};
+    var subscribeMgr = {};//TODO 这个在server运行的时候，当并发很多(>10/s)时，可能出现后一个请求覆盖前一个引起callback未执行的bug，server渲染自动终止。这里需要重新设计
     var publishModelMap = {a:1};
     var subscribeMgrKeys = []; //有序的key记录，每个key都是一个pubname，用于断线重连后按顺序redo subscribe
 
@@ -38,18 +39,8 @@
 
             //send the subscribe netMessage
             var version = collection.getVersion();
-            fw.netMessage.sendMessage({
-                name    :    pubName,
-                //去掉第一个pubname，去掉最后一个回调函数
-                args    :    args,
-                version :    version
-            },'subscribe', function(err){
-                console.log("Err : subscribe " + err);
-            },function(){
-                console.log("send subscribe " + pubName, version || 'no version');
-            });
+            var id =  this.__UK;
             
-
             if(!subscribeMgr[pubName]){
                 subscribeMgrKeys.push(pubName);
                 subscribeMgr[pubName] = {
@@ -61,7 +52,6 @@
                 };
             }
             
-            var id =  this.__UK;
             var callbackStr = Function.toString.call(completeCallback);
             
             var sourceCustomClosure = this.subscribe.caller;  
@@ -77,7 +67,11 @@
             });
             //去重之后，包装原有callback，添加处理wait的方法
             var tmpfunc = function( ){
-                completeCallback(arguments[0],arguments[1]);
+            	try{
+            		completeCallback(arguments[0],arguments[1]);
+                }catch(e){
+                	console.warn("error when pubsub callback on line 84 ",e);
+                }
                 if(env){
                     env.start();//自动调用start方法
                 }
@@ -89,6 +83,19 @@
                 callback      :    tmpfunc,
                 callbackStr   :    callbackStr,
                 env           :    this
+            });
+            
+            
+            fw.netMessage.sendMessage({
+                name    :    pubName,
+                //去掉第一个pubname，去掉最后一个回调函数
+                args    :    args,
+                uk:id,
+                version :    version
+            },'subscribe', function(err){
+                sumeru.log("error : subscribe " + err);
+            },function(){
+                sumeru.dev("send subscribe " + pubName, version || 'no version');
             });
             
             return collection;
@@ -163,9 +170,9 @@
                 args    :    subscribeMgr[pubname]['args'],
                 version :    version
             },'subscribe' , function(err){
-                console.log("Err : redoPrioritySubscribe");
+                fw.log("error : redoPrioritySubscribe", err);
             } , function(){
-                console.log("sending redo priority subscribe " + pubname, version || "no version(redo)");
+                fw.dev("sending redo priority subscribe " + pubname, version || "no version(redo)");
             });
         }
         
@@ -196,13 +203,25 @@
                 args    :    subscribeMgr[pubname]['args'],
                 version :    version
             },'subscribe' , function(err){
-                console.log("Err : redoNormalSubscribe");
+                fw.log("Err : redoNormalSubscribe", err);
             } , function(){
-                console.log("sending redo priority subscribe " + pubname, version || "no version(redo)");
+                fw.dev("sending redo priority subscribe " + pubname, version || "no version(redo)");
             });
         }    
     };
-    
+    fw.pubsub.__reg("clearClient",function(client_id){//server controller destroy
+    	for(var pubName in subscribeMgr){
+    		subscribeMgr[pubName]['stub'] = subscribeMgr[pubName]['stub'].filter(function(item){
+	            if(item.id == client_id || !item.id){
+	                return false;
+	            }
+	            return true;
+	        });
+	        if (subscribeMgr[pubName]['stub'].length == 0){
+	        	delete subscribeMgr[pubName];
+	        }
+    	}
+    });
     fw.pubsub.__reg('clear',function(){
         var item;
         for(var pubName in subscribeMgr){
@@ -221,7 +240,7 @@
                 fw.netMessage.sendMessage({
                     name : pubName
                 }, 'unsubscribe', function(err){}, function(){
-                    console.log('unsubscribe', pubName);
+                    fw.dev('unsubscribing', pubName);
                 });
                 
                 delete subscribeMgr[pubName];
@@ -265,4 +284,21 @@
     
     fw.pubsub.__reg('_releaseHold', releaseHold, 'private');
     
-})(sumeru);
+    if (typeof PublishContainer !='undefined' ){//server no echo
+    	(function(PublishContainer){
+	    	for (var pubname in PublishContainer){
+	            publishModelMap[pubname] = {
+		            'modelname' : PublishContainer[pubname]['modelName'],
+		        	'plainstruct' : PublishContainer[pubname]['plainStruct']
+	            };
+	        }
+	    })(PublishContainer)
+    }
+    
+};
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+    
+}else{//这里是前端
+    runnable(sumeru);
+}

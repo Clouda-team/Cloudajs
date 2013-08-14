@@ -74,7 +74,6 @@ var runnable = function(fw){
 		    fw.pushUpdateOfConfig(configObj.configMap);
 		}else{//Client
 		    
-		    //console.log(configObj.configMap);
 		    fw.netMessage.sendMessage(configObj.configMap, 'config_push',
 					      function(err){},
 					      function(){});

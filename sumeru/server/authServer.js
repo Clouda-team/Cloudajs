@@ -24,7 +24,7 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
         /**
          * 如果取不到接口或没有成功载入适配器文件，则停用第三方登陆
          */
-        console.log("ERR : authServer : Can not load tpaAdap.js, " + e);
+        fw.log("ERR : authServer : Can not load tpaAdap.js, " + e);
         EnableOtherLogin = false;
     }
     
@@ -68,7 +68,7 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
                                     if(existedTime > expires){
                                         collection.remove({clientId:record.clientId, sessionId:record.sessionId}, function(err, numberOfRemovedDocs) {
                                             if(err){
-                                                console.log('Clean Login Record error');
+                                                fw.log('Clean Login Record error');
                                             }
                                         });
                                     }

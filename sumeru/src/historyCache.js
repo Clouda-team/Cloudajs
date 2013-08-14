@@ -25,7 +25,6 @@
         } else if ( i === (_cache.length - 1) ) {//说明是url没变，自己刷新自己
             return false;
         } else {//清空缓存吧
-            console.log("hit historycache and get",_cache[i][1],_cache)
             for (var j = _cache.length - 1; j > i; j--) {
                 _cache.pop();//弹出，不占空间
             }

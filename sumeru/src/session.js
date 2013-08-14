@@ -1,5 +1,5 @@
-(function(fw){
-    var session = fw.addSubPackage('session');
+var runnable = function(fw){
+	var session = fw.addSubPackage('session');
     /**
      * {
      *      "identifier":"hashSerializeStr"
@@ -47,35 +47,39 @@
         };
     })(sense_get);
     
+    _Session.prototype.getContainer = function(){
+        return this.container;
+    };
+    
     _Session.prototype.set = (function(_superFun){
-        return function(key,value,isSerialize){
-            var checkType = isSerialize;
-            if(isSerialize){
-                this.__hashKey.push(key);
-            }
+        return function(key,value){
+            // var checkType = isSerialize;
+            // if(isSerialize){
+                // this.__hashKey.push(key);
+            // }
             
-            if((checkType || this.__hashKey.indexOf(key) != -1 ) && !isSBDT(value)){
-                // 不是string , number ,boolean , 抛出异常
-                throw "data type error";
-            }
+            // if((checkType || this.__hashKey.indexOf(key) != -1 ) && !isSBDT(value)){
+                // // 不是string , number ,boolean , 抛出异常
+                // throw "data type error";
+            // }
             
             return _superFun.call(this,key,value);  
         };
     })(sense_set);
     
     _Session.prototype.setIfNull = (function(_superFun){
-        return function(key,value,isSerialize){
+        return function(key,value){
             
             // 当存在当前key时，直接返回
             if(this.container.hasOwnProperty(key)){
                 return;
             }
+//             
+            // if(isSerialize && this.__hashKey.indexOf(key) == -1){
+                // this.__hashKey.push(key);
+            // }
             
-            if(isSerialize && this.__hashKey.indexOf(key) == -1){
-                this.__hashKey.push(key);
-            }
-            
-            if((isSerialize || this.__hashKey.indexOf(key) != -1 ) && !isSBDT(value)){
+            if( !isSBDT(value)){
                 // 不是string , number ,boolean , 抛出异常
                 throw "data type error";
             }
@@ -89,20 +93,20 @@
             var obj = {};
             
             var rv = _superFun.apply(this,arguments);  
+//             
+            // this.__hashKey.forEach(function(key){
+                // obj[key] = this.container[key];
+            // },this);
             
-            this.__hashKey.forEach(function(key){
-                obj[key] = this.container[key];
-            },this);
+            // serialize_pool[this.__identifier] = JSON.stringify(obj);
+//             
+            // if(serialize_pool[this.__identifier] == "{}"){
+                // delete serialize_pool[this.__identifier];
+            // }else{
+                // this.__snapshot[serialize_pool[this.__identifier]] = JSON.stringify(this.container);
+            // }
             
-            serialize_pool[this.__identifier] = JSON.stringify(obj);
-            
-            if(serialize_pool[this.__identifier] == "{}"){
-                delete serialize_pool[this.__identifier];
-            }else{
-                this.__snapshot[serialize_pool[this.__identifier]] = JSON.stringify(this.container);
-            }
-            
-            session.serialize();
+            session.serialize(JSON.stringify(this.container),this.__identifier);
             
             return rv;
         };
@@ -131,19 +135,25 @@
                 rv = true;
         }else if(serializeStr !== "" && serializeStr != null){
             // 还原被序列化的值
+            this.container = {};//覆盖
             for(var key in serialize = parseJSON(serializeStr)){
                 // 直接将值还原到container中, 不触动set方法
-                this.container[key] = serialize[key];
-                
-                if(this.__hashKey.indexOf(key) == -1){
-                    this.__hashKey.push(key);
-                }
+                // this.container[key] = serialize[key];
+                this.set(key,serialize[key]);
+                // if(this.__hashKey.indexOf(key) == -1){
+                    // this.__hashKey.push(key);
+                // }
             }
             rv = true;
         }
         return rv;
     };
     
+    _Session.prototype.clean = function(key){//clean controller session
+        // this.__hashKey = [];
+        this.container = {};
+       
+    };
     // ============================= 
     
     /**
@@ -165,6 +175,7 @@
      * 清空对session绑定的所有引用，并将当前session从session的实例池中删除
      */
     session.__reg('destroy',function(identifier){
+    	//这里在server渲染中有可能误删FIXME
         var item = typeof(identifier) == 'string' ? instance_pool[identifier] :identifier;
         identifier = item.__identifier;
         
@@ -180,32 +191,72 @@
     /**
      * 将serialize_pool中的内容,序列化到url中
      */
-    session.__reg('serialize',function(){
+    session.__reg('serialize',function(one_session){//__identifier
         // TO JSON STRING
-        var serializeDat = JSON.stringify(serialize_pool);
-        fw.router.joinSessionToHash(serializeDat);
+        // var serializeDat = JSON.stringify(one_session);
         
-        if(SUMERU_APP_FW_DEBUG){
-            console.log('call serialize, serializeDat : ',serializeDat);
-        }
-
+        fw.router.joinSessionToHash(one_session);
+        
     },true);
     
+    session.__reg('setResumeNew',function(serializeDat,identifier){//by server ,TODO for client
+        var serialize_pollurl = (serializeDat && parseJSON("{"+serializeDat+"}")) || {};
+        //instance_pool 注册
+        for (var key in serialize_pollurl) {
+        	// if (!instance_pool[key]) {
+        		// //复原session
+        		// session.create(key);
+        	// }
+        	if (serialize_pollurl[key]=='{}'){
+        		serialize_pollurl[key] = "";
+        	}
+        	serialize_pool[identifier] = serialize_pollurl[key];
+        }
+        var key = identifier ;
+        if(instance_pool[key].__unserialize()){
+        	instance_pool[key].commit();
+        }
+        
+    },true);
     /**
      * 合并需要反序列化的session对像
      */
-    session.__reg('setResume',function(serializeDat){
-        serialize_pool = (serializeDat && parseJSON("{"+serializeDat+"}")) || {};
-        
-        for(var key in instance_pool){
-            if(instance_pool[key].__unserialize()){
-                instance_pool[key].commit();
-            };
+    session.__reg('setResume',function(serializeDat,controller){
+        var serialize_pollurl = (serializeDat && parseJSON("{"+serializeDat+"}")) || {};
+        //instance_pool 注册
+        for (var key in serialize_pollurl) {
+        	if (!instance_pool[key]) {
+        		//复原session
+        		session.create(key);
+        	}
+        	if (serialize_pollurl[key]=='{}'){
+        		serialize_pollurl[key] = "";
+        	}
+        	serialize_pool[key] = serialize_pollurl[key];
         }
-        
-        if(SUMERU_APP_FW_DEBUG){
-            console.log('serialize_pool',serialize_pool);
+        var key = controller+"!" ;
+        if(instance_pool[key].__unserialize()){
+        	instance_pool[key].commit();
         }
+//         
+        // for(var key in instance_pool){
+        	// if (controller+"!" == key) {//resume 只commit本controller下的session
+        		// if(instance_pool[key].__unserialize()){
+	                // instance_pool[key].commit();
+	            // };
+        	// }
+//             
+        // }
+        
     },true);
     
-})(sumeru);
+    session.__reg('getSessionByController',function(controller){
+        return serialize_pool[controller+"!"];
+    },true);
+    
+}
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+}else{//这里是前端
+    runnable(sumeru);
+}

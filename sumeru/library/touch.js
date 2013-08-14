@@ -173,35 +173,35 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
         }
     })();
     
-	var _touchData = (function(){
-	    var dataMap = {};//key是一个uid, value是data object， 代表uid的是一个数据集合。
-	    return {
-		    get: function(el, key){
-			    var uid = _utils.getElUID(el);
-				dataMap[uid] = dataMap[uid] || {};
-			    if(arguments.length === 1){
-				    return dataMap[uid];
-				}else{
-				    return dataMap[uid][key];
-				}
-			},
-			set: function(el, key, value){
-			    var uid = _utils.getElUID(el);
-				dataMap[uid] = dataMap[uid] || {};
-				dataMap[uid][key] = value;
-			}
-		}
-	})();
-	
+    var _touchData = (function(){
+        var dataMap = {};//key是一个uid, value是data object， 代表uid的是一个数据集合。
+        return {
+            get: function(el, key){
+                var uid = _utils.getElUID(el);
+                dataMap[uid] = dataMap[uid] || {};
+                if(arguments.length === 1){
+                    return dataMap[uid];
+                }else{
+                    return dataMap[uid][key];
+                }
+            },
+            set: function(el, key, value){
+                var uid = _utils.getElUID(el);
+                dataMap[uid] = dataMap[uid] || {};
+                dataMap[uid][key] = value;
+            }
+        }
+    })();
+    
     /*
      *事件管理器，托管由用户定义的事件和处理程序。
      */
-	var eventManager = (function(){
-	    var eventHanlderMap = {};
+    var eventManager = (function(){
+        var eventHanlderMap = {};
         var hdInterMap = {};
-		return {
-		    trigger: function(el, type, paras){
-			    var uid = _utils.getElUID(el);
+        return {
+            trigger: function(el, type, paras){
+                var uid = _utils.getElUID(el);
                 var handlers = eventHanlderMap[uid][type]['handler'];
                 var smrEv = smrEventList;
                 var swipeList = [
@@ -253,6 +253,11 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                     
                     if(ops && ops.__binding_live){
                         var target = paras.originEvent.target;
+                        
+                        //兼容ios4, 文本节点的父节点为target
+                        if(target && target.nodeType === 3){
+                            target = target.parentNode;
+                        }
                         var liveEls = _utils.query(ops.__binding_live);
                         if(liveEls && liveEls.length > 0){
                             liveEls = Array.prototype.slice.apply(liveEls, [0]);
@@ -266,8 +271,8 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         execHandler(handlers[i], el, ops, paras);
                     }
                 }
-			},
-			off: function(){
+            },
+            off: function(){
                 if(typeof arguments[0] === 'undefined'){
                    return;
                 }
@@ -303,7 +308,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                 }
                 
                 //解除on绑定
-			    if(arguments.length == 1){
+                if(arguments.length == 1){
                     eventHanlderMap[uid] = null;
                 }else if(arguments.length === 2){
                     eventHanlderMap[uid] && (eventHanlderMap[uid][arguments[1]] = null);
@@ -319,16 +324,16 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         }
                     }
                 }
-			},
-		    add: function(el, type, hanlder, options){
-			    var uid = _utils.getElUID(el);
-				eventHanlderMap[uid] = eventHanlderMap[uid] || {};
-				eventHanlderMap[uid][type] = eventHanlderMap[uid][type] || {};
-				
-				eventHanlderMap[uid][type]['handler']  = eventHanlderMap[uid][type]['handler'] || [];
-				!options || (hanlder.options = options);
-				typeof hanlder === 'function' ? eventHanlderMap[uid][type]['handler'].push(hanlder) : null;
-			},
+            },
+            add: function(el, type, hanlder, options){
+                var uid = _utils.getElUID(el);
+                eventHanlderMap[uid] = eventHanlderMap[uid] || {};
+                eventHanlderMap[uid][type] = eventHanlderMap[uid][type] || {};
+                
+                eventHanlderMap[uid][type]['handler']  = eventHanlderMap[uid][type]['handler'] || [];
+                !options || (hanlder.options = options);
+                typeof hanlder === 'function' ? eventHanlderMap[uid][type]['handler'].push(hanlder) : null;
+            },
             hasHandler: function(el, type){
                 try{
                     var uid = _utils.getElUID(el);
@@ -350,9 +355,9 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                 }
                 return true;
             }
-		}
-	})();
-	
+        }
+    })();
+    
     var config = {
         tap: true,
         doubleTap: true,
@@ -378,62 +383,62 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
      *封装了旋转、pinchin、pinchout、swipe、tap等事件。
      */
     var SmrEvent = (function(){
-	    var _hasTouch = ('ontouchstart' in window);
+        var _hasTouch = ('ontouchstart' in window);
         
-		/**
-		 * 获取事件的位置信息
-		 * @param  ev, 原生事件对象
-		 * @return array  [{ x: int, y: int }]
-		 */
-		function getPosOfEvent(ev){   
-			//多指触摸， 返回多个手势位置信息
-			if(_hasTouch) {
-				var pos = [];
+        /**
+         * 获取事件的位置信息
+         * @param  ev, 原生事件对象
+         * @return array  [{ x: int, y: int }]
+         */
+        function getPosOfEvent(ev){   
+            //多指触摸， 返回多个手势位置信息
+            if(_hasTouch) {
+                var pos = [];
                 var src = null;
                 
                 for(var t=0, len=ev.touches.length; t<len; t++) {
-					src = ev.touches[t];
-					pos.push({ x: src.pageX, y: src.pageY });
-				}
-				return pos;
-			}//处理PC浏览器的情况
-			else {
+                    src = ev.touches[t];
+                    pos.push({ x: src.pageX, y: src.pageY });
+                }
+                return pos;
+            }//处理PC浏览器的情况
+            else {
                 return [{
-					x: ev.pageX,
-					y: ev.pageY
-				}];
-			}
-		};
-		/**
-		 *获取两点之间的距离
-		 */
-		function getDistance(pos1, pos2){
-		    var x = pos2.x - pos1.x, y = pos2.y - pos1.y;
-			return Math.sqrt((x * x) + (y * y));
-		};
-		
-		/**
-		 *计算事件的手势个数
+                    x: ev.pageX,
+                    y: ev.pageY
+                }];
+            }
+        };
+        /**
+         *获取两点之间的距离
+         */
+        function getDistance(pos1, pos2){
+            var x = pos2.x - pos1.x, y = pos2.y - pos1.y;
+            return Math.sqrt((x * x) + (y * y));
+        };
+        
+        /**
+         *计算事件的手势个数
          *@param ev {Event}
-		 */
-		function getFingers(ev){
-		    return ev.touches ? ev.touches.length : 1;
-		};
-		//计算收缩的比例
-		function calScale(pstart/*开始位置*/, pmove/*移动中的位置*/){
+         */
+        function getFingers(ev){
+            return ev.touches ? ev.touches.length : 1;
+        };
+        //计算收缩的比例
+        function calScale(pstart/*开始位置*/, pmove/*移动中的位置*/){
             if(pstart.length >= 2 && pmove.length >= 2) {
                 var disStart = getDistance(pstart[1], pstart[0]);
-				var disEnd = getDistance(pmove[1], pmove[0]);
+                var disEnd = getDistance(pmove[1], pmove[0]);
                 
-				return disEnd / disStart;
-			}
+                return disEnd / disStart;
+            }
             return 1;
-		};
-		
-		//return 角度，范围为{-180-0，0-180}， 用来识别swipe方向。
-		function getAngle(p1, p2){
-		    return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
-		};
+        };
+        
+        //return 角度，范围为{-180-0，0-180}， 用来识别swipe方向。
+        function getAngle(p1, p2){
+            return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+        };
         //return 角度， 范围在{0-180}， 用来识别旋转角度
         function _getAngle180(p1, p2){
             var agl = Math.atan((p2.y - p1.y) * -1 / (p2.x - p1.x)) * (180 / Math.PI);
@@ -464,7 +469,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
         
         function getXYByElement(el){
             var left =0,  top = 0;
-			
+            
             while (el.offsetParent) {
                 left += el.offsetLeft;
                 top += el.offsetTop;
@@ -472,15 +477,15 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
             }
             return { left: left, top: top };
         };
-		
-		return function(el){
-		    var me = this;
-		    var pos = {start : null, move: null, end: null};
-			var startTime = 0; 
-			var fingers = 0;
-			var startEvent = null;
-			var moveEvent = null;
-			var endEvent = null;
+        
+        return function(el){
+            var me = this;
+            var pos = {start : null, move: null, end: null};
+            var startTime = 0; 
+            var fingers = 0;
+            var startEvent = null;
+            var moveEvent = null;
+            var endEvent = null;
             var startSwiping = false;
             var startPinch = false;
             var startDrag = false;
@@ -490,12 +495,12 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
             var __holdTimer = null;
             var __tapped = false;
             var __lastTapEndTime = null;
-			
-			function triggerEvent(name, paras){
-		        if(typeof me["on"+ name] === 'function'){
-				    me["on"+ name](paras);
-				}
-		    };
+            
+            function triggerEvent(name, paras){
+                if(typeof me["on"+ name] === 'function'){
+                    me["on"+ name](paras);
+                }
+            };
             
             function reset(){
                 startEvent = moveEvent = endEvent = null;
@@ -554,8 +559,8 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                     __rotation = parseInt(diff, 10);
                     return __rotation;
                 },
-			    pinch: function(ev){
-				    if(config.pinch){
+                pinch: function(ev){
+                    if(config.pinch){
                         //touchend进入此时的getFinger(ev) < 2
                         if(!__touchStart)return;
                         if(getFingers(ev) < 2){
@@ -605,7 +610,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                             if(isTouchEnd(ev)){
                                 __scale_last_rate = 1;
                             }
-						}
+                        }
                         
                         if(Math.abs(rotation) > config.minRotationAngle){
                             var rotationEv = _utils.deepCopy(eventObj), eventType;
@@ -616,8 +621,8 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         }
                         
                         //preventDefault(ev);
-					}
-				},
+                    }
+                },
                 rotateSingleFinger: function(ev){
                     if(__rotation_single_finger && getFingers(ev) < 2){
                         if(!pos.move)return;
@@ -806,12 +811,12 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         }, config.holdTime);
                     }
                 }
-			};
-			
-		    var handlerOriginEvent = function(ev){
-			    switch(ev.type){
+            };
+            
+            var handlerOriginEvent = function(ev){
+                switch(ev.type){
                     case 'touchstart':
-				    case 'mousedown':
+                    case 'mousedown':
                         __rotation_single_finger = false;
                         __rotation_single_start = [];
                         triggerCustomEvent(el, ev.type, {
@@ -825,9 +830,9 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         if(getFingers(ev) >= 2){
                             __initial_angle = parseInt(_getAngle180(pos.start[0], pos.start[1]), 10);
                         }
-					    
-						startTime = Date.now(); 
-						startEvent = ev;
+                        
+                        startTime = Date.now(); 
+                        startEvent = ev;
                         __offset = {};
                         
                         //来自jquery offset的写法: https://github.com/jquery/jquery/blob/master/src/offset.js
@@ -840,7 +845,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         
                         gestures.hold(ev);
                         break;
-					case 'touchmove':
+                    case 'touchmove':
                     case 'mousemove':
                         triggerCustomEvent(el, ev.type, {
                             originEvent: ev
@@ -850,29 +855,27 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                         
                         if(getFingers(ev) >= 2){
                             gestures.pinch(ev);
-                        }else{ 
-                            if(__rotation_single_finger){
-                                gestures.rotateSingleFinger(ev);
-                            }
+                        }else if(__rotation_single_finger){
+                            gestures.rotateSingleFinger(ev);
+                        }else{
                             gestures.swipe(ev);
                         }
                         break;
                     case 'touchend':
                     case 'touchcancel':
-					case 'mouseup':
-					case 'mouseout':
+                    case 'mouseup':
+                    case 'mouseout':
                         triggerCustomEvent(el, ev.type, {
                             originEvent: ev
                         });
-					    if(!__touchStart)return;
+                        if(!__touchStart)return;
                         endEvent = ev;
                         
                         if(startPinch){
                             gestures.pinch(ev);
-                        }else {
-                            if(__rotation_single_finger){
-                                gestures.rotateSingleFinger(ev);
-                            }
+                        }else if(__rotation_single_finger){
+                            gestures.rotateSingleFinger(ev);
+                        }else{
                             if(startSwiping){
                                 gestures.swipe(ev);
                             }
@@ -886,10 +889,10 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                             __touchStart = true;
                             __rotation_single_finger = true;
                         }
-					    break;
-				}
-			};
-			
+                        break;
+                }
+            };
+            
             
             var eventNames = _hasTouch ? 'touchstart touchmove touchend touchcancel': 
                 'mouseup mousedown mousemove mouseout';
@@ -902,9 +905,9 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
             this.startRotate = function(){
                 __rotation_single_finger = true;
             }
-		}
-	})();
-	
+        }
+    })();
+    
     /*
      *@param el {Element} 
      *@param types {String} 事件类型， 可以空格分割多个事件。
@@ -915,9 +918,9 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
      *  interval: 0 //单位ms， 用来对handler的回调进行切片。
      *}
      */
-	var _on = function(){
-	    if(typeof arguments.length < 3)throw 'Please specify complete argments';
-		var element = typeof arguments[0] === 'string' ? 
+    var _on = function(){
+        if(typeof arguments.length < 3)throw 'Please specify complete argments';
+        var element = typeof arguments[0] === 'string' ? 
                           _utils.query(arguments[0]) : [arguments[0]];
         var types = arguments[1].split(' ');
         var handler = arguments[arguments.length - 1];
@@ -935,7 +938,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                 }
             }
         });
-	};
+    };
     
     var _live = function(){
         if(arguments.length < 3){
@@ -952,9 +955,9 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
         options.__binding_live = arguments[0];
         _on.apply(exports, [document.body, types, options, handler]);
     };
-	
     
-	var _off = function(selector, types, handler, liveSelector){
+    
+    var _off = function(selector, types, handler, liveSelector){
         if(typeof selector === 'undefined'){
            throw 'Please specify the selector.';
         }
@@ -984,7 +987,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
                 });
             });
         } 
-	};
+    };
     
     var _die = function(selector, types, handler){
         _off(document.body, types, handler, selector);
@@ -1002,7 +1005,7 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
         }
         return eventName;
     };
-	/**
+    /**
      *全局可配置的参数：
      *{
      *  tap: true, //tap类事件开关, 默认为true
@@ -1039,8 +1042,8 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
         _touchData.set(el, '_touchEv', null);
         touchEv.tearDown();
     }
-	var smrSpecical = { setUp: touchSetup, tearDown: tearDown};
-	var smrEventList = {
+    var smrSpecical = { setUp: touchSetup, tearDown: tearDown};
+    var smrEventList = {
         TOUCH_START: 'touchstart',
         TOUCH_MOVE: 'touchmove',
         TOUCH_END: 'touchend',
@@ -1081,15 +1084,15 @@ var touch = Library.touch = sumeru.Library.create(function(exports){
     };
     
     var event = {};
-	event.special = {};
+    event.special = {};
     Object.keys(smrEventList).forEach(function(key){
         event.special[smrEventList[key]] = smrSpecical;
     });
     
     exports.live = _live;
     exports.die = _die;
-	exports.on = _on;
+    exports.on = _on;
     exports.off = _off;
     exports.config = _config;
-	return exports;
+    return exports;
 });

@@ -95,7 +95,7 @@ var runnable =function(fw){
                 hasInsert = false, hasUpdate = false, hasDelete = false,
                 _diff = [];
 
-            var modelTemp = fw.model.getModelTemp(modelName);
+            var modelTemp = fw.server_model.getModelTemp(modelName);
 
             for(var p in modelTemp){
                 var field = modelTemp[p];

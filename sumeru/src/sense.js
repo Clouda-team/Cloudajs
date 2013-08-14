@@ -1,6 +1,7 @@
 var runnable = function(fw){
 	(function(fw){
 		// sense　对像空间
+		if (fw.sense)return fw.sense;
 		var sense = fw.addSubPackage('sense');
 		
 		/**
@@ -33,6 +34,10 @@ var runnable = function(fw){
 				 */
 				get:function(key){
 					sense._senseInspector && sense._senseInspector(this, key);
+					if( typeof this.container != 'object') {
+						 console.warn('no container error in sense get on line 38 '+key);
+						return;
+					}
 					return this.container[key];
 				},
 				/**
@@ -53,7 +58,7 @@ var runnable = function(fw){
 							this.toBeCommited.push((function(that, observerItem){
 								return function(checkObserver){
 									if(arguments.length === 0 ){
-										console.log('exec customCloser', observerItem.customClosure.length);
+										//fw.dev('exec customCloser', observerItem.customClosure.length);
 										observerItem.customClosure.call(that, key);
 									}else{
 										return checkObserver == observerItem;
@@ -88,8 +93,8 @@ var runnable = function(fw){
 				addObserver:function(key, customClosure){
 					// 去重
 					for(var i = 0, l = this.observer.length; i < l; i++){
-						if(this.observer[i].key === key && this.observer[i].customClosure == customClosure){
-							return;
+						if(this.observer[i].key === key && this.observer[i].customClosure == customClosure ){
+							return; //两个函数不会相等的，不知道谁写的，但这行永远不会执行 FIXME ，上面的函数改成toString后会造成session.get在两个onload是相等的bug
 						}
 					}
 					

@@ -155,7 +155,7 @@
     };
 	
 	//容器
-	var _warp = null;
+	var _wrap = null;
 
 	var _createClassName = function(status,act){
         if(!(act instanceof Array && act.length>1)){
@@ -180,11 +180,17 @@
 	};
 	var _isFristLode = true;
 	var _init = function(){
-		_warp = document.createElement("div");
-		_warp.className = "warp";
-		document.body.appendChild(_warp);
+		if (!(_wrap = document.getElementById("_smr_runtime_wrapper"))) {
+			_wrap = document.createElement("div");
+	        _wrap.className = "_smr_runtime_wrapper";
+	        _wrap.id = "_smr_runtime_wrapper";
+	        // _wrap.style.width = "100%";
+	        // _wrap.style.height = "100%";
+			document.body.appendChild(_wrap);
+			_isFristLode = false;
+			// _fixSreenSize(_wrap);
+		}
 		_isFristLode = false;
-		_fixSreenSize(_warp);
 	};
 
     var _createFlipObj = function(frontdom,backdom){
@@ -219,7 +225,9 @@
         }
         
         if ( target.anim && typeof target.anim[1] !== 'undefined' &&  typeof act_direct_name[target.anim[1]] !== 'undefined' ) {
-            target.anim[1] = act_direct_name[target.anim[1]];
+            
+            target.anim = [target.anim[0],act_direct_name[target.anim[1]]];
+            //target.anim[1] = act_direct_name[target.anim[1]];
         }
         
         if(!target.anim || typeof _act[target.anim[0]] === "undefined"
@@ -270,7 +278,7 @@
                     target.dom_back = target.dom[1];
                     
                 }
-                //console.log(show.dom == target.dom,show.dom, target.dom)
+                //fw.log(show.dom == target.dom,show.dom, target.dom)
                 //有clonedom，说明是自己推自己，我要给他附加上去成背景图案，推完自己再抹去。
                 if (target.cloneDom ) {
                     show.dom.parentNode.appendChild( target.cloneDom );
@@ -314,17 +322,17 @@
                             &&hide.dom_front!=target.dom_front
                             &&hide.dom_front!=target.dom_back){
                             hide.dom_front.className = hide.front_classname?("hide "+hide.front_classname):"hide";
-                            _warp.appendChild(hide.dom_front);
+                            _wrap.appendChild(hide.dom_front);
                             f_rm++;
                         }
                         if(hide.dom_back!=target.dom
                             &&hide.dom_back!=target.dom_front
                             &&hide.dom_back!=target.dom_back){
                             hide.dom_back.className = hide.back_classname?("hide "+hide.back_classname):"hide";
-                            _warp.appendChild(hide.dom_back);
+                            _wrap.appendChild(hide.dom_back);
                             f_rm++
                         }
-                        _warp.removeChild(hide.dom);
+                        _wrap.removeChild(hide.dom);
                         
                     }else{
                         if(hide.dom!=target.dom
@@ -346,6 +354,8 @@
                         .replace(new RegExp(blockClassName,"g"),"")
                         .replace(/(^\s*)|(\s*$)/g,"")+blockClassName;
                     target.dom_back.className = target.back_classname;
+                }else if (target.anim[0] == 'none'){//none的时候，不需要隐藏，不然第一次加载有抖动
+                	
                 }else{
                     target.classname = (target.dom.className).replace(/(_g_[\S]*)|(transi)|(hide)|(animated)/g,"")
                         .replace(new RegExp(blockClassName,"g"),"")
@@ -371,8 +381,8 @@
 
 
                 //把dom移动到warp中
-                if(_warp!=_standby.parentElement){
-                    _warp.appendChild(_standby);
+                if(_wrap!=_standby.parentElement){
+                    _wrap.appendChild(_standby);
                 }
                 _removeClass(_standby,"hide");
 
@@ -445,7 +455,8 @@
 	    this.style.display = "none";
 	}
 	
-	fw.transition.__reg('_run', _transition, 'private');
+    fw.transition.__reg('_init', _init, 'private');
+    fw.transition.__reg('_run', _transition, 'private');
 	fw.transition.__reg('_subrun', _subtransition, 'private');
 	
 	

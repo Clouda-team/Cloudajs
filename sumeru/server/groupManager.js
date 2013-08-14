@@ -83,32 +83,32 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
         conn.setEncoding(defaultCharset);
         
         conn.on('data',function(data){
-            console.log('retrieving S2S : ' + data);
+            fw.dev('retrieving S2S : ' + data);
             netMessage.onData(data,conn);
         });
         
         // 1秒超时
         conn.setTimeout(1000,function(){
-            console.log('s2s connection timeout. Disconnected');
+            fw.dev('s2s connection timeout. Disconnected');
             conn.end();
         });
     });
 
     server.on('error',function(){
-        console.log('S2S Err:' + arguments);
+        fw.log('S2S Err:' + arguments);
     });
 
     server.on('close',function(){
-        console.log('S2S Disconnected:' + arguments);
+        fw.log('S2S Disconnected:' + arguments);
     });
 
     server.listen(listenPort,function(){
-        console.log('S2S listen on port 8089');
+        fw.log('S2S listen on port 8089');
     });
     
     process.on('exit',function(){
         unregister(__current);
-        console.log('server shutdown..');
+        fw.log('server shutdown..');
     });
     
     //================================================
@@ -119,7 +119,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
         client.setEncoding(defaultCharset);
         
         client.setTimeout(1000,function(){
-            console.log('connection timeout.' , port);
+            fw.log('connection timeout.' , port);
             // 如果到超时为止,消息未发送,则认为发送失败.
             if(!writed){
                 onerror && onerror();
@@ -128,7 +128,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
         });
         
         client.on('error',function(){
-            console.log(arguments);
+            fw.log(arguments);
             onerror && onerror();
         });
 
@@ -140,7 +140,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
         });
 
         client.on('data',function(msg){
-            console.log(msg);
+            fw.dev(msg);
         });
     };
     
@@ -154,7 +154,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
             if(sp){
                 __connMsgTo(sp, msg, err, success);
             }else{
-                console.log('all failed. ' + JSON.stringify(sps));
+                fw.log('group manager all failed. ' + JSON.stringify(sps));
                 onerr && onerr();
                 /*
                  * FIXME
@@ -205,7 +205,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
     var register = function(sps){
         
         if(registered || !Array.isArray(sps)){
-            console.log('register failed : invalid arguments or repeating record');
+            fw.log('register failed : invalid arguments or repeating record');
             return;
         }
         
@@ -286,9 +286,9 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
             collection.remove({"$or":removeItems},function(){
                 // 去重后，将新值插入数据库
                 collection.save(save,function(){
-                    console.log("\n==========\nServer Port : ");
-                    console.log(save);
-                    console.log("Server Port END\n==========\n");
+                    fw.log("\n==========\nServer Port : ");
+                    fw.log(save);
+                    fw.log("Server Port END\n==========\n");
                 });
             });
             
@@ -301,7 +301,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
     var unregister = function(id){
         getDbCollectionHandler(collectionName,function(err,collection){
             collection.remove({Unique_Key:id},function(err,collection){
-                console.log('unregister : ' + id);
+                fw.dev('unregister : ' + id);
             });
         });
     };
@@ -313,7 +313,7 @@ var runnable = function(fw, getDbCollectionHandler,ObjectId) {
      * 现在只实现了轮训式广播，未实现组播和单播，即target参数无用.
      */
     netMessage.setOutputToServer(function(msg/* , target */, onerror, onsuccess){
-        console.log("server to server : " + msg);
+        fw.dev("server to server : " + msg);
         getDbCollectionHandler(collectionName,function(err,collection){
             collection.find({},{}).toArray(function(err,results){
                 if(err){

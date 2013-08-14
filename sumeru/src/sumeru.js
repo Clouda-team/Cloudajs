@@ -9,7 +9,7 @@
                 xhr.onreadystatechange = function(){
                    if (xhr.readyState == 4) {
                         if (xhr.status >= 200 && xhr.status < 300 && !error) {
-                            options.callback(xhr.responseText);
+                            options.callback(xhr.responseText, options.url);
                         } else {
                             console.error('请求 ' + options.url + ' 失败');
                         }
@@ -21,7 +21,7 @@
                     xhr.send(null);
                 }catch(e){
                     error = true;
-                    console.log('error:' + options.url);
+                    sumeru.log('error:' + options.url);
                 }
             };
             
@@ -48,6 +48,7 @@
                 if(arguments.length === 0)return;
                 
                 var baseDir = getBaseDir();
+                var blanket_scripts = [];
                 var directorys = [];
                 var args = Array.prototype.slice.call(arguments, 0);
                 
@@ -55,7 +56,21 @@
                     //var reg = /.css$|.js$/g;
                     if(dirname && dirname.indexOf('.js') > -1){
                         var url = baseDir + '/' + dirname;// + '?'+Date.now();
-                        document.write('<script src="'+ url +'">\x3C/script>');
+                        
+                        
+                        //if (sumeru.config.get('runtest')) { //why not work
+                        if(typeof blanket != 'undefined') {
+                        	//document.write('<script data-cover data-cover-flags="debug" src="'+ url +'"></script>');
+                            //document.write('<script data-cover data-cover-flags="debug" type = "text/template" src="'+ url +'"></script>');
+                        	if (QUnit.urlParams.coverage && baseDir.indexOf('/src') > -1) {
+                        		blanket_scripts.push(url);
+                        	} else {
+                                document.write('<script src="'+ url +'">\x3C/script>');
+                        	}
+                        } else {
+                        	document.write('<script src="'+ url +'">\x3C/script>');
+                        }
+                        
                     }else if(dirname && dirname.indexOf('.css') > -1){
                         var url = baseDir + '/' + dirname;// + '?'+Date.now();
                         document.write('<link rel="stylesheet" href="' + url + '" />');
@@ -71,7 +86,34 @@
                     currentBaseDir = baseDir + '/' + dirname;
                     _loadScript({url : currentBaseDir + '/package.js', callback : callback});
                 });
-            }
+                
+                blanket_scripts.forEach(function(uri){
+                    var callback = function(content, url){
+                    	blanket.instrument({
+                            inputFile: content,
+                            inputFileName: url
+                        },function(instrumented){
+                            try{
+                                blanket.utils.blanketEval(instrumented);
+                            	//document.write('<script>'+ instrumented +'</script>');
+                            }
+                            catch(err){
+                                if (blanket.options("ignoreScriptError")){
+                                    //we can continue like normal if
+                                    //we're ignoring script errors,
+                                    //but otherwise we don't want
+                                    //to completeLoad or the error might be
+                                    //missed.
+                                    if (blanket.options("debug")) { sumeru.log("BLANKET-There was an error loading the file:"+url); }
+                                }else{
+                                    throw new Error("Error parsing instrumented code: "+err);
+                                }
+                            }
+                        });
+                    };
+                    _loadScript({url : uri, callback : callback});
+                });
+            };
         })();
         
         W.sumeru = sumeru;
@@ -96,22 +138,24 @@
         }
         getThisScriptRoot(thisScript);
         document.write('<script src="sumeru/src/package.js">\x3C/script>');
-    }else{//if server model
+    }else{//if server
     
-        var fs = require('fs');
-        var path = require('path');
+        //evalByPackageJS has been moved. common read things to readClientFile.js
         var buildServer = function(fw){
+        	var readClientFile = require(__dirname+"/../server/readClientFile.js");
+            
             var loadList = [
-            'utils.js',
-            'sense.js',
-            'config.js',
-            'netMessage.js',
-            'frameworkConfig.js',
-            'library.js',
-            'validation.js',
-            'validationRules.js',
-            '../library/obj.js',
-            '../library/asyncCallbackHandler.js'
+                'log.js',
+                'utils.js',
+                'sense.js',
+                'config.js',
+                'netMessage.js',
+                'frameworkConfig.js',
+                'library.js',
+                'validation.js',
+                'validationRules.js',
+                '../library/obj.js',
+                '../library/asyncCallbackHandler.js'
             ];
     
             sumeru = fw;
@@ -120,41 +164,25 @@
                 require(__dirname + '/' + loadList[i])(sumeru);
             }
 
-            //var configPath = fw.config.get('configPath'); 
-            //console.log(configPath);
             this.sumeru = sumeru;
     
             //WorkRound for router
-            sumeru.router = {};
-            sumeru.router.add = function(){};
+            if (!sumeru.router){//不覆盖server的 
+                sumeru.router = {};
+                sumeru.router.add = function(){};
+            }
             
             //
             var appPath  = __dirname + '/../../app' + 
-                            ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : ''),
-                allTheDirFiles = [],
-                modelBaseDir = appPath + '/model',
-                findAllTheDirFiles = function(theDir) {                                 //遍历theDir目录下的所有文件， 并存于allTheDirFiles数组。
-                    var theDirFiles = fs.readdirSync(theDir);
-                    for (var i = 0, len = theDirFiles.length; i < len; i++) {
-                        var thePath = theDir + '/' + theDirFiles[i];
-                        theDirFiles[i].indexOf('.') === -1 ? 
-                          findAllTheDirFiles(thePath) : allTheDirFiles.push(thePath);
-                    }
-                };
+                            ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
+                
             //读取config文件
             var configPath = appPath + '/config';
-            if (fs.existsSync(configPath)) {
-                findAllTheDirFiles(configPath);
-                allTheDirFiles.forEach(function(file) {
-                    if (path.extname(file) == '.js' &&
-                        file.indexOf('package.js') == -1) {
-                        var content = fs.readFileSync(file, 'utf-8');
-                        eval(content);
-                    };
-                });
-            } else {
-                console.log(configPath + ' didnot existed.');
-            }
+            readClientFile.evalByPackageJS(configPath,{sumeru:sumeru});
+            
+            //读取server config文件
+            configPath = appPath + '/server_config';
+            readClientFile.evalByPackageJS(configPath,{sumeru:sumeru});        
         }
         module.exports =  buildServer;
     }

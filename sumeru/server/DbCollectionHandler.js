@@ -120,15 +120,19 @@ var runnable = function(fw){
     case MONGO:
     default:
         var mongodb = require('mongodb');
+        
+        //compatible with old versions.
+        var databaseConfig = config.database || config;
+        
         var serverOptions = {
             'auto_reconnect': true,
-            'poolSize': 10         //MAX IS 2000
+            'poolSize': databaseConfig.get('poolSize')         //MAX IS 2000
           };
         
-        var host = config.get('mongoServer'),
-            port = config.get('mongoPort'),
-            username = config.get('bae_user'),
-            password = config.get('bae_password');
+        var host = databaseConfig.get('mongoServer') || '127.0.0.1',
+            port = databaseConfig.get('mongoPort') || 27017,
+            username = databaseConfig.get('user') || '',
+            password = databaseConfig.get('password') || '';
         
         if(process && process.BAE){
             host = process.env.BAE_ENV_ADDR_MONGO_IP;
@@ -138,7 +142,7 @@ var runnable = function(fw){
         }
         
         var server = new mongodb.Server(host, port, serverOptions);
-        var db = new mongodb.Db(config.get('dbname'), server, {});
+        var db = new mongodb.Db(databaseConfig.get('dbname') || 'test', server, {});
 	
         ObjectId = mongodb.ObjectID;
         
@@ -161,19 +165,17 @@ var runnable = function(fw){
         createDB = function(callback){
             db.open(function(err, db){
         		if (err){
-        		    console.log('DB OPEN ERROR');
-        		    console.log(err);
+        		    fw.log('DB OPEN ERROR', err);
         		    return;
         		}
         		
         		if (username !== '' || password !== ''){
         		    db.authenticate(username,password,function(err,result){
-                            	if (!err){
-        			    callback(db);
-        			}else {
-        			    console.log('DB auth failed');
-        			    console.log(err);
-        			}
+                        if (!err){
+            			    callback(db);
+            			}else {
+            			    fw.log('DB auth failed', err);
+            			}
         		    })
         		}else{
         		     callback(db);

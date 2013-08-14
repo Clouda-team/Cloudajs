@@ -1,5 +1,5 @@
-// FIXME Debug开关, 发布时删除
-var SUMERU_APP_FW_DEBUG = false;
+//Debug开关, 发布时删除
+var SUMERU_APP_FW_DEBUG = true;
 
 (function(global,rootName) {
     /**

@@ -30,8 +30,6 @@ var runnable = function(fw){
    var getMeta = function(data, callback){
 
      imagemagick.identify({data : data}, function(err, meta){
-        //console.log("imageMate error:"+err);
-        //console.log(meta);
         callback(meta);      
      })
      

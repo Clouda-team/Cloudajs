@@ -1,17 +1,18 @@
 var fw = require(__dirname + '/../src/newPkg.js')();
-var log = require(__dirname  + '/../src/log.js');
+require(__dirname  + '/../src/log.js')(fw);
 
 var config = fw.config;
+
+
+var isBae = ((typeof process.BAE !== 'undefined') ? true : false);
 //startup a server
-var FILE_PORT = config.get('httpServerPort');
 var http = require("http"), 
     path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
-    appName = process.argv[2] || '';
+    appName = isBae?'':(process.argv[2] || '');
 
-if(FILE_PORT > 0){
-    var fileServer = http.createServer(function(req, res){
+    module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
         var frkDir = __dirname + '/../../',
             localBase = frkDir + '/app'+ (appName ? '/' + appName : ''),
@@ -19,12 +20,28 @@ if(FILE_PORT > 0){
             range = typeof req.headers.range == 'string' ? req.headers.range : undefined;
         
         filePath = filePath.replace(/\.\.\//g, '');
+        
+        //把问号后面去掉
+        // filePath = fw.router.parseFromUrl(filePath);
+        filePath = fw.uri.parseFileFromUrl(filePath);
+        
         localBase = path.normalize(localBase);
         var view_from_cache = fw.config.get('view_from_cache');
-            
-        if(filePath.indexOf('/unit/') > -1){
-            localBase = __dirname + '/../..';
-        }
+        
+        //黑名单的配置需要同步至bae的lighttpd配置中
+        var deniedList = [ //黑名单
+            new RegExp('^/publish/'),
+            new RegExp('^/server_config/')
+        ];
+        
+        for (var i=0; i < deniedList.length; i++) {
+            if (deniedList[i].test(filePath)) {
+                res.writeHead(404);
+                res.end();        
+                return;
+            };
+        };
+        var filePath2 = filePath;//记录
         
         if(filePath == '/'){
             filePath = localBase + '/index.html';
@@ -33,13 +50,16 @@ if(FILE_PORT > 0){
             var sumerudir = /sumeru\//g;
             var viewdir = /\/view\//;
             var sumeruPath = path.join(localBase, fw.config.get('sumeruPath'));
-            
 
             if(sumerujs === filePath){
                 filePath = sumeruPath + '/src/sumeru.js';
             }else if(view_from_cache && viewdir.test(filePath)){//hack it！在bin/view目录下读取编译后的
+                if (filePath.indexOf("/bin")==0){
+                	filePath = localBase + filePath;
+                }else{
+                	filePath = localBase +"/bin"+ filePath;
+                }
                 
-                filePath = localBase +"/bin"+ filePath;
             }else if(sumerudir.test(filePath)){
                 filePath = sumeruPath + '/' + 
                     filePath.slice(filePath.lastIndexOf('sumeru/') + 'sumeru/'.length);
@@ -48,11 +68,8 @@ if(FILE_PORT > 0){
             }
         }
 
-        //把问号后面去掉
-        if(filePath.indexOf('?') != -1){
-            filePath = filePath.split('?')[0];
-        }
-        log.write('file server accessing ' + path.normalize(filePath));
+        
+        // fw.log('file server accessing ' + path.normalize(filePath));
         
         var extensionName = path.extname(filePath),
             contentType = 'text/html';
@@ -62,10 +79,11 @@ if(FILE_PORT > 0){
                 '.jpg' : 'image/jpeg',
                 '.jpeg' : 'image/jpeg',
                 '.png' : 'image/jpeg',
+                '.ico' : 'image/jpeg',
                 '.json' : 'text/json',
                 '.manifest' : 'text/cache-manifest'
             },
-            _binaryMap = ['.jpg','.jpeg','.png','.gif','.bmp','.mp3', '.png'],
+            _binaryMap = ['.jpg','.jpeg','.png','.gif','.bmp','.mp3', '.ico', '.png'],
             binaryMap = {};
         
         _binaryMap.forEach(function(item){
@@ -75,7 +93,7 @@ if(FILE_PORT > 0){
         if(extMap[extensionName]){
             contentType = extMap[extensionName];
         }
-        path.exists(filePath, function(exists){
+        fs.exists(filePath, function(exists){
             if(exists){
                 
                 res.setHeader('Date', new Date().toString());
@@ -105,7 +123,7 @@ if(FILE_PORT > 0){
                                     for (var i = 0, l = stack.length; i < l; i++){
                                         if(stack[i] == token){
                                             found = true;
-                                            log.dev('circular Ref Found :', token, stack);
+                                            fw.dev('circular Ref Found :', token, stack);
                                             return found;
                                         }
                                     }
@@ -117,7 +135,7 @@ if(FILE_PORT > 0){
                                 parsePartial = function(parseToken, refStack, content, callback){
                                     //先去掉所有HTML的注释
                                     var commentRegExp = /(<!--([\s\S]*?)-->)/mg; // means <!--xxx-->
-                                    log.dev('view remove comment', content.match(commentRegExp));
+                                    fw.dev('view remove comment', content.match(commentRegExp));
                                     
                                     /*
                                     var tplRoleOpenPart = /<!--([\s]*tpl-role[\s]*=[\s]*[\s\S]*?)-->/g,
@@ -163,11 +181,11 @@ if(FILE_PORT > 0){
                                     var branchNum = syntaxMatcher.length || 1;
                                     //partialCount += branchNum;
                                     
-                                    log.dev('branchNum', branchNum, parseToken);
+                                    fw.dev('branchNum', branchNum, parseToken);
                                     
                                     if(syntaxMatcher.length == 0){
                                         //替换为实际内容（再无进一步include命令的）
-                                        log.dev('hit plain text', parseToken);
+                                        fw.dev('hit plain text', parseToken);
                                         asyncPartialMap[parseToken] = content;
                                         var replaceSeg = new RegExp('{{>\\s*' + parseToken +  '\\s*}}');
                                         entireContent = entireContent.replace(replaceSeg, content);
@@ -194,9 +212,9 @@ if(FILE_PORT > 0){
                                                         /*if(i == l - 1 && !haveReachedParse){
                                                             callback();
                                                         } else {
-                                                            log.dev('partialCount ciruclar - before', partialCount);
+                                                            fw.dev('partialCount ciruclar - before', partialCount);
                                                             //partialCount--;
-                                                            log.dev('partialCount circular - after', partialCount);
+                                                            fw.dev('partialCount circular - after', partialCount);
                                                         }*/
                                                         //这里其实是continue的意思，但由于构造了闭包，所以直接return当前闭包即可
                                                         return;
@@ -204,28 +222,28 @@ if(FILE_PORT > 0){
                                                     
                                                     haveReachedParse = true;
                                                     
-                                                    log.dev('checkCache', (partialName), typeof asyncPartialMap[(partialName)]);
+                                                    fw.dev('checkCache', (partialName), typeof asyncPartialMap[(partialName)]);
                                                     
                                                     if(typeof asyncPartialMap[partialName] == 'undefined'){
                                                         
                                                         fs.readFile(path.dirname(filePath) + '/' + partialName + '.html', 'utf-8', function(error, content){
                                                             if(error){
-                                                                log.write(error);
+                                                                fw.log(error);
                                                                 res.writeHead(500);
                                                                 res.end('error occured when processing view partial:' + partialName, 'utf-8');
                                                                 return;
                                                             }
                                                             
                                                             //开始解析之前，先把内容include进来
-                                                            log.dev('pre replace ---', matched[0]);
+                                                            fw.dev('pre replace ---', matched[0]);
                                                             entireContent = entireContent.replace(matched[0], content);
                                                             asyncPartialMap[partialName] = content;
                                                             
                                                             parsePartial(partialName, _refStack, content, function(){
                                                                 
-                                                                /*log.dev('partialCount - before', partialCount);
+                                                                /*fw.dev('partialCount - before', partialCount);
                                                                 partialCount--;
-                                                                log.dev('partialCount - after', partialCount);
+                                                                fw.dev('partialCount - after', partialCount);
                                                                 */
                                                                 if(--branchNum == 0){
                                                                     callback();
@@ -233,13 +251,13 @@ if(FILE_PORT > 0){
                                                             });
                                                         });
                                                     } else {
-                                                        log.dev('hitCacheViewPartial', matched[0]);
+                                                        fw.dev('hitCacheViewPartial', matched[0]);
                                                         entireContent = entireContent.replace(matched[0], asyncPartialMap[partialName]);
                                                         
                                                         parsePartial(matched[1], _refStack, asyncPartialMap[matched[1]], function(){
-                                                            /*log.dev('partialCount cache - before', partialCount);
+                                                            /*fw.dev('partialCount cache - before', partialCount);
                                                             partialCount--;
-                                                            log.dev('partialCount cache - after', partialCount);
+                                                            fw.dev('partialCount cache - after', partialCount);
                                                             */
                                                             if(--branchNum == 0){
                                                                 callback();
@@ -282,7 +300,7 @@ if(FILE_PORT > 0){
 
                                 res.writeHead(200, {'Content-Type' : contentType});
                                 res.end(entireContent, 'utf-8');
-                                //log.dev('partialCount', partialCount);
+                                //fw.dev('partialCount', partialCount);
                                 /*if(partialCount == 0){
                                     
                                     /*到了这里，所有的include块都已经被解析完成，如果还存在{{>，要不然是触犯了正则匹配中的小数点，要不然是触犯了循环引用。
@@ -295,19 +313,63 @@ if(FILE_PORT > 0){
                                     partialCount++;
                                 }*/
                             });
-                        } else if(extensionName == '.html' || extensionName == '.js' || extensionName == '.css'){
+                        } else if(extensionName == '.html'){
+                            //view from cache : true以后，controller的模板也会走入这里
+                            if (filePath.search("json.html")!=-1){
+                            	res.writeHead(200, {"Content-Type": "application/json"});
+                            }else{
+                            	res.writeHead(200, {"Content-Type": "text/html"});
+                            }
+                            
+                            if (filePath2.match(/^\/\w+\.html$/) ) {//只有根目录才会渲染
+                                if ( fw.router.check_routeing(req.url)!==null ) {
+                                    var domarr = entireContent.split('<body>');
+                                    if (domarr.length!=2){
+                                    	try{
+	                                    	fw.router.finishServerRender(req.url,"",function(page){
+	                                             res.end(page);
+	                                        });
+                                       }catch(e){
+                                       		console.dir(e);
+                                       		res.end();
+                                       }
+                                        return ;
+                                    }
+                                    res.write(domarr[0]+'<body>');//这部分无需等待
+                                 	try{
+                                    	//split by <body>,speedup render js,css
+                                    	fw.router.finishServerRender(req.url,domarr[1],function(page){
+                                             res.end(page);
+                                        });
+                                    }catch(e){
+                                        console.dir(e);
+                                        fw.dev("error when server render....");
+                                        res.end(domarr[1]);
+                                    }
+                                    
+                                    //这里有点丑陋，整理用output.js封装handlebars
+                                    // var content = fw.output.render(template,template_data);
+                                    // res.end(content);
+                                }else{
+                                    res.end(entireContent);
+                                }
+                                
+                            }else{
+                                res.end(entireContent);
+                            }
+                            
+                        } else if(extensionName == '.js' || extensionName == '.css'){
+                            
                             
                             var raw = fs.createReadStream(filePath, {
                                 encoding : 'utf8'
                             });
-        
+                            
                             if(acceptEncoding.match(/\bdeflate\b/)){
-                                console.log('hit deflate');
                                 res.setHeader('Content-Encoding' , 'deflate');
                                 res.writeHead(200, {'Content-Type' : contentType});
                                 raw.pipe(zlib.createDeflate()).pipe(res);
                             } else if (acceptEncoding.match(/\bgzip\b/)){
-                                console.log('hit gzip');
                                 res.setHeader('Content-Encoding' , 'gzip');
                                 res.writeHead(200, {'Content-Type' : contentType});
                                 raw.pipe(zlib.createGzip()).pipe(res);
@@ -385,17 +447,5 @@ if(FILE_PORT > 0){
                 res.end();
             }
         });
-    });
-}
-
-if(module && module.exports){
-    module.exports = function(){
-        if (FILE_PORT <= 0) {
-            log.write('File Server NOT start on ' + FILE_PORT);
-            return;
-        };
-        fileServer.listen(FILE_PORT, function(){
-            log.write('File Server Listening on ' + FILE_PORT);
-        });
     };
-}
+

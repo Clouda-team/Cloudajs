@@ -1595,4 +1595,10 @@ Handlebars.VM = {
 };
 
 Handlebars.template = Handlebars.VM.template;
-;
+
+
+if(typeof module !='undefined' && module.exports){
+	module.exports = Handlebars;
+}else{
+    // window.Handlebars = runnable(sumeru);
+}

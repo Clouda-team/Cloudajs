@@ -1,19 +1,9 @@
 Model = typeof Model == 'undefined' ? {} : Model;
 
-var fw = fw || {};
+var runnable = function(fw){
 
-if(typeof module != 'undefined' && module.exports){
-	module.exports = function(_fw){
-		fw = _fw;
-	}
-}
-
-
-(function(fw){
-
-	fw.addSubPackage('model');
-    fw.model.__reg('models', []);
-
+	cmodel.__reg('models', []);//等echo交换
+	
 	var modelTools = {
 		/**
 		 * 定义model属性的getter/setter方法，这些方法在创建modeltemp时就生成了，这些方法仅供开发者调用。
@@ -105,7 +95,8 @@ if(typeof module != 'undefined' && module.exports){
 			this.__smr__.isDirty = false;
 			this.__smr__.isDeleted = false;
 			this.__smr__.isPhantom = false;
-			if (key in this._fieldsMap) {
+			var key;
+			for (key in this._fieldsMap) {
 				var field = this._fieldsMap[key];
 				var fieldType = field['type'];
 				if(fieldType === 'model'){
@@ -140,7 +131,7 @@ if(typeof module != 'undefined' && module.exports){
 							if(val._getModelName()===fieldModelName){
 								this._baseSet(key, val);
 							}else{
-								console.log('model.set arguments format error');
+								fw.log('model.set arguments format error');
 							}
 						}else{
 							if(this[key]._isCollection){
@@ -154,7 +145,7 @@ if(typeof module != 'undefined' && module.exports){
 							    if(val[i]._isModel){
 							        newModel = val[i];
 							    }else{
-							    	newModel = fw.model.create(fieldModelName,val[i]);
+							    	newModel = cmodel.create(fieldModelName,val[i]);
 							    }
 								this[key].add(newModel);
 							}
@@ -164,10 +155,10 @@ if(typeof module != 'undefined' && module.exports){
 							if(val._getModelName()===fieldModelName){
 								this._baseSet(key, val);
 							}else{
-								console.log('model.set arguments format error');
+								fw.log('model.set arguments format error');
 							}
 						}else{
-							this._baseSet(key, fw.model.create(fieldModelName,val));
+							this._baseSet(key, cmodel.create(fieldModelName,val));
 						}
 					}
 				}else{
@@ -238,7 +229,7 @@ if(typeof module != 'undefined' && module.exports){
 		 * 将当前状态保存为snapshot
 		 */
 		_takeSnapshot : function(){
-	        this.__smr__.dataMapSnapshot = fw.model._extend({}, this.__smr__.dataMap);
+	        this.__smr__.dataMapSnapshot = cmodel._extend({}, this.__smr__.dataMap);
 		},
 		_getSnapshot : function(){
 			return this.__smr__.dataMapSnapshot;
@@ -362,7 +353,7 @@ if(typeof module != 'undefined' && module.exports){
 				_self;//用来执行save的model分身。
 			if(!isSubSave){//非
 				self = this;
-				_self = fw.model._extend(createModel(this._getModelName()), self);
+				_self = cmodel._extend(createModel(this._getModelName()), self);
 				_self.__smr_assist__.__extendPointer = self;
 				_self.__smr_assist__.__pkgId = fw.__random();
 			}else{
@@ -526,7 +517,7 @@ if(typeof module != 'undefined' && module.exports){
 		}
 	};
 
-
+	
 	/**
 	 * 想法是：全局model的解析工作只做一次。
 	 * 一个model的属性可以分为几部分
@@ -538,7 +529,7 @@ if(typeof module != 'undefined' && module.exports){
 	 			1）fieldMap: name\type\relation\model\validation\defaultValue
 	 				validation在这个位置
 	 			2）function: 
-	 **************************以上在第一次创建时通过getModelTemp生成，并放在fw.model.models中，以后每次用时直接取 不可修改，不可枚举，不可删除**********************
+	 **************************以上在第一次创建时通过getModelTemp生成，并放在cmodel.models中，以后每次用时直接取 不可修改，不可枚举，不可删除**********************
 
 	 *		4、每个model独立的属性：
 	 			dataMap,这个dataMap会直接挂在model obj上
@@ -547,14 +538,15 @@ if(typeof module != 'undefined' && module.exports){
 	 */
 
 	/**
-	 * 将用户定义的model，转换为真实使用的model原型存放在fw.model.models中。每个model只做一次转换。
+	 * 将用户定义的model，转换为真实使用的model原型存放在cmodel.models中。每个model只做一次转换。
 	 */
 	var getModelTemp = function(modelName){
-		if(typeof fw.model.models[modelName] == 'undefined' ){
+		
+		if(typeof cmodel.models[modelName] == 'undefined' ){
 
 			//执行定义func，获得导出的config和方法等
 			var exports = {},
-				modelDef = eval(modelName);
+				modelDef = cmodel._getModelDef(modelName);
 			modelDef.call(this, exports);
 			
 			modelDef = exports;
@@ -598,10 +590,10 @@ if(typeof module != 'undefined' && module.exports){
 			}
 
 			
-			fw.model.models[modelName] = newModelTemp;
+			cmodel.models[modelName] = newModelTemp;
 			
 		}
-		return fw.model.models[modelName];
+		return cmodel.models[modelName];
 	}
 
 
@@ -630,7 +622,7 @@ if(typeof module != 'undefined' && module.exports){
 						var subCollection = fw.collection.create({modelName  : oneField['model']});
 						newModel[oneField['name']] = subCollection;
 					}else{
-						var subModel = fw.model.create(oneField['model']);
+						var subModel = cmodel.create(oneField['model']);
 						newModel[oneField['name']] = subModel;
 					}
 					
@@ -716,7 +708,7 @@ if(typeof module != 'undefined' && module.exports){
                           
                         } else if(copyIsModel) {
                           copyIsModel = false;
-                          clone = src && src._isModel ? src : fw.model.create(copy._getModelName());            
+                          clone = src && src._isModel ? src : cmodel.create(copy._getModelName());            
                           //留存一个指向原对象的指针
                           clone.__smr_assist__.__sourcePointer = copy.__smr_assist__.__sourcePointer || [];
                           clone.__smr_assist__.__sourcePointer.push(copy);
@@ -740,14 +732,42 @@ if(typeof module != 'undefined' && module.exports){
         return target;
     }
 	
-    fw.model.__reg('create', createModel);
-    fw.model.__reg('_extend', extendModel);
-    fw.model.__reg('_getModelTemp', getModelTemp);
+    cmodel.__reg('create', createModel);
+    cmodel.__reg('_extend', extendModel);
+    cmodel.__reg('_getModelTemp', getModelTemp);
     
 	
-})(sumeru);
+};
 
-
+//客户端与服务器端的命名空间不同
+var cmodel;
+if(typeof module != 'undefined' && module.exports){//server运行
+	module.exports = function(_fw){
+		fw = _fw;
+		cmodel = fw.addSubPackage('model');
+		cmodel.__reg('_getModelDef', function(modelName){
+			if (modelName.search("Model.") != -1 ) {//兼容客户端的modelName写法,客户端用Model.xxx,服务端用xxx
+				modelName = modelName.substr(6);
+			}
+			return Model[modelName];
+		});
+		//兼容dal的错误
+		if (typeof fw.__DAL == 'undefined'){
+			fw.__DAL = {};
+			fw.__DAL.make = function(){};
+			fw.__DAL.make.save = function(){};
+		}
+		runnable(fw);
+	}
+	
+}else{//client运行
+	cmodel = sumeru.addSubPackage('model');
+	//cmodel.__reg('models', []);//等echo交换
+	cmodel.__reg('_getModelDef', function(modelName){
+		return eval(modelName);
+	});
+	runnable(sumeru);
+}
 //for node
 /*if(typeof exports != 'undefined'){
 	exports.createModel = fw.__modelFactory;

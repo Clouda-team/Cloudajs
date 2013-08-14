@@ -6,10 +6,11 @@
  * @author huangxin03@baidu.com
  */
  
-(function(fw){
+var runnable = function(fw){
 	
 	fw.addSubPackage('modelPoll');
-	
+	var cmodel = fw.model;
+    
 	var ENABLE = true; //modelPoll开关
 	var _pollMap = {};  //存modelPolls的实例
 
@@ -28,7 +29,7 @@
 			if(this.dataMap[model.smr_id]){
 				delete this.dataMap[model.smr_id];
 			} else {
-				console.log('Model', model, 'had been destroyed.');
+				fw.log('Model', model, 'had been already destroyed earlier.');
 			}
 		},
 
@@ -50,7 +51,7 @@
 
 	function getModel(modelName, row){
 
-		if(!ENABLE){ return fw.model.create(modelName, row);}
+		if(!ENABLE){ return cmodel.create(modelName, row);}
 
 		var poll = getPoll(modelName);
 		var newModel;
@@ -58,9 +59,11 @@
 		if(poll.get(row.smr_id)){
 			//池中已有的数据直接返回
 			newModel = poll.get(row.smr_id);
+			//更新model
+			newModel._setData(row);
 		}else{
 			//池中没有的数据, 新建model
-			newModel = fw.model.create(modelName, row);
+			newModel = cmodel.create(modelName, row);
 			//入池
 			if(row.smr_id){poll.add(newModel);}
 		}
@@ -89,4 +92,11 @@
 	fw.modelPoll.__reg('addModel', addModel);
 	fw.modelPoll.__reg('destroyModel', destroyModel);
 	
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+    module.exports = function(fw){
+    	runnable(fw);
+    }
+}else{//这里是前端
+	runnable(sumeru);
+}

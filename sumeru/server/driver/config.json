@@ -14,7 +14,7 @@
 	{
 		"url" : "pcs.baidu.com",
 		"path" : "/rest/2.0/pcs",
-		"app_id" : "",
+		"app_id" : "403798",
 		"dir" : "/apps/Sumeru",
 		"type" : "image",
 		"height" : 2000

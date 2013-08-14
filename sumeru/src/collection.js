@@ -1,4 +1,4 @@
-(function(fw){
+var runnable = function(fw){
 
 	fw.addSubPackage('collection');
 
@@ -108,7 +108,7 @@
 				if(row._getModelName() == modelName){
 			    	newModel = row;
 				}else{
-					console.log("collection.add arguments format error.")
+					sumeru.log("collection.add arguments format error.")
 				}
 			}else{
 				newModel = fw.modelPoll.getModel(modelName, row);
@@ -320,6 +320,9 @@
 			this._clearWheres();
 			return rs;
 		},
+		/**
+		 * 取列数据
+		 */
 		pluck : function(fieldKey){
 			if(!fieldKey)return [];
 			var result = [];
@@ -436,15 +439,25 @@
 				return undefined;
 			}
 			this.sortIt();
-			var item = this[index];
-			
-			//如果发现被删除的，则循环找下一个。如果最终都找不到，返回undefined
-			if(item._isDeleted() === true){ //如果该model已经被删除
-				this.splice(i, 1);
-				return this.get(i);
+			var item,fieldKey,returnValue;
+			if(!Library.objUtils.isNumber(index)){
+				fieldKey = index;
+				index = 0;
 			}
-			
+			item = this[index];
+				
+			//如果发现被删除的，则循环找下一个。如果最终都找不到，返回undefined
+			while(item._isDeleted() === true){ //如果该model已经被删除
+				this.splice(index, 1);
+				item = this[index];
+			}
+			if(fieldKey){
+				return this[fieldKey];
+			}
 			return item;
+		},
+		set : function(key,val){
+			this[key] = val;
 		},
 		
 		stringify : function(){
@@ -515,6 +528,7 @@
 					item._setData(_snapshot);
 				}else{
 					this.remove(item);
+					l--;
 				}
 
 			}
@@ -642,4 +656,9 @@
     fw.collection.__reg('_create', function(def,dataMap){
 		return __collectionFactory(def,dataMap);
 	});
-})(sumeru);
+}
+if(typeof module !='undefined' && module.exports){
+	module.exports = runnable;
+}else{
+    runnable(sumeru);
+}

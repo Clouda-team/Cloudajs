@@ -94,6 +94,11 @@
 			success: (status === authstatus.LOGIN),
 			status: status
 		});
+
+		if(status === authstatus.LOGIN){
+			sumeru.auth.success && sumeru.auth.success();
+		}
+		
 	};
 	
 	/**

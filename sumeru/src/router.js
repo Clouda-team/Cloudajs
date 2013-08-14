@@ -34,164 +34,76 @@
 var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
 (function(fw){
     var router = fw.addSubPackage('router');
-    var utils = fw.utils;
     
-    /**
-     * 取得url中的hash部份
-     */
-    function getHash(){
-        var idx = self.location.href.indexOf("#"),
-            hash = '';
-        
-        if (idx >= 0) {
-            hash = self.location.href.substr(idx + 1);
-        }
-        
-        return hash;
-    }
+    var uriParts;//存储此router的uri
     
-    /**
-     * 折分url,返回三个主要部份
-     * @param hash {string} 将折分的hash字符串
-     * @returns {controll:{string},param:{string},session:{string}};
-     */
-    /*
-     * testurl = "/real-time?a=1&b=abc%20def%28ghi%29&SEN_DAT{%27asdf%27%3A%7Bkey%3A100%2Ckey1%3A200%7D}"
-     */
-    var isInternalJoin = false;
+    // var isInternalJoin = false;
     var isControllerChange = true, isParamsChange  = true, isSessionChange = true;
-    var lastController = null ,lastParams = null,lastSession = null;
+    var lastController = null ,lastParams = null,lastSession = null,lastOneSession=null;
     var isIgnore = false , isforce = false;
-    function splitHash(hash){
-        
-        var parts = {controller:'',params:'',session:''};
-        var cursor_start = 0 , cursor_end;
-        
-        // 如果是空串,null,undefined,则认为没有参数,没有session,也没指定controller
-        try{
-            if(!hash){
-                return parts;
-            }
-            
-            cursor_end = hash.indexOf('!');
-        
-            /*
-             * 如果cursor_end 为 -1,则表示根本没有session及params.
-             * 直接将hash做为controller名称并返回parts
-             */
-            if(cursor_end == -1){
-                parts.controller = hash;
-                return parts;
-            }
-            
-            if(hash.indexOf('_smr_ignore=true') != -1){
-                isIgnore = true;
-            }
-            
-            //取得controller,从位置 0 到第一个 '!' 
-            parts.controller = hash.substring(cursor_start,cursor_end);
-        
-            cursor_start = cursor_end+1;
-            cursor_end = hash.indexOf('_smr_ses_dat{');
-            
-            /*
-             * 如果未找到session的开始标记, 由认为没有session部份,
-             * 将cursor_end置为undefined,利用substring方法特性,直接取得cursor_start位置到最后的字符串
-             */
-            cursor_end = cursor_end == -1 ? undefined : cursor_end; 
-            
-            //取得controller参数,从上一个end位置到 SEN_DATA{ 开始的位置,最后一个&不影响结果
-            parts.params = hash.substring(cursor_start,cursor_end);
-            
-            // 确认无参数,则将parts.paras置为null, 保证一致后续操作
-            if(parts.params == "&"){
-                parts.params = '';
-            }
-            /*
-             * 如果在上一步没有找到session的开始标记,则直接不处理session部份
-             */
-            if(cursor_end === undefined){
-                return parts;
-            }
-            
-            cursor_start = cursor_end;
-            // 自session标记起始处至遇到的第一个右花括号'}'为止,认为是session部份.
-            cursor_end = hash.indexOf('}',cursor_start + '_smr_ses_dat{'.length);
-            
-            //取得session部份
-            parts.session = hash.substring(cursor_start + '_smr_ses_dat{'.length ,cursor_end);
-            
-            // decode session
-            parts.session = decodeURIComponent(parts.session);
-            
-            return parts;
-        }finally{
-            //处理变化标记并记录当前值
-            isControllerChange = parts.controller != lastController;
-            lastController = parts.controller;
-            
-            isParamsChange = lastParams != parts.params;
-            lastParams = parts.params || "";
-            
-            isSessionChange = lastSession != parts.session;
-            lastSession = parts.session;
-            
-            // debug log.
-            if(SUMERU_APP_FW_DEBUG){
-                console.log('isControllerChange :' + isControllerChange);
-                console.log('isSessionChange :' + isSessionChange);
-                console.log('isParamsChange :' + isParamsChange);
-                console.log('parts of hash:' , parts);
-            }
-        }
-        
-    };
     
+    var objToUrl = function(session){
+    	var sessionObj = (typeof session == 'object') ?session:JSON.parse(session);
+    	var hash = [];
+        for (var name in sessionObj) {
+        	hash.push(name + "=" + sessionObj[name]);
+        }
+        return hash.join("&");
+        
+    }
     /**
      * 将session部份,拼入hash
+     * 修改by孙东，此函数作为session改造的一部分，在压入url的session只能压入本controller的内容
+     * 可能会有子controller的问题，，FIXME TODO
      */
     router.__reg('joinSessionToHash',function (serializeDat){
-        // encode , serizlizeDat需要去掉两端的花括号,做为分隔符
-        var string_session = utils.encodeURIComponentFull(serializeDat.substring(1,serializeDat.length - 1));
-        var hash = lastController + "!" + (lastParams == '' ? '&' : lastParams);
+        //uriParts.params 与 uriParts.session 进行整合
+    	isSessionChange = lastOneSession != serializeDat;
+    	lastOneSession = serializeDat;
         
-        // 确认分隔符的存在
-        if(hash.indexOf("!") == -1){
-            hash += '!';
+        if (isSessionChange) {
+        	var hash = serializeDat?("?"+objToUrl(serializeDat)):"";
+        	if (hash){
+        		hash = uriParts.path + uriParts.controller + hash;
+        	}
+        	History.replaceState(serializeDat, document.title, hash);
         }
-        
-        // 确认分隔符的存在
-        if(hash[hash.length -1] != '&'){
-            hash += '&';
-        }
-        
-        // 拼入session
-        hash += "_smr_ses_dat{" + string_session + "}";
-        lastSession = string_session;
-        isInternalJoin = true;      //标记拼接
-        self.location.hash = hash;
         
     },true);
     
-    router.__reg('redirect',function(urlHash,_isforce){
+    router.__reg('redirect',function(urlHash,_isforce,type){
         
-        // 确认分隔符的存在
-        if(urlHash.indexOf("!") == -1){
-            urlHash += '!';
-        }
-        
-        // 确认分隔符的存在
-        if(urlHash[urlHash.length -1] != '&'){
-            urlHash += '&';
-        }
-        
-        // 确认有session需要保持
-        if(lastSession){
-            urlHash += "_smr_ses_dat{" + utils.encodeURIComponentFull(lastSession) + "}";
-        }
-        
-        self.location.hash = urlHash;
+        var iParts = fw.uri.getInstance(urlHash);//更新path，更新controller
+        //session 要体现在url中
+        fw.dev("redirect....",iParts.controller);
+        var other = fw.session.getSessionByController(iParts.controller);
+        var hash = "";
         isforce = !!_isforce;
+        
+        if ( typeof iParts.params === 'object' && !Library.objUtils.isEmpty(iParts.params) ) {
+        	var objstring="?";
+        	if (other){
+        		if (typeof other == 'string'){
+        			other = JSON.parse(other);
+        		}
+    			for( var t in other){
+        			if (!iParts.params[t]) {//从session中提取url中没有的参数
+    					objstring = objstring + t +"="+other[t]+"&" 
+        				
+        			}else if (iParts.params[t] != other[t]){
+        				isforce = true;
+        			}
+        			
+        		}
+        	}
+        	hash = objstring + objToUrl(iParts.params);
+        }
+        if (typeof type =='string' &&type=='replace'){
+        	History.replaceState(lastSession, document.title, uriParts.path+iParts.controller + hash);
+        }else{
+        	History.pushState(lastSession, document.title, uriParts.path+iParts.controller + hash);
+        }
+		
     });
     
     
@@ -204,20 +116,26 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
      *  params变化 : 进入一个新的当前controller
      * 
      */
-    function __router(event){
+    function __router(locationurl){
         
-        if(event){
-            event.preventDefault();
-        }
+        uriParts = fw.uri.getInstance(locationurl);
         
-        var parts = splitHash(getHash());
+        //处理session change 
+        isSessionChange = lastSession != uriParts.session;
+        lastSession = uriParts.session;
+        //处理controller change 
+        isControllerChange = uriParts.controller != lastController;
+        lastController = uriParts.controller;
+
+        fw.dev('isControllerChange :' + isControllerChange);
+        fw.dev('isSessionChange :' + isSessionChange);
+        fw.dev('parts of hash:' , uriParts);
         
         // 如果session序列化发生变化,并用不是内部拼接的(理论上此时应只有复制url产生),将变化的对像合并入session工厂.
-        if(isSessionChange && !isInternalJoin){
-            fw.session.setResume(parts.session);
+        if(isSessionChange || isControllerChange){
+            fw.session.setResume(lastSession,lastController);
         }
         
-        // 
         if(isIgnore == false && (isControllerChange || isParamsChange)){
             // 进入目标controller.
             fw.init((function(contr, params){
@@ -225,63 +143,30 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
                         fw.controller.dispatch(contr, params,isforce);
                         isforce = false;
                     };
-            })(parts.controller, parts.params));
+            })(lastController, uriParts.contr_argu));//objToUrl(uriParts.params)
         }
         
         // 还原标记为false
-        isIgnore = isInternalJoin = isControllerChange = isSessionChange = isParamsChange = false;
+        isIgnore  = isControllerChange = isSessionChange = lastOneSession = isParamsChange = false;
     }
     
      fw.event.domReady(function() {
-         if(SUMERU_APP_FW_DEBUG){
-             sumeru.__require("./unit/qunit/qunit-1.9.0.js",function(exports){
-                 var linkElement = document.createElement("link");
-                 linkElement.href = "./unit/qunit/qunit-1.9.0.css";
-                 linkElement.rel = "stylesheet";
-                 
-                 document.querySelector("head").appendChild(linkElement);
-                 
-                 var qunitBlock = document.createElement("div");
-                 qunitBlock.id = 'qunit';
-                 qunitBlock.style.position = 'fixed';
-                 qunitBlock.style.zIndex = 10000;
-                 qunitBlock.style.textAlign = 'left';
-                 qunitBlock.style.overflow = 'scroll';
-                 qunitBlock.style.height = screen.availHeight + "px";
-                 qunitBlock.style.width = screen.availWidth + "px";
-                 qunitBlock.style.left = '10000px';
-                 qunitBlock.style.top = '10000px';
-                 document.body.appendChild(qunitBlock);
-                 
-                 exports.showResource = function(){
-                     qunitBlock.style.left = 0;
-                     qunitBlock.style.top = 0;
-                 };
-                 
-                 exports.hideResource = function(){
-                     qunitBlock.style.left = '10000px';
-                     qunitBlock.style.top = '10000px';
-                 };
-                 
-                 exports.init();
-                 exports.hideResource();
-                 console.log('DEBUG MODE : QUNIT READIED.');
-             },'Qunit');
-         }else{
-             window.test = function(){
-             };
-         }
-         if(SUMERU_ROUTER){
-             window.onhashchange = __router;
-             __router();
-         }
+     	if (typeof location ==='object'	){//前端渲染
+     		
+	         if(SUMERU_ROUTER){
+	         	
+	             History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of onhashchange
+					// Log the State
+					var State = History.getState(); // Note: We are using History.getState() instead of event.state
+					History.log('statechange:', State.data, State.title, State.cleanUrl);
+					__router(State.cleanUrl.substr(location.origin.length));
+				});
+	            __router((location.href.replace(/&?_suid=\d*/g,"")).substr(location.origin.length));
+	            
+	         }
+     	}
+         
         
     });
-    
-    // DEBUG....
-    if(SUMERU_APP_FW_DEBUG){
-        router.__reg('splitHash',splitHash,true);
-    }
-    
-    return ;
+   
 })(sumeru);

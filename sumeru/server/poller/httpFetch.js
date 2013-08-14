@@ -213,7 +213,7 @@ module.exports=function(fw,getDbCollectionHandler){
 	    https = require('http');
 	    console.log('using http');
 	}
-	fw.model = model;
+	fw.server_model = model;
 	/* console.log('++++++++++++++++');
 	   console.log(model);*/
 

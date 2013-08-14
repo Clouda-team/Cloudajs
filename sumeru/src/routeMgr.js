@@ -1,4 +1,4 @@
-(function(sumeru){
+var runnable = function(sumeru){
     
     var routerMap = [];
     
@@ -9,7 +9,8 @@
             if (Library.objUtils.isObject(rule) && typeof rule.pattern != 'undefined' && rule.action) {
                 routerMap.push({
                     path : rule.pattern,
-                    action : rule.action
+                    action : rule.action,
+                    server_render : (rule.server_render!==false)
                 })
             };
         }
@@ -54,4 +55,10 @@
     sumeru.router.externalProcessor.__reg('getAll', getAllExternalProcessor);
     
     
-})(sumeru);
+}
+//)(sumeru);
+if(typeof module !='undefined' && module.exports){
+    module.exports = runnable;
+}else{//这里是前端
+    runnable(sumeru);
+}

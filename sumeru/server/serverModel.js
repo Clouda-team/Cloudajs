@@ -11,7 +11,11 @@ var runnable = function(fw){
 	 */
 	var fs = require('fs');
 	var path = require('path');
-	var log = require(__dirname  + '/../src/log.js');
+	require(__dirname  + '/../src/log.js')(fw);
+	
+	var readClientFile = require(__dirname + "/readClientFile.js");//执行本地js文件
+        
+	//
 /*	var buildFile = require(__dirname  + '/lib/buildFile.js');
 
 	var buildModel = function(){
@@ -32,24 +36,20 @@ var runnable = function(fw){
 	    fs.writeFileSync(target_path + '/model.js', fileCnt, 'utf8');
 	};
 
-	log.write('start build');
 	buildModel();
-	log.write('build finish');
 */
 
 	//提取出model 中对field的定义，也就是config那部分
-	fw.model = {};
-	fw.model.modelTempContainter = {};
-	fw.model.modelRelation = {};
+	fw.server_model = {};
+	fw.server_model.modelTempContainter = {};
+	fw.server_model.modelRelation = {};
 	var buildModelTemp = function(){
 		//var modelPath = path.join(process.dstDir, 'server/tmp/model.js');
-		//console.log('modelPath :' + modelPath);
         
         var appPath  = __dirname + '/../../app' + 
             ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
         var allTheDirFiles = [];
         var modelBaseDir = appPath + '/model';
-        var Model = Model || {};
         var findAllTheDirFiles = function(theDir) {                                 
             var theDirFiles = fs.readdirSync(theDir);
             for (var i = 0, len = theDirFiles.length; i < len; i++) {
@@ -64,12 +64,13 @@ var runnable = function(fw){
            allTheDirFiles.forEach(function(file) {
                 if (path.extname(file) == '.js'
                     && path.basename(file, '.js') != 'package') {
-                    var content = fs.readFileSync(file, 'utf-8');
-                    eval(content);
+                	readClientFile(file,{"sumeru":fw,"Model":Model});
+                    // var content = fs.readFileSync(file, 'utf-8');
+                    // eval(content);
                 };
             });
         }else{
-            log.dev(modelBaseDir + ' 目录不存在！！！');
+            fw.dev(modelBaseDir + ' DO NOT EXIST');
         }
         
 		var modelDef = Model;
@@ -87,9 +88,9 @@ var runnable = function(fw){
 					if(oneField['type']=='model'&& typeof oneField['model'] != 'undefined'){
 						oneField.model = oneField.model.replace(/Model\./, ''); 
 						
-                        fw.model.modelRelation[oneField.model] = fw.model.modelRelation[oneField.model] || [];
-                        if (fw.model.modelRelation[oneField.model].indexOf(model) == -1) {
-                            fw.model.modelRelation[oneField.model].push(model);
+                        fw.server_model.modelRelation[oneField.model] = fw.server_model.modelRelation[oneField.model] || [];
+                        if (fw.server_model.modelRelation[oneField.model].indexOf(model) == -1) {
+                            fw.server_model.modelRelation[oneField.model].push(model);
                         };
 					}
 
@@ -99,25 +100,30 @@ var runnable = function(fw){
 	            fieldsMap[fw.idField] = {name : fw.idField, type : 'int'};
 				//fieldsMap[fw.clientIdField] = {name : fw.clientIdField, type	:	'string'};
 	        }
-	        fw.model.modelTempContainter[model] = fieldsMap;
-	        fw.model.modelTempContainter[model].needAuth = exports['config'].needAuth;
+	        fw.server_model.modelTempContainter[model] = fieldsMap;
+	        fw.server_model.modelTempContainter[model].needAuth = exports['config'].needAuth;
 	    }
 	}
 	buildModelTemp();
-	fw.model.getModelRelation = function(modelName){
-		if(typeof fw.model.modelRelation[modelName] == 'undefined'){
-			fw.model.modelRelation[modelName] = [];
+	fw.server_model.getModelRelation = function(modelName){
+		if(typeof fw.server_model.modelRelation[modelName] == 'undefined'){
+			fw.server_model.modelRelation[modelName] = [];
 		}
-		return fw.model.modelRelation[modelName];
+		return fw.server_model.modelRelation[modelName];
 	}
-	fw.model.getModelTemp = function(modelName){
-		if(typeof fw.model.modelTempContainter[modelName] == 'undefined'){
-			console.log('error: undefined modelName.', modelName);
+	fw.server_model.getModelTemp = function(modelName){
+		if(typeof fw.server_model.modelTempContainter[modelName] == 'undefined'){
+			fw.log('error: undefined modelName.', modelName);
 			return false;
 		}
 
-		//console.log(fw.model.modelTempContainter[modelName]);
-		return fw.model.modelTempContainter[modelName];
+		//fw.dev(fw.server_model.modelTempContainter[modelName]);
+		return fw.server_model.modelTempContainter[modelName];
+	}
+	//added by sundong,for server running client code.
+	fw.server_model._getModelTemp = function(modelName){
+		//client model name with :::: Model.modelName,so remove "Model."
+		return fw.server_model.getModelTemp(modelName.substr(6));
 	}
 }
 

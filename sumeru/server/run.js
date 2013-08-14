@@ -10,12 +10,18 @@ fw.__reg('IS_SUMERU_SERVER', true);
 fw.__reg('idField', 'smr_id');
 fw.__reg('clientIdField', '__clientId');
 
+
 /**
  * 以下引入js均需使用newPkg.js的功能，在node中，整个运行过程中，只在这里载入一次，
  * 其它组件文件只需载入newPkg.js即可，否则将引发一个重复载入的错误。
  */
- 
+
+require(__dirname + "/../server_client/server_router.js")(fw);
+
 require(__dirname + '/../src/sumeru.js')(fw);
+
+GLOBAL.App = {},GLOBAL.Model = {};
+GLOBAL.SUMERU_DEFAULT_CONTROLLER;
 
 //build model
 require(__dirname + '/serverModel.js')(fw);
@@ -25,16 +31,14 @@ require(__dirname + '/serverModel.js')(fw);
  */
 var path = require('path');
 var fs = require('fs');
-var log = require(__dirname + '/../src/log.js');
+require(__dirname + '/../src/log.js')(fw);
 var findDiff = require(__dirname + '/findDiff.js')(fw);
-var SnapshotMgrFactory = require(__dirname + '/snapshotMgr.js')(fw);
-
+var snapshotMgr = require(__dirname + '/snapshotMgr.js');
 
 //===================
 var runFileServer = true;
-if (typeof process.BAE != 'undefined'){
-    runFileServer = false;
-}
+var viewPath;
+
 // 启用文件server
 
 //===================
@@ -42,6 +46,9 @@ var STATUS_LOGIN = "1";
 
 var config = fw.config;
 var netMessage = fw.netMessage;
+
+var runServerRender = (config.get('runServerRender')===false)?false:true;//默认开启server渲染
+fw.router.setServerRender(runServerRender);
 
 var clientTracer = fw.addSubPackage("clientTracer");
 var SocketMgr = {};
@@ -63,8 +70,12 @@ var socket_count_reg = 0;
 var nope = function(){};
 
 //startup a server
-var PORT = config.get('socketPort');
 
+
+var PORT =  (typeof process !== 'undefined' && 
+     typeof process.BAE !== 'undefined') ?
+    process.env.APP_PORT : config.get('httpServerPort');
+    
 var idField = fw.idField;
 
 var DbCollectionHandler = require(__dirname + "/DbCollectionHandler.js")(fw);
@@ -75,8 +86,8 @@ var serverCollection = DbCollectionHandler.serverCollection;
 var appendUserInfoNCallback = require(__dirname + '/lib/appendUserInfoNCallback.js');
 
 // trigger的触发频率. 单位毫秒， 在单位时间内的所有trigger将合并为一次，用于控制DB压力
-var trigger_rate = 1000;
-
+var trigger_rate = 1;
+var _server_socket_id = '99999';
 //==============
 // 用户追踪方法
 //==============
@@ -95,7 +106,7 @@ clientTracer.__reg('onClientConnection',function(clientId){
     if(!clientId){
         return;
     }
-    console.log("client connection: " + clientId);
+    fw.dev("client connection: " + clientId);
     netMessage.sendLocalMessage({clientId : clientId},'Client_Connection');
 });
 
@@ -103,7 +114,7 @@ clientTracer.__reg('onClientDisconnection',function(clientId){
     if(!clientId){
         return;
     }
-    console.log("client disconnection: " + clientId);
+    fw.dev("client disconnection: " + clientId);
     netMessage.sendLocalMessage({clientId : clientId},'Client_Disconnection');
 });
 
@@ -129,7 +140,7 @@ clientTracer.__reg('onSocketConnection',function(clientId,socketId){
     if(socketArr.length == 1){
         clientTracer.onClientConnection(clientId);
     }
-    // console.log("client " + clientId + ", socket connection :" + socketId);
+    // fw.dev("client " + clientId + ", socket connection :" + socketId);
     netMessage.sendLocalMessage({clientId : clientId, socketId: socketId},'Client_SocketConnection');
     
 });
@@ -161,7 +172,7 @@ clientTracer.__reg('onSocketDisconnection',function(clientId,socketId){
             // 删除clientid记录.
             delete clientToSocket[clientId];
         }
-        console.log("socket disconnection, client " + clientId + ", socket disconnection :" + socketId , "Active Socket reg :" + socket_count_reg , "Active Client : " + Object.keys(clientToSocket).length);
+        fw.dev("socket disconnection, client " + clientId + ", socket disconnection :" + socketId , "Active Socket reg :" + socket_count_reg , "Active Client : " + Object.keys(clientToSocket).length);
         netMessage.sendLocalMessage({clientId : clientId, socketId: socketId},'Client_SocketDisconnection');
     }else{
         /*
@@ -169,7 +180,7 @@ clientTracer.__reg('onSocketDisconnection',function(clientId,socketId){
          * 此时的清理，是清理非正常断开的socket.正在常的情况下，不应走这个else.
          */
         // 如果没有clientid，则需要遍历所有的client并找到对应的socket并断开
-        console.log("trying to clear the socketId:", socketId , ", that does not have a corresponding clientId");
+        fw.log("trying to clear the socketId:", socketId , ", that does not have a corresponding clientId");
         for(var key in clientToSocket){
             socketArr = clientToSocket[key];
             if(Array.isArray(socketArr)){
@@ -208,6 +219,30 @@ clientTracer.__reg("SendGlobalMessageByClientId",function(msg,tag,clientId){
 });
 
 
+
+/**
+ * 默认接收者，防止引发无handle的异常
+ */
+var default_receiver = function(msg) {
+    fw.log("default receiver: this message not have a clear receiver [" + JSON.stringify(msg) + "]");
+};
+
+var log_receiver = function(msg,target){
+    fw.dev("client log : [ " + target + " ] " + JSON.stringify(msg) );
+};
+
+netMessage.setReceiver({
+    onS2SMessage:default_receiver,
+    onLocalMessage:default_receiver,
+    onError:default_receiver,
+    onMessage:default_receiver,
+    onGlobalError:default_receiver,
+    onGlobalMessage:default_receiver,
+    onLogMessage:log_receiver
+});
+
+
+
 //==============
 
 fw.publish = function(modelName, pubName, pubFunc, options) {
@@ -238,12 +273,12 @@ fw.publish = function(modelName, pubName, pubFunc, options) {
     };
     options = Library.objUtils.extend(defaultOptions, options);
 
-    var collection = new serverCollection.create(modelName);
+    var collection = new serverCollection.create(modelName);//FIXME 注意这里
 
     if (pubFunc) {
         /*pubFunc = (function(collection){
          return function(callback){
-         console.log('here in pub', arguments);
+         fw.dev('here in pub', arguments);
          //pubFunc(collection, callback);
          }
          })(collection);*/
@@ -251,7 +286,7 @@ fw.publish = function(modelName, pubName, pubFunc, options) {
     } else {
         pubFunc = function(callback) {
             return collection.find({}, function(err, items) {
-                //console.log('after resolve', JSON.stringify(items));
+                //fw.dev('after resolve', JSON.stringify(items));
                 callback(items);
             });
         };
@@ -278,7 +313,8 @@ fw.publish = function(modelName, pubName, pubFunc, options) {
         },
         options : options,
         clients : {},
-		clientTracker : {}
+		clientTracker : {},
+        extPublish : (pubFunc.toString().indexOf('.extfind') >= 0) ? true : false   //判断是否为external publish
     };
 
 };
@@ -326,6 +362,13 @@ var appPath  = __dirname + '/../../app' +
 var publishBaseDir = appPath + '/publish';
 var allTheDirFiles = []; 
 
+if (typeof process.BAE == 'undefined'){//not bae
+    // runFileServer = false;
+    viewPath = appPath + '/bin';
+}else{
+	viewPath = __dirname + '/../../__bae__/bin';
+}
+
 var findAllTheDirFiles = function(theDir) { //遍历theDir目录下的所有文件， 并存于allTheDirFiles数组。
     var theDirFiles = fs.readdirSync(theDir);
     for (var i = 0, len = theDirFiles.length; i < len; i++) {
@@ -338,12 +381,18 @@ if (fs.existsSync(publishBaseDir)) {
     findAllTheDirFiles(publishBaseDir);
     allTheDirFiles.forEach(function(file) {
         if (path.extname(file) == '.js') {
+            if(path.basename(file).indexOf('Config.js') >= 0) { return; }  //跳过externalPublishConfig.js
             require(file)(fw);
         };
     });
+
 } else {
-    log.dev(publishBaseDir + ' didnot exist');
+    fw.dev(publishBaseDir + ' DO NOT EXIST');
 }
+
+//external.js
+require(__dirname + '/external.js')(fw, findDiff, publishBaseDir);
+
 
 var runStub = function(db) {
     
@@ -359,9 +408,9 @@ var runStub = function(db) {
                            'config_write_from_server',
                            item.socketId,
                            function(err){
-                               console.log('send config_write_from_server fail ' + err);
+                               fw.log('send config_write_from_server fail ' + err);
                            },function(){
-                               console.log('send config_write_from_server ok...');
+                               fw.dev('send config_write_from_server ok...');
                            }
                           );
             })(item);
@@ -376,15 +425,43 @@ var runStub = function(db) {
     var http = require("http");
     var sockjs = require("sockjs");
     // 是否载入并启动文件server
+    var fsServer;
     if (runFileServer) {
-        var fsServer = require(__dirname + "/FileServer.js");
-        fsServer && fsServer();
+        if (runServerRender){
+        	require(__dirname + "/../src/session.js")(fw);
+        	require(__dirname + "/../src/event.js")(fw);
+	        require(__dirname + "/../src/pubsub.js")(fw,PublishContainer);
+	        require(__dirname + "/../src/sense.js")(fw);
+	        require(__dirname + "/../src/pilot.js")(fw);
+	        
+	        require(__dirname + '/../src/model.js')(fw);
+			require(__dirname + '/../src/modelPoll.js')(fw);
+			require(__dirname + '/../src/query.js')(fw);
+			require(__dirname + "/../src/collection.js")(fw);//require model.js modelPoll.js
+	        
+	        require(__dirname + "/../src/controller.js")(fw);
+	        require(__dirname + "/../src/messageDispatcher.js")(fw);
+	        require(__dirname + "/../server_client/server_render.js")(fw,viewPath);
+	        var readClientFile =  require(__dirname + "/../server/readClientFile.js");
+	        //执行controller目录
+	        readClientFile.evalByPackageJS(appPath+"/controller",{sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars(),Library:Library,console:console});
+	        //最后，执行用户自定义的server渲染包含的文件
+            readClientFile.evalByPackageJS(appPath+"/server_config",{sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars()},'server_library.js');
+
+        }
+     	
+     	//FileServer已经与socketServer合并，不会额外开端口号
+        fsServer = require(__dirname + "/FileServer.js");
     }
     
     //start websocket-http server
     var globalServer = http.createServer(function(req, res) {
+    	if (typeof fsServer =='function'){
+    		return fsServer(req,res);
+    	}
+    	
     }).listen(PORT, function() {
-        log.write('Server Listening on ' + PORT);
+        fw.log('Server Listening on ' + PORT);
     });
     
     // register the server to group
@@ -400,7 +477,7 @@ var runStub = function(db) {
     sock.on("connection", function(conn) {
         
         if(!conn){
-            console.log('no connection object.');
+            fw.log('no connection object.');
             return;
         }
         socket_count ++;
@@ -411,14 +488,14 @@ var runStub = function(db) {
                 msg = fw.myrsa.decrypt(msg);
             }
             
-            log.write("retrieving " + msg);
+            //fw.log("retrieving " + msg);
             
             netMessage.onData(msg,conn);
         });
 
         conn.on("close", function(){
             socket_count --;
-            console.log( "Active Socket:" + socket_count);
+//            fw.dev( "Active Socket:" + socket_count);
  //           netMessage.sendLocalMessage({clientId : conn.clientId},'Client_Disconnection');
             clientTracer.onSocketDisconnection(conn.clientId,conn._sumeru_socket_id);
             clearSocketMgrBySocketId(conn._sumeru_socket_id);
@@ -467,14 +544,35 @@ var runStub = function(db) {
      * @param {Object} socketId
      */
     netMessage.setOutput(function(data,socketId,onerror,onsuccess){
+    	//before throw a error ,send a netmessage instead
+        //check whether it is from server-client which DONT have socketid
+        //if typeof socketId === function
+        //then it is from server_client
+        //兼容server端执行客户端的fw.netMessage.sendMessage.
+        if (typeof socketId === 'function'){
+        	
+        	if (!SocketMgr[_server_socket_id]){//注册默认执行函数
+        		SocketMgr[_server_socket_id] = {_sumeru_socket_id:_server_socket_id,write:function(data){
+	        		var tmp = JSON.parse(data);
+	        		data = JSON.parse(tmp.content);
+	        		netMessage.sendLocalMessage( data,tmp.target,onerror,onsuccess);
+	        	}}
+        	}
+        	//直接调用
+        	netMessage.onData(data,SocketMgr[_server_socket_id]);
+        	return true;
+        }
+        
+        
         var socket = SocketMgr[socketId];
         
         if (!socket) {
+            
             onerror && onerror("no socket");
             return true;
         };
         var data2;
-        if (fw.config.get("rsa_enable") && data.match(/\"swappk\"/) === null) {
+        if (fw.config.get("rsa_enable") && data.match(/\"swappk\"/) === null && socketId!=_server_socket_id) {
             //在socket中管理交换得来的pk
             data2 = fw.myrsa.encrypt(data,socket.mypk);
         }else{
@@ -483,30 +581,8 @@ var runStub = function(db) {
         
         socket.write(data2);
         onsuccess && onsuccess();
-        log.swrite('sending:', data.substr(0, 400));
     });
-    
-    /**
-     * 默认接收者，防止引发无handle的异常
-     */
-    var default_receiver = function(msg) {
-        console.log("default receiver: this message not have a clear receiver [" + JSON.stringify(msg) + "]");
-    };
-    
-    var log_receiver = function(msg,target){
-        console.log("client log : [ " + target + " ] " + JSON.stringify(msg) );
-    };
-    
-    netMessage.setReceiver({
-        onS2SMessage:default_receiver,
-        onLocalMessage:default_receiver,
-        onError:default_receiver,
-        onMessage:default_receiver,
-        onGlobalError:default_receiver,
-        onGlobalMessage:default_receiver,
-        onLogMessage:log_receiver
-    });
-    
+
     /**
      * 接收消息的过滤器, 用于将消息中附带的sessionId与clientId附加回链接对像上.
      * 此操作，用于验证模块.
@@ -654,13 +730,13 @@ var runStub = function(db) {
                 var socketId = content.socketId;
                 
                 if(!socketId){
-                    console.log("No SocketId, Can't register connection");
+                    fw.log("No SocketId, Can't register connection");
                     conn.write("ERROR: NO SOCKET_ID");
                     return;
                 }
                 
                 if(SocketMgr[socketId]){
-                    console.log("same socketId, Can't register connection");
+                    fw.log("same socketId, Can't register connection");
                     conn.write("ERROR: SAME SOCKET_ID");
                     return;
                 }
@@ -674,7 +750,7 @@ var runStub = function(db) {
                     SocketMgr[socketId].mypk = content.pk;
                 }
                     
-                console.log('register socket, id:' + socketId);
+                fw.dev('register socket, id:' + socketId);
                 
                 clientTracer.onSocketConnection(conn.clientId,socketId);
                 
@@ -695,9 +771,9 @@ var runStub = function(db) {
                 }
                 setTimeout(function(){
                     netMessage.sendMessage(msgObj,'echo_from_server', socketId, function(err){
-                        console.log('send echo_from_server faile' + err);
+                        fw.log('send echo_from_server faile' + err);
                     }, function(){
-                        console.log('send echo_from_server ok');
+                        fw.dev('send echo_from_server ok');
                     });
                 },0);
             }
@@ -727,7 +803,7 @@ var runStub = function(db) {
     };
 
     var unsubscribe = function(content, target, conn){
-        console.log('triigeer unsbuscribe', content);
+        //fw.dev('triigeer unsbuscribe', content);
         if (typeof PublishContainer[content.pubname] == 'undefined') {
             return;
         };
@@ -759,7 +835,7 @@ var runStub = function(db) {
             var modelName = "";
             while(modelName = trigger_push_cache.shift()){
                 fw.pushUpdateOfModel(modelName);
-                console.log('trigger_push, modelName:' + modelName);
+                //fw.dev('trigger_push, modelName:' + modelName);
             }
         }
         trigger_push_timer = clearTimeout(trigger_push_timer);
@@ -797,12 +873,9 @@ var runStub = function(db) {
         onMessage:{
             target:'trigger_push',
             handle:trigger_push
-        },
-        onS2SMessage:{
-            target:'trigger_push',
-            handle:trigger_push
         }
     });
+    
     if (config.cluster.get('enable') === true) {
         var cluster_mgr = require(__dirname + '/cluster.js');
         
@@ -826,11 +899,12 @@ var runStub = function(db) {
     	var configdiff = 0;
     	if(obj && typeof obj === "object"){   
     	    for(var ob in obj){ 
-    		if (typeof fw.config.get(ob) == 'undefined'){
-    		    console.log('add config : ' + ob);
-    		    configdiff = 1;
-    		}
-    		fw.config.set(ob,obj[ob]);
+        		if (typeof fw.config.get(ob) == 'undefined'){
+        		    fw.dev('add config : ' + ob);
+        		    configdiff = 1;
+        		}
+    		
+    		    fw.config.set(ob,obj[ob]);
     	    }
     	}
     };
@@ -857,10 +931,11 @@ var runStub = function(db) {
             target:'data_write_from_client',
             handle:function(content,type,conn){
                 
-                console.log('data_write_from_client receiver.....');
+                fw.dev('data_write_from_client:', content);
                 
                 var pubname = content.pubname;
                 var pubRecord = typeof PublishContainer[pubname] == 'undefined'? false: PublishContainer[pubname];
+                var extPublish = pubRecord === false ? false : pubRecord.extPublish;
 
                 var modelchain = content.modelchain;
                 var pilotid = content.pilotid;
@@ -870,7 +945,7 @@ var runStub = function(db) {
                 var struct = JSON.parse(JSON.stringify(content.data)),
                     structData = struct.cnt;
                 var modelname = struct.modelName;
-                var modeltemp = fw.model.getModelTemp(modelname);
+                var modeltemp = fw.server_model.getModelTemp(modelname);
 
                 if(modeltemp.needAuth){
                     if(conn.loginStatus !== STATUS_LOGIN){
@@ -879,8 +954,8 @@ var runStub = function(db) {
                             pilotid: pilotid,
                             data: []
                         }, 'data_auth_from_server',socketId,
-                        function(){console.log('send data_auth_from_server failed');},
-                        function(){console.log('send fail to auth');}
+                        function(){fw.dev('send data_auth_from_server failed');},
+                        function(){fw.dev('send fail to auth');}
                         );
                         return;
                     }
@@ -894,47 +969,87 @@ var runStub = function(db) {
                             data: errorData
                         },errorType,
                         socketId,
-                        function(){console.log('send ' + errorType + ' faile');},
-                        function(){console.log('send ' + errorType + ' ok');}
+                        function(){fw.log('send ' + errorType + ' fail');},
+                        function(){fw.dev('send ' + errorType + ' ok');}
                     );
                 }
                 
                 var collection = new serverCollection.create(modelname);
 
-                if(struct.type == 'insert'){
-                    var doInsert = function(modifiedData){
+
+                var doInsert = function(modifiedData){
                         
-                        if (typeof modifiedData != 'undefined') {
-                            structData = modifiedData;
-                        };
-                        
-                        var id = structData[idField];
-                            
-                        delete structData.__clientId;   
-                        
-                        structData[idField] = ObjectId(structData[idField]);
-						
-						/*FIXME 
-                            坑1：所有该model的子model都会通过beforeInsert，beforeUpdate事件
-                            坑2: 传入事件中的collection实际都是最外层的一个
-                            坑3: 在事件处理函数中，没有modelName可供判断，只能通过判断某特殊字段来判断model类型，如果错误的写入一个字段，会因为验证失败导致该次插入失败
-                        * */
-                        collection.insert(structData,function(){
-                            //写回insert id
-                            content.data.cnt[idField] = id;
-                            
-                            if(pubRecord){
-                                //运行绑定的事件 onInsert接口为以前遗留，在此兼容
-                                pubRecord.options.onInsert(pubRecord.collection, structData, conn.userinfo);
-                                pubRecord.options.afterInsert(pubRecord.collection, structData, conn.userinfo);
-                            }
-                            
-                            //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            //fw.pushUpdateOfModel(struct.modelName);
-                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');    
-                        },errorHandle,struct.modelName);    
+                    if (typeof modifiedData != 'undefined') {
+                        structData = modifiedData;
                     };
                     
+                    var id = structData[idField];
+                        
+                    delete structData.__clientId;   
+                    
+                    structData[idField] = ObjectId(structData[idField]);
+                    
+                    /*FIXME 
+                        坑1：所有该model的子model都会通过beforeInsert，beforeUpdate事件
+                        坑2: 传入事件中的collection实际都是最外层的一个
+                        坑3: 在事件处理函数中，没有modelName可供判断，只能通过判断某特殊字段来判断model类型，如果错误的写入一个字段，会因为验证失败导致该次插入失败
+                    * */
+                    collection.insert(structData,function(){
+                        //写回insert id
+                        content.data.cnt[idField] = id;
+                        
+                        if(pubRecord){
+                            //运行绑定的事件 onInsert接口为以前遗留，在此兼容
+                            pubRecord.options.onInsert(pubRecord.collection, structData, conn.userinfo);
+                            pubRecord.options.afterInsert(pubRecord.collection, structData, conn.userinfo);
+                        }
+                        
+                        fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');    
+                    },errorHandle,struct.modelName);    
+                };
+
+                var doDelete = function(modifiedData){
+                        
+                    if (typeof modifiedData != 'undefined') {
+                        structData = modifiedData;
+                    };
+                    
+                    var removeItem = {};
+                    removeItem[idField] = ObjectId(structData[idField]);
+                    collection.remove(removeItem,function(){
+                        
+                        //运行绑定的事件
+                        pubRecord.options.afterDelete(pubRecord.collection, structData);
+                        pubRecord.options.onDelete(pubRecord.collection, structData);
+                        fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
+                    },errorHandle,struct.modelName);    
+                };
+
+                var doUpdate = function(modifiedData){
+                        
+                    if (typeof modifiedData != 'undefined') {
+                        structData = modifiedData;
+                    };
+                    
+                    var id = structData[idField];
+                    delete structData[idField];
+                    var updateItem = {};
+                    updateItem[idField] = ObjectId(id);
+                    collection.update(updateItem,structData,function(){
+                        
+                        //运行绑定的事件
+                        pubRecord.options.onUpdate(pubRecord.collection, structData);
+                        pubRecord.options.afterUpdate(pubRecord.collection, structData);
+                        fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
+                    },errorHandle,struct.modelName);
+                };
+
+
+
+
+                //operation handlers
+                var insertHandler = function(){
+
                     if(pubRecord){
                         //如果开发者在beforeInsert中没有调用callback，则意味终止对db的操作和afterInsert的触发，也不会有diff操作产生
                         //添加userinfo后调用beforeInsert
@@ -945,62 +1060,66 @@ var runStub = function(db) {
                     }else{
                         doInsert();
                     }
-                    
-                }else if (struct.type == 'delete'){
 
-                    var doDelete = function(modifiedData){
-                        
-                        if (typeof modifiedData != 'undefined') {
-                            structData = modifiedData;
-                        };
-                        
-                        var removeItem = {};
-                        removeItem[idField] = ObjectId(structData[idField]);
-                        collection.remove(removeItem,function(){
-                            
-                            //运行绑定的事件
-                            pubRecord.options.afterDelete(pubRecord.collection, structData);
-                            pubRecord.options.onDelete(pubRecord.collection, structData);
-                            //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            //fw.pushUpdateOfModel(struct.modelName);
-                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
-                        },errorHandle,struct.modelName);    
-                    };
-                    
+                }
+
+                var deleteHandler = function(){
+
                     //如果开发者在beforeDelete中没有调用callback，则意味终止对db的操作和beforeDelete的触发，也不会有diff操作产生
                     //添加userinfo后调用doDelete
                     appendUserInfoNCallback.callFunc(pubRecord.options.beforeDelete, 
                                                     [pubRecord.collection, structData],
                                                     conn.userinfo,
                                                     doDelete);
-                } else if (struct.type == 'update'){
 
-                    var doUpdate = function(modifiedData){
-                        
-                        if (typeof modifiedData != 'undefined') {
-                            structData = modifiedData;
-                        };
-                        
-                        var id = structData[idField];
-                        delete structData[idField];
-                        var updateItem = {};
-                        updateItem[idField] = ObjectId(id);
-                        collection.update(updateItem,structData,function(){
-                            
-                            //运行绑定的事件
-                            pubRecord.options.onUpdate(pubRecord.collection, structData);
-                            pubRecord.options.afterUpdate(pubRecord.collection, structData);
-                            //fw.netMessage.sendS2SMessage({modelName:struct.modelName},"trigger_push",nope,nope);
-                            //fw.pushUpdateOfModel(struct.modelName);
-                            fw.netMessage.sendLocalMessage({modelName:struct.modelName}, 'trigger_push');
-                        },errorHandle,struct.modelName);
-                    }
-                    
+                }
+
+                var updateHandler = function(){
                     //如果开发者在beforeUpdate中没有调用callback，则意味终止对db的操作和afterInsert的触发，也不会有diff操作产生
                     appendUserInfoNCallback.callFunc(pubRecord.options.beforeUpdate, 
                                                     [pubRecord.collection, structData],
                                                     conn.userinfo,
                                                     doUpdate);
+
+                }
+
+                //external handlers
+                
+                //暂时没有把userInfo等信息加入external，没有走appendUserInfoNCallback。需要的时候加上
+                var extInsertHandler = function(){
+                    fw.external.insert(structData);
+                }
+
+                var extDeleteHandler = function(){
+                    fw.external.delete(structData);
+                }
+
+                var extUpdateHandler = function(){
+                    fw.external.update(structData);
+                }
+
+
+                var operations = {
+                    insert : insertHandler,
+                    'delete' : deleteHandler,
+                    update : updateHandler,
+                    extInsert : extInsertHandler,
+                    extDelete : extDeleteHandler,
+                    extUpdate : extUpdateHandler
+                }
+
+                var operType = struct.type;
+                if(extPublish){
+                    operType = 'ext' + operType.charAt(0).toUpperCase() + operType.slice(1);
+                }
+
+                var operationHandler = operations[operType];
+                
+                if(!operationHandler){
+                    fw.log('no handler found for opertaion', struct.type);
+                }else{
+                    fw.dev('extPublish: ++++++', extPublish, '++++++');
+                    operationHandler();
                 }
             }
         }
@@ -1009,15 +1128,14 @@ var runStub = function(db) {
     /**
      * 处理订阅
      */
-    netMessage.setReceiver({
-        onMessage:{
-            target:'subscribe',
-            handle:function(content,target,conn){
-                
-                console.log('subscribe receiver.....', pubname , socketId);
+    var subscribe_function = function(content,target,conn){
                 
                 var pubname = content.name;
                 var socketId = conn._sumeru_socket_id;
+                var uk = content.uk || "";
+                
+                fw.dev('subscribe receiver.....', pubname , socketId);
+                
                 var clientId = conn.clientId;
                 var clientVersion = content.version;
 
@@ -1047,6 +1165,7 @@ var runStub = function(db) {
 
                 // 去重,防止两次相同订阅
                 var hasDuplicated = SubscribeMgr[modelName].some(function(item){
+                	
                     // 如果socketid不一样,则订阅不重复
                     if(socketId != item.socketId){
                         return false;
@@ -1067,17 +1186,18 @@ var runStub = function(db) {
                     },item.args)){
                         return false;
                     }
-                    console.log('\n\n ===========\n\n same subscribe : ' + args.join(' , '));
+                    //fw.dev('\n\n ===========\n\n same subscribe : ' + args.join(' , '));
                     // 否则认为订阅重复.
                     return true;
                 });
-                if(!hasDuplicated){
+                //server渲染，不订阅//也订阅 socketId != _server_socket_id
+                if(!hasDuplicated && socketId != _server_socket_id){
                     //订阅无重复，执行订阅
                     
                     //在args有变的情况下，先去除老的记录。
                     var cleanArr = SubscribeMgr[modelName].filter(function(item){
                         if(item.pubname == pubname && item.socketId == socketId){
-                            console.log('CLEAR [pubname :' + pubname + ", socketId : " + socketId + " ] ");
+                            fw.dev('CLEAR [pubname :' + pubname + ", socketId : " + socketId + " ] ");
                             return false;
                         }else{
                             return true;
@@ -1106,30 +1226,26 @@ var runStub = function(db) {
                     pubFunc = pubRecord.handle,
                     
                     onComplete = function(dataArray){
-                        
+
+                        var deltaFlag = false;
+
                         pubRecord.clients[socketId] = pubRecord.clients[socketId] || {snapshot : []};
-						//clientTrack 用来追踪client, 缓存client历史snapshot
-                        pubRecord.clientTracker[clientId] = pubRecord.clientTracker[clientId] || { snapshotMgr : SnapshotMgrFactory.createSnapshotMgr(pubname) };
-						
-                        //首次subscribe时清空clientTracker.snapshotMgr
-                        if(!clientVersion){
-                            pubRecord.clientTracker[clientId].snapshotMgr.reset();
-                        }
+
+                        pubRecord.clients[socketId].snapshot = dataArray;
+                        
+                        var snapshot = pubRecord.clients[socketId].snapshot;
 
                         //通过 clientVersion 判断是first subscribe还是redo subscribe
                         //如果有clientVersion && server端有记录，则增量传输
-                        var snapshot = pubRecord.clientTracker[clientId].snapshotMgr.get(clientVersion);
-                        var deltaFlag = clientVersion && snapshot;
-
-                        if(deltaFlag){
-                            var diffData = findDiff(dataArray, pubRecord.clientTracker[clientId].snapshotMgr.get(clientVersion), PublishContainer[pubname]["modelName"]);
+                        if(clientVersion && snapshotMgr.get(pubname, clientVersion)){
+                            var diffData = findDiff(dataArray, snapshotMgr[pubname].get(pubname, clientVersion), PublishContainer[pubname]["modelName"]);
                             if(!diffData.length){
-                                //console.log(pubname, 'has NO DELTA, STOP!');
-                                return false;
+                                return false; //没有diff, 不用下发
                             }
+                            deltaFlag = true; //有diff，增量下发
                         }
 
-                        var dataVersion = pubRecord.clientTracker[clientId].snapshotMgr.add(dataArray);
+                        var dataVersion = snapshotMgr.add(pubname ,dataArray);
 
                         //如果是分页请求，且为该页第一次请求，保存其左右边界
                         if (pubRecord.isByPage && 
@@ -1160,6 +1276,7 @@ var runStub = function(db) {
                         var params = {
                             pubname: pubname,
                             modelName : modelName,
+                            uk:uk,
                             data : deltaFlag ? diffData : dataArray,
                             flag : deltaFlag ? 'live_data' : 'full_ship',
                             version : dataVersion
@@ -1167,18 +1284,21 @@ var runStub = function(db) {
 
                         var cmd = deltaFlag ? 'data_write_from_server_delta' : 'data_write_from_server';
 
+
+
                         netMessage.sendMessage(params, cmd, socketId, function(err){
-                                console.log('send data_write_from_server fail ' + err , socketId);
+                                fw.log('send data_write_from_server fail ' + err , socketId);
                             }, function(){
-                                console.log('send data_write_from_server ok' , socketId);
+                                //fw.dev('send data_write_from_server ok ' , deltaFlag ? diffData : dataArray);
                             }
                         );
                         
                     };
                 
                 //run publish function with args and callback
-                if(pubRecord.needAuth){
-                    console.log('connection', conn.loginStatus);
+                if(pubRecord.needAuth &&socketId != _server_socket_id){//server渲染无登陆一说
+                    fw.dev('connection', conn.loginStatus);
+                    
                     if(conn.loginStatus === STATUS_LOGIN){
                         pubFunc.call(collection, args, onComplete, conn.userinfo);
                     }else{
@@ -1187,17 +1307,22 @@ var runStub = function(db) {
                             data: []
                         },'data_auth_from_server',
                         socketId,
-                        function(){console.log('send data_auth_from_server failed');},
-                        function(){console.log('do auth failed');}
+                        function(){fw.log('send data_auth_from_server failed');},
+                        function(){fw.log('do auth failed');}
                         );
                     }
                 }else{
-                    //log.swrite(PublishContainer);
-                    //log.swrite(pubname);
-                    //log.swrite(pubRecord);
                     pubFunc.call(collection, args, onComplete, conn.userinfo);
                 }
             }
+    netMessage.setReceiver({
+        onMessage:{
+            target:'subscribe',
+            handle:subscribe_function
+        },
+        onLocalMessage:{//for server render
+        	target:'subscribe',
+        	handle:subscribe_function
         }
     });
     
@@ -1250,7 +1375,7 @@ var runStub = function(db) {
         
         var walkLog = {}; //防止循环引用
         var walkModelRelation = function(_modelName){
-            var _modelRelation = fw.model.getModelRelation(_modelName);
+            var _modelRelation = fw.server_model.getModelRelation(_modelName);
             if (_modelRelation && !walkLog[_modelName]) {
                 walkLog[_modelName] = true;
                 var tmpSubRecord;
@@ -1266,7 +1391,7 @@ var runStub = function(db) {
         };
         
         walkModelRelation(modelName);
-        //log.dev('---------walk modelrelation result', subscribers, '----', fw.model.modelRelation, '++++', modelName);
+        //fw.dev('---------walk modelrelation result', subscribers, '----', fw.server_model.modelRelation, '++++', modelName);
         
         /*
          * FIXME 如果此时新增的数据,在查询的时候被排除在订阅数据的查询条件外,则会导至新插入的数据不会被重新下发至客户端.
@@ -1284,9 +1409,9 @@ var runStub = function(db) {
                  * 不知为何，socketId在某种情况下，无法指向一个存在的socket连接对像，在此种情况下，由于数据无法返回客户端，继续做下发并无意义。所以直接退出。
                  * FIXME 更好的方式是找出丢失连接的原因，并清理掉不存在连接的subscriber.
                  */
-                if(!SocketMgr[item.socketId]){
-                    console.log('SocketMgr: lost connection, the socket id is " ' + item.socketId + '"');
-                    clientTracer.onSocketDisconnection(null,item.socketId);
+                if(!SocketMgr[item.socketId] ){
+                    fw.log('SocketMgr: lost connection, the socket id is " ' + item.socketId + '"');
+                    clientTracer.onSocketDisconnection(null, item.socketId);
                     clearSocketMgrBySocketId(item.socketId);
                     return;
                 }
@@ -1302,32 +1427,35 @@ var runStub = function(db) {
                         return;
                     };
                     
-                    if(JSON.stringify(dataArray) === JSON.stringify(pubRecord.clientTracker[clientId].snapshotMgr.getLatest())){
+                    var snapshot =  pubRecord.clients[item.socketId].snapshot;
+
+                    if(JSON.stringify(dataArray) === JSON.stringify(snapshot)){
                         //如果这条增量没有导致实质的数据改变，就不推送了
                         stop = true;
                     };
                     
                     if (!stop) {
                         
-                        var diffData = findDiff(dataArray, pubRecord.clientTracker[clientId].snapshotMgr.getLatest(), PublishContainer[item.pubname]["modelName"]);
+                        var diffData = findDiff(dataArray, snapshot, PublishContainer[item.pubname]["modelName"]);
 
-                        var dataVersion = pubRecord.clientTracker[clientId].snapshotMgr.add(dataArray);
-						
+                        var dataVersion = snapshotMgr.add(item.pubname, dataArray);
+
                         netMessage.sendMessage({
                                 pubname : item.pubname,
                                 data : !PublishContainer[item.pubname].plainStruct ? diffData :dataArray, //这里其实就是struct，不过传输的是没有删除过clientid，和id的版本
-                                //flag : 'full_ship'
                                 flag : 'live_data',
 								version : dataVersion
                             },
                             'data_write_from_server_delta',
                             item.socketId,
                             function(err){
-                                console.log('send data_write_from_server_delta fail ' + err  , item.pubname , item.socketId);
+                                fw.log('send data_write_from_server_delta fail ' + err  , item.pubname , item.socketId);
                             },function(){
-								console.log('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
+								fw.dev('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
                             }
                         );
+
+                        pubRecord.clients[item.socketId].snapshot = dataArray;
                         
                     };
                 }, userinfo);
