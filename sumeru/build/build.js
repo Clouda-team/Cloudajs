@@ -166,11 +166,14 @@ var buildManifest = function(appDir, theBinDir){
     var cacheViewStr = '';
 
     var readAllFileInView = function(bsvdir, httpBase){
-        if(path.existsSync(bsvdir)){
+        if(fs.existsSync(bsvdir)){
             var theDirFiles = fs.readdirSync(bsvdir);
             if(theDirFiles && theDirFiles.length > 0){
                 for(var i=0; i < theDirFiles.length; i++){
-                    if(theDirFiles[i].indexOf('.') > -1){
+                    if (theDirFiles[i] == '.svn' || theDirFiles[i] == '.git') {
+                        continue;
+                    };
+                    if(fs.statSync(path.join(bsvdir, theDirFiles[i])).isFile()){
                         allFiles.push(httpBase + '/' + theDirFiles[i]);
                     }else{
                         readAllFileInView(bsvdir + '/' + theDirFiles[i], httpBase + '/' + theDirFiles[i]);

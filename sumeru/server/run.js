@@ -444,9 +444,9 @@ var runStub = function(db) {
 	        require(__dirname + "/../server_client/server_render.js")(fw,viewPath);
 	        var readClientFile =  require(__dirname + "/../server/readClientFile.js");
 	        //执行controller目录
-	        readClientFile.evalByPackageJS(appPath+"/controller",{sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars(),Library:Library,console:console});
+	        readClientFile.evalByPackageJS(appPath+"/controller",{process:process, sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars(),Library:Library,console:console});
 	        //最后，执行用户自定义的server渲染包含的文件
-            readClientFile.evalByPackageJS(appPath+"/server_config",{sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars()},'server_library.js');
+            readClientFile.evalByPackageJS(appPath+"/server_config",{process:process, sumeru:sumeru,App:App,Model:Model,Handlebars:sumeru.render.getHandlebars()},'server_library.js');
 
         }
      	

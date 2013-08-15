@@ -16,14 +16,14 @@ var fs = require('fs');
 	    return true;
 	}
 
-	if (('.js'!== ext) && ('.json' !== ext) && ('.html' !== ext) && ('.css' !== ext)){
+	if (('.js'!== ext) && '.manifest' !== ext && ('.json' !== ext) && ('.html' !== ext) && ('.css' !== ext)){
 	    return false;
 	}
 	return true;//check ok
     }
 
 //遍历删除一个目录中的所有内容,保留文件夹
-var rmdir = function(dir) {
+var emptydir = function(dir) {
     var list = fs.readdirSync(dir);
     for(var i = 0; i < list.length; i++) {
         var filename = path.join(dir, list[i]);
@@ -32,12 +32,12 @@ var rmdir = function(dir) {
         if(filename == "." || filename == "..") {
 	    // pass these files
         } else if(stat.isDirectory()) {
-	    rmdir(filename);
+	       emptydir(filename);
         } else {
 	    // rm fiilename
-	    if (isFwFile(filename)){
-		fs.unlinkSync(filename);
-	    }
+    	    if (isFwFile(filename)){
+        		fs.unlinkSync(filename);
+        	}
         }
     }
 //    fs.rmdirSync(dir);
@@ -68,7 +68,7 @@ var basedir = path.join(__dirname, '../../');
 
 require('./build.js');
 setTimeout(function(){
-	rmdir(path.join(basedir, '__bae__'));
+	emptydir(path.join(basedir, '__bae__'));
 	// if (fs.existsSync(path.join(basedir,'__bae__/bin/cache.manifest')))
 	// {
  		// fs.unlinkSync(path.join(basedir,'__bae__/bin/cache.manifest'));	

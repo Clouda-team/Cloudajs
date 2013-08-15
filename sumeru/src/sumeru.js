@@ -178,11 +178,11 @@
                 
             //读取config文件
             var configPath = appPath + '/config';
-            readClientFile.evalByPackageJS(configPath,{sumeru:sumeru});
+            readClientFile.evalByPackageJS(configPath,{process:process,sumeru:sumeru});
             
             //读取server config文件
             configPath = appPath + '/server_config';
-            readClientFile.evalByPackageJS(configPath,{sumeru:sumeru});        
+            readClientFile.evalByPackageJS(configPath,{process:process,sumeru:sumeru});        
         }
         module.exports =  buildServer;
     }

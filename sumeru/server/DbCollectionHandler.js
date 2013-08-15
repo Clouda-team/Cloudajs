@@ -142,7 +142,7 @@ var runnable = function(fw){
         }
         
         var server = new mongodb.Server(host, port, serverOptions);
-        var db = new mongodb.Db(databaseConfig.get('dbname') || 'test', server, {});
+        var db = new mongodb.Db(databaseConfig.get('dbname') || 'test', server, {w : 1});
 	
         ObjectId = mongodb.ObjectID;
         
@@ -174,7 +174,7 @@ var runnable = function(fw){
                         if (!err){
             			    callback(db);
             			}else {
-            			    fw.log('DB auth failed', err);
+            			    fw.log('DB auth failed', 'database :', databaseConfig.get('dbname'), 'username :', username, 'password :', password, err);
             			}
         		    })
         		}else{
