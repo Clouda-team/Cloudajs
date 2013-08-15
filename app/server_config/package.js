@@ -1,4 +1,6 @@
 sumeru.packages(
-    'database.js'
+    'database.js',
+    'site_url.js',
+    'bae.js' //keep bae at the bottom
 );
  

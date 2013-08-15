@@ -1284,7 +1284,7 @@ var runnable = function(fw){
             // delete this.getEnvironment;
             // delete this.__getIdentifier;
             
-            fw.dev('destory ["' + id + '"]');
+            fw.dev('destory ["' + id + '"]' + uk);
         },
         __renderData:function(tapped_block){
             var me = this;
@@ -1337,21 +1337,7 @@ var runnable = function(fw){
                 //@params i number
                 var t=0;
                 var doLoad = function(i,callbackfunc) {
-                	//确保onload是按顺序执行的
-                	//这里可能有死循环，所以进行超时设定
-                	if (env.isWaiting > 0){
-                		setTimeout(function(){
-                			if (t>=80){//4s超时
-                				sumeru.log('doLoad超时，'+t*50+"ms，server渲染结束，是否缺少env.start() ?");
-                				finalCallback();
-                				return false;
-                			}
-                			doLoad(i,callbackfunc);
-                			t++;
-                		},50);
-                		return ;
-                	}
-                	//实践：只有当subscribe的结果回来，env.start之后，，才会执行doLoad的callbackfunc
+                	
                 	callbackfunc && callbackfunc();
                 	
                     if (i >= toLoad.length) {

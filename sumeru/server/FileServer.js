@@ -322,6 +322,9 @@ var http = require("http"),
                             }
                             
                             if (filePath2.match(/^\/\w+\.html$/) ) {//只有根目录才会渲染
+                            	if (fw.config.get("site_url")){
+                                	entireContent = entireContent.replace(/<base[\s\S]*?\/\s*>/g,"").replace("</head>",'<base href="'+fw.config.get("site_url")+'" /></head>')
+                                }
                                 if ( fw.router.check_routeing(req.url)!==null ) {
                                     var domarr = entireContent.split('<body>');
                                     if (domarr.length!=2){
@@ -335,6 +338,7 @@ var http = require("http"),
                                        }
                                         return ;
                                     }
+                                    
                                     res.write(domarr[0]+'<body>');//这部分无需等待
                                  	try{
                                     	//split by <body>,speedup render js,css

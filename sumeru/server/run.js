@@ -451,7 +451,7 @@ var runStub = function(db) {
         }
      	
      	//FileServer已经与socketServer合并，不会额外开端口号
-        fsServer = require(__dirname + "/FileServer.js");
+        fsServer = require(__dirname + "/fileServer.js");
     }
     
     //start websocket-http server
@@ -1134,7 +1134,7 @@ var runStub = function(db) {
                 var socketId = conn._sumeru_socket_id;
                 var uk = content.uk || "";
                 
-                fw.dev('subscribe receiver.....', pubname , socketId);
+                fw.dev('subscribe receiver.....', pubname , uk);
                 
                 var clientId = conn.clientId;
                 var clientVersion = content.version;

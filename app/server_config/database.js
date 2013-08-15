@@ -7,10 +7,3 @@ sumeru.config.database({
     password: '',
     poolSize : 10
 });
-
-
-if(typeof process != 'undefined' && process.BAE){
-    sumeru.config.database({
-        dbname : 'your_bae_db_name'
-    });
-}
