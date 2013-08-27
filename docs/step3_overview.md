@@ -5,7 +5,7 @@
 
 Clouda目录结构如下图：
 
-<img style="max-width: 32%;;" src="/assets/md/docs/images/sumeru_folder.png">
+<img style="max-width: 32%;;" src="./images/sumeru_folder.png">
 
     app：应用开发相关的代码和资源放在该目录下
 
