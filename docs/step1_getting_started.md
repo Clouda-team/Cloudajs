@@ -1,4 +1,3 @@
-
 ## 安装和使用Clouda
 
 
@@ -27,7 +26,7 @@ Clouda是基于node.js的Webapp开发框架，在使用Clouda时需要安装**no
 在Clouda框架中有一个itworks的实例，可以在浏览器中输入 localhost:8080/debug.html/itworks 来运行。
 
 
-<img style="max-width: 60%;;" src="/assets/md/docs/images/itworks.png">
+<img style="max-width: 60%;;" src="./images/itworks.png">
 
 ## Hello World
 
@@ -81,7 +80,7 @@ Clouda是基于node.js的Webapp开发框架，在使用Clouda时需要安装**no
 
 在浏览器中输入"localhost:8080/debug.html/helloworld"运行该应用。
 
-<img style="max-width: 60%;;" src="/assets/md/docs/images/helloworld.png">
+<img style="max-width: 60%;;" src="./images/helloworld.png">
 
 
 ## 环境搭建
