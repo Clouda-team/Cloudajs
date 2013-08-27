@@ -2,7 +2,7 @@
 
     答： “云环境（BAE）” -> “版本管理” -> “高级” -> “日志”
 
-    <img style="max-width: 80%;;" src="/assets/md/docs/images/bae_log.png">
+    <img style="max-width: 80%;;" src="./images/bae_log.png">
 
 2. “XMLHttpRequest cannot load http://sfenglish.sx.duapp.com/socket/info. Origin http://sfenglish.duapp.com is not allowed by Access-Control-Allow-Origin.”错误解决。
 
