@@ -1,10 +1,9 @@
-
 在《从这里开始》中介绍了如何使用Clouda开发“Hello World”，现在我们真正使用Clouda开发一个App---"留言大厅"。
 
 
 ### 首先预览一下"留言大厅"
 
-<img style="max-width:45%;;" src="/assets/md/docs/images/hall.png">
+<img style="max-width:45%;;" src="./images/hall.png">
 
 在"留言大厅"这个应用中，用户可以在这里留言，也可以看到别人的留言
 
