@@ -9,23 +9,23 @@ Clouda是基于node.js开发的，所以需要node.js环境以及需要数据库
 
 （2）使用BAE，如果是第一次使用，需要先发送邮件到dev_support@baidu.com申请开通node.js权限。
 
-<img style="max-width: 80%;;" src="/assets/md/docs/images/intro_4_2.png">
+<img style="max-width: 80%;;" src="./images/intro_4_2.png">
 
 （3）node.js权限开通后，点击 “创建应用” ，如图：
 
-<img style="max-width: 50%;;" src="/assets/md/docs/images/intro_4_3.png">
+<img style="max-width: 50%;;" src="./images/intro_4_3.png">
 
 （4）点击 “确定”后在页面点击“云环境(BAE)”
 
-<img style="max-width: 80%;;" src="/assets/md/docs/images/intro_4_4.png">
+<img style="max-width: 80%;;" src="./images/intro_4_4.png">
 
 （5）完成“应用域名”申请，以及选择使用“node.js”环境
 
-<img style="max-width: 70%;;" src="/assets/md/docs/images/intro_4_5.png">
+<img style="max-width: 70%;;" src="./images/intro_4_5.png">
 
 （6）“创建新版本”，并使用SVN下载版本代码
 
-<img style="max-width: 80%;;" src="/assets/md/docs/images/intro_4_6.png">
+<img style="max-width: 80%;;" src="./images/intro_4_6.png">
 
 （7）将本地sumeru工程文件拷贝到SVN下载版本代码目录下
 	
@@ -33,12 +33,12 @@ Clouda是基于node.js开发的，所以需要node.js环境以及需要数据库
 
 * 在“版本管理”页面，点击“服务管理”并选择 “MongoDB”
 
-<img style="max-width: 80%;;" src="/assets/md/docs/images/selectMongo.png">
+<img style="max-width: 80%;;" src="./images/selectMongo.png">
 
 
 * 在“MongoDB”页面点击“创建MongoDB”，创建一个新的MongoDB数据库并**获取数据名**
 
-<img style="max-width: 80%;;" src="/assets/md/docs/images/createMongo.png">
+<img style="max-width: 80%;;" src="./images/createMongo.png">
 
 	 
 （9）修改app/server_config/bae.js
