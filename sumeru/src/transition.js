@@ -17,18 +17,26 @@
 	 * add className
 	 * klass可以是string或array
 	 */
-	var _addClass = function(obj,klass){
-	  if ( typeof klass === 'string' && _hasClass(obj,klass) ) return;
-	  var _ks = _trim(obj.className).replace(/\s+/g," ").split(" ");
-		_ks = _ks.concat(klass);
-		obj.className = _ks.join(" ");
-	};
-	
-	var _hasClass = function(obj,klass) {
-        var rex = new RegExp("( |^)" + klass+"( |$)",["i"]);
-        if ( obj.className.match(rex) ) {
-            return true;
+    var _addClass = function(obj,klass){
+      var klass = _hasClass(obj,klass);
+      if (klass.length===0) return;
+      var _ks = _trim(obj.className).replace(/\s+/g," ").split(" ");
+        _ks = _ks.concat(klass);
+        obj.className = _ks.join(" ");
+    };
+    
+    var _hasClass = function(obj,klass) {
+        if ( typeof klass === 'string'){
+            klass = [klass];
         }
+        var neededItems = [];
+        Array.prototype.forEach.call(klass,function(k){
+            var rex = new RegExp("( |^)" + k+"( |$)",["i"]);
+            if ( !obj.className.match(rex) ) {
+                neededItems.push(k);
+            }
+        });
+        return neededItems;
    }
 	/**
 	 * remove className
@@ -354,8 +362,6 @@
                         .replace(new RegExp(blockClassName,"g"),"")
                         .replace(/(^\s*)|(\s*$)/g,"")+blockClassName;
                     target.dom_back.className = target.back_classname;
-                }else if (target.anim[0] == 'none'){//none的时候，不需要隐藏，不然第一次加载有抖动
-                	
                 }else{
                     target.classname = (target.dom.className).replace(/(_g_[\S]*)|(transi)|(hide)|(animated)/g,"")
                         .replace(new RegExp(blockClassName,"g"),"")
@@ -457,6 +463,9 @@
 	
     fw.transition.__reg('_init', _init, 'private');
     fw.transition.__reg('_run', _transition, 'private');
+    fw.transition.__reg('_serverRun', function(){
+        
+    }, 'private');
 	fw.transition.__reg('_subrun', _subtransition, 'private');
 	
 	
