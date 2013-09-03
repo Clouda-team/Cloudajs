@@ -1,105 +1,111 @@
-从这里开始
-====================
+## 安装和使用Clouda
 
 
-欢迎来到sumeru的世界，在这里，您将获得超乎想象、无比便捷的开发体验。
+### 安装Clouda
 
-sumeru是以JavaScript为唯一开发语言并专注于开发移动App的云端统一开发框架，使用sumeru开发的App，既可以作为Web App运行，也可以打包作为Native App安装，其以打造全新App架构为使命，提供使用Javascript抹平云和端的新世界，你将不再需要切换语言分别编写服务器和客户端逻辑；你将不再需要花费原来50%以上的精力遍历、操作DOM和管理链接，只需专心编写最核心的业务逻辑。
+Clouda是基于node.js的Webapp开发框架，在使用Clouda时需要安装**node.js**和**MongoDB**，如果您没有安装请参考本文档**环境搭建**部分。
 
-
-
-Sumeru, a simple but powerful Web App framework, provides rich functionalities for building de-facto Web Applications based on Baidu Cloud technology. Sumeru offers awesome features such as data-unify，adaptive feedback，realtime network connection etc. Developers beneﬁts from Sumeru in terms of coding efforts, performance and application distribution.
-
-
-## 一. 获取sumeru
-
-sumeru基于node.js开发，可使用npm获取。
+使用下面命令安装Clouda
 
 	npm install -g sumeru
-	
-现在，我们创建一个sumeru项目。
+
+### 使用Clouda创建工程
 
 	sumeru init ./myproject
-	
-myproject是项目所在目录，你可提前创建，也可由sumeru自动创建。
-	
-在每一个生成项目中，都会有一个可运行的应用,首先使用下面的命令启动sumeru。
+
+### 运行Clouda
+
+**在运行Clouda前需要启动MongoDB**
 
 	cd myproject
-	
 	sumeru start
-	
-在运行应用之前，请确保已经安装并启动mongoDB，保持mongoDB在后台运行，然后在浏览器中输入 localhost:8080/debug.html#/itworks 第一次运行sumeru。
-
-![](images/itworks.png)
-
-同时我们也提供手动下载方式，[点击这里下载](https://github.com/brandnewera/sumeru/archive/master.zip)
 
 
-## 二. “Hello World”
+### 如何访问应用
+
+在Clouda框架中有一个itworks的实例，可以在浏览器中输入 localhost:8080/debug.html/itworks 来运行。
 
 
-上面我们已经成功安装并启动了sumeru，下面我们真正使用sumeru开发一个“Hello World”应用。
+<img style="max-width: 60%;;" src="./images/itworks.png">
+
+## Hello World
 
 
-### 第一步：在"app/controller/"下创建helloworld.js文件，输入以下代码：
+上面我们已经成功安装并启动了Clouda，下面我们使用Clouda开发一个“Hello World”应用。
+
+
+### （1）在"app/controller/"下创建helloworld.js文件，输入以下代码：
 
 * helloworld.js
 
 
 		sumeru.router.add(
-
 			{
-				pattern: '/helloworld',
+			    pattern: '/helloworld',
 				action: 'App.helloworld'
 			}
-
 		);
 
-	通过router添加一个URl与Controller的映射关系，关于router我们会在后续文档中做专门的说明，保持helloworld.js文件打开，并输入以下代码。
-	
-		App.helloworld = sumeru.controller.create(function(env,session){
+	通过router添加一个URL与Controller的映射关系，关于router我们会在后续文档中做专门的说明，保持helloworld.js文件打开，并输入以下代码。
 
+		App.helloworld = sumeru.controller.create(function(env,session){
 			env.onrender = function(doRender){
 				doRender("helloworld",["push", "left"]);
 			};
-
-		});	
+		});
 
 	**env.onrender()**方法是完成对view(界面)的渲染，关于该方法在后续会做专门说明。
-	
-### 第二步：打开“app/controller/package.js”
+
+### （2）打开“app/controller/package.js”
 
 
 * package.js:
 
 		sumeru.packages(
-
 			'helloworld.js'
-
 		);
 
 	package.js用于将文件之间的依赖关系添加到sumeru中，关于package.js在后续会做专门的说明。
 
-	
 
-### 第三步：在"app/view/"下创建helloworld.html，并输入已下代码
+
+### （3）在"app/view/"下创建helloworld.html，并输入已下代码
 
 * helloworld.html
 
-	
+
 		<p>Hello World!</p>
-		
-** 至此 **，"hello world"应用代码已经完成。
 
-在浏览器中输入"localhost:8080/debug.html#/helloworld"运行该应用。
+**至此**，"Hello World"应用代码已经完成。
 
-![](images/helloworld.png)
+在浏览器中输入"localhost:8080/debug.html/helloworld"运行该应用。
+
+<img style="max-width: 60%;;" src="./images/helloworld.png">
 
 
-你可能已经发现，一个sumeru的项目有以下目录组成
+## 环境搭建
 
-![](images/sumeru_folder.png)
+### 安装node.js
 
-对于sumeru目录在后续会做专门的介绍。
+Clouda是基于node.js的开发框架，所以我们首先需要安装node.js
+
+* 下载node.js，地址：<http://nodejs.org/download/>
+
+* 安装node.js
+
+
+### 安装MongoDB
+
+在本地sumeru已mongoDB作为数据库，按照下面的步骤安装并启动MongoDB
+
+* 下载mongoDB，地址：<http://www.mongodb.org/downloads>
+
+* 解压下载的文件夹，进入解压后的目录，在根目录下创建"data"目录，并在创建的"data"目录下创建"db"文件夹
+
+* 进入根目录下的bin/，启动MongoDB
+
+		sudo ./mongodb -dbpath ../data/db
+
+
+**注意：在运行Clouda应用前必须启动MongoDB**
 	
