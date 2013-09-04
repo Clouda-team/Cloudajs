@@ -30,19 +30,23 @@ var runnable =function(fw){
     sRouter.__reg('setServerRender', function(runServer) {
     	_runServerRender = runServer;
     });
-    var routing_map = {}
+    var routing_map = {};
    
-    var check_routeing = function(path){
+    var check_routeing = function(path){//for server router using.
     	if (!_runServerRender)
     		return null;
     	if (!routing_map[path]){
     		routing_map[path] = fw.uri.getInstance(path);
+		}
+		if ( routing_map[path].controller == null){//上传文件流程
+		    return null;
+		}else{
+		    return routing_map[path];
+		}
 		
-    	}
-		return routing_map[path].controller;
-    }
+    };
     var __routeing = function(path,dom,callback){
-        var uriParts = routing_map[path];
+        var uriParts = fw.uri.getInstance(path);//routing_map[path];
         
         //处理session change 
         isSessionChange = true;//lastSession != uriParts.session;
@@ -63,8 +67,7 @@ var runnable =function(fw){
         
         return sDispatch(uriParts.controller, uriParts,path,dom,callback);
         
-    }
-    
+    };
     var findController = function(path){
         var pattern , find;
         var routeMap =fw.router.getAll();
@@ -111,14 +114,14 @@ var runnable =function(fw){
             	readyhtml = dom.replace("</body>",readydom+"</body>");
             }
             callback(readyhtml);
-        }
+        };
         fw.controller.getServerInstance(identifier, uriParts,path,constructor,__onFinish);
         
         return true;
-    }
+    };
     var finishServerRender = function(path,dom,callback){
         __routeing(path,dom,callback);
-    }
+    };
     
     sRouter.__reg('finishServerRender', finishServerRender, 'private');
     sRouter.__reg('check_routeing', check_routeing, 'private');
@@ -130,7 +133,7 @@ var runnable =function(fw){
 
     
     
-}
+};
 
 if(typeof module !='undefined' && module.exports){
     module.exports = runnable;
