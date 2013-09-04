@@ -66,6 +66,10 @@ var args = process.argv.slice(2);
     legalArgNum(1);
     init(args[0]);
     break;
+  case 'prepare_for_bae':
+    legalArgNum(3);
+    prepare_for_bae(args);
+    break;
   case 'update':
     legalArgNum(1);
     update(args[0]);
@@ -236,7 +240,24 @@ function start() {
   } else abort(NOWORKSPACE_ERROR);
 };
 
-
+function prepare_for_bae(args){
+	if(!IF_WORKSPACE) {
+		abort(NOWORKSPACE_ERROR);
+	}
+	var the_process = spawn(process.execPath, [path.resolve(HOME, '../build/prepareForBae.js'), args[0], args[1], args[2]]);
+	the_process.stdout.on('data', function(data) {
+		console.log(data.toString());
+	});
+	the_process.stderr.on('data', function(data) {
+		console.log(data.toString());
+	});
+	the_process.on('close', function (code) {
+		if(code == 0){
+			console.log('   \x1b[36mCongratulations! Your application has been succesfully prepared\x1b[0m');
+		}
+	});
+	
+}
 
 /**
  * Terminal application.
