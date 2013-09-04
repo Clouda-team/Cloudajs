@@ -95,7 +95,6 @@ var http = require("http"),
         if(extMap[extensionName]){
             contentType = extMap[extensionName];
         }
-        
         fs.exists(filePath, function(exists){
             if(exists){
                 
