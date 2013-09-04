@@ -1,6 +1,6 @@
 {
   "name": "sumeru",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
   "main": "app.js",
   "scripts": {
@@ -22,7 +22,8 @@
     "sockjs": "0.3.7",
     "uglify-js": "2.3.6",
     "redis" : "0.8.4",
-    "clean-css" : "1.0.12"
+    "clean-css" : "1.0.12",
+    "formidable" : "1.0"
   },
   "devDependencies": {
     "mocha": "1.8.1",
