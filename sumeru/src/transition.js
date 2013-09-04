@@ -386,7 +386,7 @@
                 _addClass(_standby,[_createClassName("standby",target["anim"]),blockClassName]);
 
 
-                //把dom移动到warp中
+                //把dom移动到wrap中
                 if(_wrap!=_standby.parentElement){
                     _wrap.appendChild(_standby);
                 }

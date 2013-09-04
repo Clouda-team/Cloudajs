@@ -442,33 +442,39 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
 	}
 	
 	//注册新用户
-	fw.publish('smrAuthModel', 'auth-register', function(token, password, info, clientId, callback){
-	    var collection = this,
-		    sha1 = crypto.createHash('sha1');
-			
-		sha1.update(password);
-		password = sha1.digest('hex');
-		
-		collection.find({token: token}, function(err, items){
-			if(items && items.length <= 0){
-				var user = {
-					smr_id: ObjectId(),
-					token: token,
-					password: password,
-					secretKey: fw.__random(8),
-					info: info
-				}
-				collection.insert(user, function(err, collection){
-					delete user.password;
-					user.status = (err == null) ? 
-						authstatus.UPSERT_SUCC : authstatus.UPSERT_FAIL;
-					callback([user]);
-				});
-			}else{
-				callback([{token: token, status: authstatus.UPSERT_REPEAT}]);
-			}
-		});
-	});
+    fw.publish('smrAuthModel', 'auth-register', function(token, password, info, clientId, callback){
+        
+        //var collection = this;
+        
+        getDbCollectionHandler('smrAuthModel',function(err, collection){
+            
+            var sha1 = crypto.createHash('sha1');
+            
+            sha1.update(password);
+            password = sha1.digest('hex');
+            
+            collection.find({token: token}).toArray(function(err, items){
+                if(items && items.length <= 0){
+                    var user = {
+                            smr_id: ObjectId(),
+                            token: token,
+                            password: password,
+                            secretKey: fw.__random(8),
+                            info: info
+                    }
+                    collection.insert(user, function(err, collection){
+                        delete user.password;
+                        user.status = (err == null) ? 
+                                authstatus.UPSERT_SUCC : authstatus.UPSERT_FAIL;
+                        callback([user]);
+                    });
+                }else{
+                    callback([{token: token, status: authstatus.UPSERT_REPEAT}]);
+                }
+            });
+            
+        });
+    });
 	
 	//更新用户信息
 	fw.publish('smrAuthModel', 'auth-update', function(sessionId, clientId, newinfo, callback){
@@ -489,4 +495,4 @@ module.exports = function(fw, getDbCollectionHandler, ObjectId){
 			}
 		});
 	});
-}
+};

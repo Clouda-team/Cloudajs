@@ -10,7 +10,8 @@ var http = require("http"),
     path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
-    appName = isBae?'':(process.argv[2] || '');
+    appName = isBae?'':(process.argv[2] || ''),
+    formidable = require("formidable");//用于文件处理
 
     module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
@@ -23,7 +24,9 @@ var http = require("http"),
         
         //把问号后面去掉
         // filePath = fw.router.parseFromUrl(filePath);
-        filePath = fw.uri.parseFileFromUrl(filePath);
+        // filePath = fw.uri.parseFileFromUrl(filePath);
+        var fileObj = fw.uri.getInstance(filePath);
+        filePath = fileObj.path;
         
         localBase = path.normalize(localBase);
         var view_from_cache = fw.config.get('view_from_cache');
@@ -36,12 +39,12 @@ var http = require("http"),
         
         for (var i=0; i < deniedList.length; i++) {
             if (deniedList[i].test(filePath)) {
-                res.writeHead(404);
+                res.writeHead(403);//forbidden
                 res.end();        
                 return;
             };
         };
-        var filePath2 = filePath;//记录
+        //var filePath2 = filePath;//记录
         
         if(filePath == '/'){
             filePath = localBase + '/index.html';
@@ -92,6 +95,25 @@ var http = require("http"),
         
         if(extMap[extensionName]){
             contentType = extMap[extensionName];
+        }
+        //ADDED BY SUNDONG
+        if (fileObj.type == 'file'){//deal upload
+            if (req.method.toLowerCase() == 'post') {
+                // parse a file upload
+                var form = new formidable.IncomingForm();
+                
+                form.uploadDir = process.env.TMP || process.env.TMPDIR || process.env.TEMP || '/tmp' || process.cwd();//localBase + '/upload/';
+                
+                form.parse(req, function(err, fields, files) {
+                  res.writeHead(200, {'content-type': 'text/plain'});
+                  res.write(files.myfile1.path);
+                  res.end();
+                });
+            
+                return;
+              }
+            res.end('need request post...');
+            return ;
         }
         fs.exists(filePath, function(exists){
             if(exists){
@@ -321,12 +343,12 @@ var http = require("http"),
                             	res.writeHead(200, {"Content-Type": "text/html"});
                             }
                             
-                            if (filePath2.match(/^\/\w+\.html$/) ) {//只有根目录才会渲染
+                            if (filePath.match(/\/\w+\.html$/) ) {//不只根目录才会渲染
                             	if (fw.config.get("site_url")){
-                                	entireContent = entireContent.replace(/<base[\s\S]*?\/\s*>/g,"").replace("</head>",'<base href="'+fw.config.get("site_url")+'" /></head>')
+                                	entireContent = entireContent.replace(/<base[\s\S]*?\/\s*>/g,"").replace("</head>",'<base href="'+fw.config.get("site_url")+'" /></head>');
                                 }
-                                if ( fw.router.check_routeing(req.url)!==null ) {
-                                    var domarr = entireContent.split('<body>');
+                                if ( fileObj.controller !== null ) {
+                                    var domarr = entireContent.split('<body');
                                     if (domarr.length!=2){
                                     	try{
 	                                    	fw.router.finishServerRender(req.url,"",function(page){
@@ -339,7 +361,7 @@ var http = require("http"),
                                         return ;
                                     }
                                     
-                                    res.write(domarr[0]+'<body>');//这部分无需等待
+                                    res.write(domarr[0]+'<body');//这部分无需等待
                                  	try{
                                     	//split by <body>,speedup render js,css
                                     	fw.router.finishServerRender(req.url,domarr[1],function(page){
