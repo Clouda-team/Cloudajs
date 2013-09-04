@@ -1,0 +1,11 @@
+/*$
+  Do not make any changes, otherwise it will lead to build failure for bae.
+$*/
+if(typeof process != 'undefined' && process.BAE){
+    sumeru.config.database({
+        dbname : 'your_bae_db_name'
+    });
+    sumeru.config({
+        site_url : 'http://yourapp.duapp.com/'
+    });
+}
