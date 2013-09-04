@@ -10,8 +10,7 @@ var http = require("http"),
     path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
-    appName = isBae?'':(process.argv[2] || ''),
-    formidable = require("formidable");//用于文件处理
+    appName = isBae?'':(process.argv[2] || '');
 
     module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
@@ -96,25 +95,7 @@ var http = require("http"),
         if(extMap[extensionName]){
             contentType = extMap[extensionName];
         }
-        //ADDED BY SUNDONG
-        if (fileObj.type == 'file'){//deal upload
-            if (req.method.toLowerCase() == 'post') {
-                // parse a file upload
-                var form = new formidable.IncomingForm();
-                
-                form.uploadDir = process.env.TMP || process.env.TMPDIR || process.env.TEMP || '/tmp' || process.cwd();//localBase + '/upload/';
-                
-                form.parse(req, function(err, fields, files) {
-                  res.writeHead(200, {'content-type': 'text/plain'});
-                  res.write(files.myfile1.path);
-                  res.end();
-                });
-            
-                return;
-              }
-            res.end('need request post...');
-            return ;
-        }
+        
         fs.exists(filePath, function(exists){
             if(exists){
                 
