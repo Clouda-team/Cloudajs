@@ -1,10 +1,10 @@
 {
   "name": "sumeru",
-  "version": "0.8.8",
+  "version": "0.8.10",
   "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
   "main": "app.js",
   "scripts": {
-    "test": "make test-cov"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
