@@ -61,7 +61,7 @@ var runnable = function(fw){
 									});
 	fw.validation.addrule("email" , {   
 										"runat":"both",
-										"regexp":"^[a-zA-Z0-9_\.\-\+]+\@([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9]{2,4}$",
+										"regexp":"^[a-zA-Z0-9_\.\+\-]+\@([a-zA-Z0-9\-]+\.)+[a-zA-Z0-9]{2,4}$",
 										"msg":"$1必须为email格式。"
 									});
 	fw.validation.addrule("onlyletter" , {
