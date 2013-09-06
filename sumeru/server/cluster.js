@@ -24,6 +24,7 @@ var init = function(fw){
     
     fw.netMessage.setReceiver({
         onLocalMessage:{
+            overwrite : true,
             target : [channelNameSend],
             handle : function(data){
                 if (!redis_client_publish) {

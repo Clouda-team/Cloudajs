@@ -150,6 +150,7 @@
 	    netMessage.setReceiver({
 	        onLocalMessage:{
 	            target : ['after_echo_from_server'],
+	            overwrite : true,
 	            handle : function(){
 	                fw.auth.init(function(){
 	                    inited = true;

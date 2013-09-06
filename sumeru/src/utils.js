@@ -302,7 +302,9 @@ var runnable = function(fw){
         return rand;
     };
 
+    //========= 以下为用到的工具代码，huangxin03  ==========//
 
+    //深度克隆
     var clone = function(item){
 
         if (!item) { return item; } // null, undefined values check
@@ -356,7 +358,20 @@ var runnable = function(fw){
 
     }
 
-    fw.utils.__reg('deepclone', clone);
+    fw.utils.__reg('deepClone', clone);
+
+    //merge two object, append b to a
+    var merge = function(a, b){
+
+        var copy = clone(a);
+
+        for(x in b){
+            typeof copy[x] !== 'undefined' ? false :copy[x] = b[x];
+        }
+        return copy;
+    }
+
+    fw.utils.__reg('merge', merge);
 	
 };
 

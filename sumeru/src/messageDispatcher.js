@@ -550,6 +550,7 @@ var runnable = function(fw){
      */
     fw.netMessage.setReceiver({
     	onMessage : {
+            overwrite : true,
     	    target : 'config_write_from_server',
     	    handle : onMessage_config_write_from_server
     	},
@@ -562,10 +563,12 @@ var runnable = function(fw){
     
     fw.netMessage.setReceiver({
     	onMessage : {
+            overwrite : true,
     	    target : 'echo_from_server',
     	    handle : onMessage_echo_from_server
     	},
     	onLocalMessage:{
+            overwrite : true,
     	    target : ['data_write_latency'],
     	    handle : onLocalMessage_data_write_latency
     	}
@@ -574,10 +577,12 @@ var runnable = function(fw){
     
     fw.netMessage.setReceiver({
     	onMessage:{
+            overwrite : true,
     	    target:['data_write_from_server','data_write_from_server_delta'],
     	    handle : onMessage_data_write_from_server
     	},
     	onLocalMessage:{
+            overwrite : true,
     	    target:['data_write_from_server','data_write_from_server_delta'],
     	    handle : onMessage_data_write_from_server
     	},
@@ -589,6 +594,7 @@ var runnable = function(fw){
     fw.netMessage.setReceiver({
         onError:{
             //该标记只有服务端认证失败时才返回
+            overwrite : true,
             target:['data_auth_from_server'],           
             handle : onError_data_auth_from_server
         },
@@ -596,6 +602,7 @@ var runnable = function(fw){
     fw.netMessage.setReceiver({
         onError:{
             //该标记只有服务端DB操作失败时才返回
+            overwrite : true,
             target:['data_write_from_server_dberror'],           
             handle : onError_data_write_from_server_dberror
         },
@@ -603,6 +610,7 @@ var runnable = function(fw){
     fw.netMessage.setReceiver({
         onError:{
             //该标记只有服务端model验证失败时才返回
+            overwrite : true,
             target:['data_write_from_server_validation'],           
             handle : onError_data_write_from_server_validation
         },

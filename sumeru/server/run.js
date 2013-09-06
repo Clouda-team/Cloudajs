@@ -45,6 +45,7 @@ var viewPath;
 var STATUS_LOGIN = "1";
 
 var config = fw.config;
+
 var netMessage = fw.netMessage;
 
 var runServerRender = (config.get('runServerRender')===false)?false:true;//默认开启server渲染
@@ -377,12 +378,30 @@ var findAllTheDirFiles = function(theDir) { //遍历theDir目录下的所有文�
     }
 };
 
+
+var externalConfig;
+
 if (fs.existsSync(publishBaseDir)) {
     findAllTheDirFiles(publishBaseDir);
     allTheDirFiles.forEach(function(file) {
         if (path.extname(file) == '.js') {
-            if(path.basename(file).indexOf('Config.js') >= 0) { return; }  //跳过externalPublishConfig.js
-            require(file)(fw);
+
+            var publishModuleObject = require(file);
+            if((typeof publishModuleObject).toLowerCase() === "function"){
+                var publishModule = require(file)(fw);
+                if(publishModule && publishModule.config && publishModule.type === 'external'){
+                    externalConfig = publishModule.config;
+                }
+            }else if((typeof publishModuleObject).toLowerCase() === "object"){
+                //兼容老的external.js, 坑。。。
+                var publishModule = require(file);
+                if(publishModule && !publishModule.config){
+                    externalConfig = publishModule;
+
+                    fw.log("externalConfig", externalConfig);
+                }
+            }
+            
         };
     });
 
@@ -391,7 +410,10 @@ if (fs.existsSync(publishBaseDir)) {
 }
 
 //external.js
-require(__dirname + '/external.js')(fw, findDiff, publishBaseDir);
+var http = require("http");
+var sockjs = require("sockjs");
+var serverObjectId = require("./ObjectId");
+require(__dirname + '/../src/external.js')(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId);
 
 
 var runStub = function(db) {
@@ -422,8 +444,7 @@ var runStub = function(db) {
 
     //var groupManager = require(__dirname + "/groupManager.js")(fw,getDbCollectionHandler,ObjectId);
     
-    var http = require("http");
-    var sockjs = require("sockjs");
+    
     // 是否载入并启动文件server
     var fsServer;
     if (runFileServer) {
@@ -450,7 +471,7 @@ var runStub = function(db) {
 
         }
      	
-     	//FileServer已经与socketServer合并，不会额外开端口号
+     	//fileServer已经与socketServer合并，不会额外开端口号
         fsServer = require(__dirname + "/fileServer.js");
     }
     
@@ -726,6 +747,7 @@ var runStub = function(db) {
     netMessage.setReceiver({
         onMessage:{
             target:'echo',
+            overwrite : true,
             handle:function(content,target,conn){
                 var socketId = content.socketId;
                 
@@ -815,6 +837,7 @@ var runStub = function(db) {
     
     netMessage.setReceiver({
         onMessage:{
+            overwrite : true,
             target:'unsubscribe',
             handle:unsubscribe
         }
@@ -867,10 +890,12 @@ var runStub = function(db) {
     
     netMessage.setReceiver({
         onLocalMessage:{
+            overwrite:true,
             target:'trigger_push',
             handle:trigger_push
         },
         onMessage:{
+            overwrite:true,
             target:'trigger_push',
             handle:trigger_push
         }
@@ -881,6 +906,7 @@ var runStub = function(db) {
         
         netMessage.setReceiver({
             onLocalMessage:{
+                overwrite:true,
                 target:cluster_mgr.channelNameRev,
                 handle:trigger_push
             }
@@ -917,6 +943,7 @@ var runStub = function(db) {
 
     netMessage.setReceiver({
     	onMessage:{
+            overwrite:true,
     	    target: 'config_push',
     	    handle: config_push
     	}
@@ -928,6 +955,7 @@ var runStub = function(db) {
      */
     netMessage.setReceiver({
         onMessage:{
+            overwrite:true,
             target:'data_write_from_client',
             handle:function(content,type,conn){
                 
@@ -1083,42 +1111,41 @@ var runStub = function(db) {
 
                 }
 
-                //external handlers
-                
                 //暂时没有把userInfo等信息加入external，没有走appendUserInfoNCallback。需要的时候加上
-                var extInsertHandler = function(){
-                    fw.external.insert(structData);
-                }
 
-                var extDeleteHandler = function(){
-                    fw.external.delete(structData);
-                }
+                var extPostHandler = function(){
+                    var args; //including callback in pulish
+                    var subscribers = SubscribeMgr[modelname].filter(function(item, index){
+                        return socketId === item.socketId;
+                    });
 
-                var extUpdateHandler = function(){
-                    fw.external.update(structData);
-                }
+                    subscribers.forEach(function(item){
+                        if(pubname === item.pubname){args = item.args;}
+                    });
 
+                    fw.external.doPost(modelname, pubname, struct.type, structData, args);
+                }
 
                 var operations = {
-                    insert : insertHandler,
-                    'delete' : deleteHandler,
-                    update : updateHandler,
-                    extInsert : extInsertHandler,
-                    extDelete : extDeleteHandler,
-                    extUpdate : extUpdateHandler
+                    'insertOper' : insertHandler,
+                    'deleteOper' : deleteHandler,
+                    'updateOper' : updateHandler,
+                    'extPostOper' : extPostHandler
                 }
 
                 var operType = struct.type;
                 if(extPublish){
-                    operType = 'ext' + operType.charAt(0).toUpperCase() + operType.slice(1);
+                    //operType = 'ext' + operType.charAt(0).toUpperCase() + operType.slice(1);
+                    operType = 'extPostOper';
+                }else{
+                    operType = operType + 'Oper'; //避免关键字
                 }
 
                 var operationHandler = operations[operType];
                 
                 if(!operationHandler){
-                    fw.log('no handler found for opertaion', struct.type);
+                    fw.log('no handler found for opertaion', struct.type );
                 }else{
-                    fw.dev('extPublish: ++++++', extPublish, '++++++');
                     operationHandler();
                 }
             }
@@ -1317,10 +1344,12 @@ var runStub = function(db) {
             }
     netMessage.setReceiver({
         onMessage:{
+            overwrite:true,
             target:'subscribe',
             handle:subscribe_function
         },
         onLocalMessage:{//for server render
+            overwrite:true,
         	target:'subscribe',
         	handle:subscribe_function
         }
@@ -1402,7 +1431,7 @@ var runStub = function(db) {
             //write back to make sure the consistence.
             var pubRecord = PublishContainer[item.pubname],
                 pubFunc = pubRecord.handle;
-
+            
             (function(item, pubRecord){
                 var stop = false;
                 /**
@@ -1417,8 +1446,8 @@ var runStub = function(db) {
                 }
                 
                 var userinfo = SocketMgr[item.socketId].userinfo;
-				var clientId = SocketMgr[item.socketId].clientId;
-				
+                var clientId = SocketMgr[item.socketId].clientId;
+                
                 //FIXME 这里现在其实有性能问题，对每个subscriber都会重新运行一次pubFunc。但由于异步的问题，现在没有实现缓存其结果。
                 pubFunc.call(pubRecord.collection, item.args, function(dataArray){
                     
@@ -1444,14 +1473,14 @@ var runStub = function(db) {
                                 pubname : item.pubname,
                                 data : !PublishContainer[item.pubname].plainStruct ? diffData :dataArray, //这里其实就是struct，不过传输的是没有删除过clientid，和id的版本
                                 flag : 'live_data',
-								version : dataVersion
+                                version : dataVersion
                             },
                             'data_write_from_server_delta',
                             item.socketId,
                             function(err){
                                 fw.log('send data_write_from_server_delta fail ' + err  , item.pubname , item.socketId);
                             },function(){
-								fw.dev('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
+                                fw.dev('send data_write_from_server_delta ok...' , item.pubname , item.socketId);
                             }
                         );
 
@@ -1460,6 +1489,8 @@ var runStub = function(db) {
                     };
                 }, userinfo);
             })(item, pubRecord);
+            
+            
 
         });
     };

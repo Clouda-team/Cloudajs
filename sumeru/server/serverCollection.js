@@ -173,9 +173,8 @@ var runnable = function(fw, getDbCollectionHandler , ObjectId){
             var modelName = this.baseModel;
             var pubname = args.shift();
             var callback = args.pop();
-            var params = args;
 
-            fw.external.fetch(modelName, pubname, params, callback);
+            fw.external.doFetch(modelName, pubname, args, callback);
 
         },
 
