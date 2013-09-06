@@ -7,13 +7,22 @@ var runnable = function(path, context) {
   context.console=console;
   vm.runInNewContext(data, context, path);
 }
+var _getFilePackageByPath = function(path,filename){
+	if (typeof filename !='undefined'){
+		if (fs.existsSync(path +'/'+ filename)) {//首先判断filename是否存在
+			return (path +'/'+ filename);
+		}
+	}
+	//不存在则退化到执行package.js
+	return fs.existsSync(path + '/package.js')?(path + '/package.js'):false;
+	
+}
 var evalByPackageJS = function(path,context,filename){
-	var url = (typeof filename =='undefined')?(path + '/package.js'):(path +"/"+filename);
-
-    if (!fs.existsSync(url)) {
-        return;
-    };
-    var entireContent = fs.readFileSync(url, 'utf-8');
+	var url = _getFilePackageByPath(path,filename);
+	if (!url){
+		return ;
+	}
+	var entireContent = fs.readFileSync(url, 'utf-8');
     var contentReg = /packages\s*\(\s*(.*)\s*\)/mg;
     var dirnameList = [];
     
