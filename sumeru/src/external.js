@@ -443,7 +443,6 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	});
 
 	//---------------------------------- 以下为external接口 -------------------------------//
-	
 	/**
 	 * package: external
 	 * method name: externalFetch
@@ -471,6 +470,12 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 			callback(dataArray);							//run subsribe callback
 		}else{
 			_sync(modelName, pubName, url, callback);		//同步数据
+		}
+
+		if(config.fetchInterval && !fetchTimer[url]){
+			fetchTimer[url] = setInterval(function(){
+				_sync(modelName, pubName, url, callback);	
+			}, config.fetchInterval);
 		}
 		
 	}
