@@ -37,9 +37,9 @@ var runnable = function(fw){
 									});
 	fw.validation.addrule("required" , {
 										"runat":"both",
-										"func":function(value){
-											var v = v+""||"",
-												len = v.length;
+										"func":function(v){
+											var v = typeof v != "undefined"?v+"":"";
+											var len = v.length;
 											return len>0;
 										},
 										"msg":"$1为必填项。"
