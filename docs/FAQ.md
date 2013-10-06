@@ -33,3 +33,7 @@
 
 	答：Clouda仅支持webkit浏览器
 
+
+7. 出现“MSBUILD : error MSB3428: Could not load the Visual C++ component ‘VCBuild.exe’.”
+<img style="max-width: 80%;;" src="./images/error_install_sureru.png">
+    答：按照出错之后的提示安装 .NET Framework 2.0 SDK以及安装Microsoft Visual Studio 2005。
