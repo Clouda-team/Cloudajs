@@ -119,6 +119,7 @@ var runnable = function(fw){
         
         //source = source + ' ';  //加一个空格是为了兼容readBlockRelation的正则
         var source_ = source,
+            emptyedBlockSource_ = source, //最终将是清理掉每个block标签中内容的结果，对于有嵌套的不做清除
             relationLevelStack = [blocksRelation];
         
         //这个函数匹配之后做什么
@@ -198,6 +199,10 @@ var runnable = function(fw){
                 } else {
                     relationLevelStack.pop();
                     tpl.renderBlock[match_tplid] = Handlebars.compile(source_.substr(0, pairEndPos));
+                    
+                    //对于没有嵌套的，在渲染骨架时，清除其内的内容
+                    var emptyBottomBlockRegexp = new RegExp('(<[\\s]*block[^>]+tpl-id=[\'"]' + match_tplid  + '[\'"][^>]*>)[\\s\\S]*?(<[\\s]*\/[\\s]*block[\\s]*>)', 'mi');
+                    emptyedBlockSource_ = emptyedBlockSource_.replace(emptyBottomBlockRegexp, "\$1\$2");
                 
                     //截取模板代码，只取当前匹配的</block>标签的后面
                     var nextPairEndMatcher = source_.match(nearbyBlockPairEnd);
@@ -219,9 +224,10 @@ var runnable = function(fw){
         tpl.blocksRelation = blocksRelation;
         
         //使用非贪婪匹配正则，去掉block中的元素
-        source = source.replace(/(<block[^>]*>)[\s\S]*?(<\/block>)/ig,"\$1\$2");
+        
+        //source = source.replace(/(<block[^>]*>)[\s\S]*?(<\/block>)/ig,"\$1\$2");
         //先把骨头架子渲染出来，不带有具体的block内容
-        var renderFunc = tpl.renderBone = Handlebars.compile(source);
+        var renderFunc = tpl.renderBone = Handlebars.compile(emptyedBlockSource_);
         //recycle
         // parserElement = null;
         tpl.tplContent = renderFunc({});

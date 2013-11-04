@@ -108,7 +108,16 @@
             // 插入
             document.getElementById(container).appendChild(tplContentDom);
         }
-        tplContentDom.innerHTML = tpl.tplContent;//renderFunc({});
+        //替换渲染内容的时候不能如此简单粗暴
+        //当server渲染过了，那么替换渲染的uk为本uk即可，不需要清空数据
+        //let's do it!
+        var mat = tplContentDom.innerHTML.match(/tpl-id=["'](T[^_]*)/);
+        if (!mat){
+            tplContentDom.innerHTML = tpl.tplContent;
+        }else{//i got server render
+            var server_uk = new RegExp(mat[1],"g");
+            tplContentDom.innerHTML = tplContentDom.innerHTML.toString().replace(server_uk,session.__UK);
+        }
         
         return tpl;
     	

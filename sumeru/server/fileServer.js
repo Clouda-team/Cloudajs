@@ -10,8 +10,40 @@ var http = require("http"),
     path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
-    appName = isBae?'':(process.argv[2] || '');
+    appName = isBae?'':(process.argv[2] || ''),
+    fileUpload = require(__dirname + "/fileUpload.js");//用于文件处理
 
+var dealFileExtention = function(filepath){
+    var filepart1 = filepath.substring(0,filepath.lastIndexOf(".")),//filename etc.
+        filepart2 = filepath.substring(filepath.lastIndexOf("."));//extision as .gif
+    return [filepart1,filepart2];
+};
+var putFileAsName = function(filepath,i){
+    if ( fs.existsSync(filepath) ) {//存在，则i++进入递归，不存在重名，则返回path
+        var tmp = dealFileExtention(filepath);
+        var filepart1 = tmp[0],
+        filepart2 = tmp[1];
+        
+        if (!i)i=0;
+        var match = filepart1.match(/\((\d+)\)$/);
+        if (match){
+            filepart1 = filepart1.replace(/\((\d+)\)$/,"(" + i + ")");
+        }else{
+            filepart1 = filepart1+"(1)";
+        }
+        return putFileAsName(filepart1 + filepart2,++i);
+    }
+    return filepath;
+};
+var getCookieFromString = function(strcookie,name){
+    if (typeof strcookie !== 'string') return '';
+    var arrcookie = strcookie.split("; ");
+    for(var i = 0; i < arrcookie.length; i++){
+        var arr = arrcookie[i].split("=");
+        if(arr[0] == name) return arr[1];
+    }
+    return '';
+};
     module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
         var frkDir = __dirname + '/../../',
@@ -19,13 +51,8 @@ var http = require("http"),
             filePath = req.url,
             range = typeof req.headers.range == 'string' ? req.headers.range : undefined;
         
-        filePath = filePath.replace(/\.\.\//g, '');
+        filePath = decodeURI(filePath.replace(/\.\.\//g, ''));
         
-        //把问号后面去掉
-        // filePath = fw.router.parseFromUrl(filePath);
-        // filePath = fw.uri.parseFileFromUrl(filePath);
-        var fileObj = fw.uri.getInstance(filePath);
-        filePath = fileObj.path;
         
         localBase = path.normalize(localBase);
         var view_from_cache = fw.config.get('view_from_cache');
@@ -43,7 +70,16 @@ var http = require("http"),
                 return;
             };
         };
-        //var filePath2 = filePath;//记录
+        
+        //把问号后面去掉
+        var fileObj  = fw.uri.getInstance(filePath);
+        
+        if ( fs.existsSync(localBase+filePath.replace(/\?.*/,""))){//存在文件
+            filePath = filePath.replace(/\?.*/,"");
+        }else{
+            filePath = fileObj.path;
+        }
+        
         
         if(filePath == '/'){
             filePath = localBase + '/index.html';
@@ -73,7 +109,7 @@ var http = require("http"),
         
         // fw.log('file server accessing ' + path.normalize(filePath));
         
-        var extensionName = path.extname(filePath),
+        var extensionName = path.extname(filePath).toLowerCase(),
             contentType = 'text/html';
             extMap = {
                 '.js' : 'text/javascript',
@@ -94,6 +130,56 @@ var http = require("http"),
         
         if(extMap[extensionName]){
             contentType = extMap[extensionName];
+        }
+        //ADDED BY SUNDONG
+        if (fileObj.router && fileObj.router.type == 'file'){//deal upload
+            /*
+                pattern    :   '/files', //pattern用于定义匹配上传文件的uri
+                type  :   'file',
+                max_size_allowed:'10M',//support k,m
+                file_ext_allowed:'' ,//allow all use '' , other use js array ["jpg",'gif','png','ico']
+                upload_dir:"public",//default dir is public
+                rename:function(filename){//if rename_function is defined,the uploaded filename will be deal with this function.
+                    return filename+"_haha";
+                }
+            */
+            if (req.method.toLowerCase() == 'post') {
+                // parse a file upload
+                var form = new fileUpload();
+                //fileObj.router
+                form.uploadDir = fw.config.get("tmp_dir");//process.env.TMP || process.env.TMPDIR || process.env.TEMP || '/tmp' || process.cwd();//localBase + '/upload/';上传到临时目录
+                if (fileObj.router.max_size_allowed) {
+                    form.maxFieldsSize = fileObj.router.max_size_allowed;
+                }
+                form.parse(req, function(err, fields, files) {
+                  res.writeHead(200, {'content-type': 'text/plain'});
+                  //上传成功。重命名到上传目录
+                  var pubdir = (fileObj.router.upload_dir||"upload");
+                  var wholepubdir = process.dstDir + '/'+pubdir + "/";
+                  for(var n in files){
+                      if (files[n].size == 0 ) continue; 
+                      //if rename function exists,rename first.
+                      if (typeof fileObj.router.rename === 'function'){
+                          var tmp = dealFileExtention(files[n].name);
+                          var filepart1 = tmp[0],
+                          filepart2 = tmp[1];
+                          files[n].name = (fileObj.router.rename(filepart1)||"") + filepart2;
+                      }
+                      //then find a name to rename & save
+                      var pubfilepath = putFileAsName(wholepubdir + files[n].name);
+                      fs.renameSync(files[n].path, pubfilepath);//files[n].path 是临时文件的路径，savefilepath是排除了重复的文件
+                      var pubfilelink = (fw.config.get("site_url") || "")+ "/" + pubdir + pubfilepath.substring(pubfilepath.lastIndexOf("/"));
+                      res.end(pubfilelink);
+                      break;//暂不支持一个form多个上传文件，其实支持也很简单但是没有必要，正常情况一个文件一个文件上传处理即可。
+                  }
+                  
+                  res.end('no files');
+                });
+            
+                return;
+              }
+            res.end('need request post...');
+            return ;
         }
         fs.exists(filePath, function(exists){
             if(exists){
@@ -317,53 +403,75 @@ var http = require("http"),
                             });
                         } else if(extensionName == '.html'){
                             //view from cache : true以后，controller的模板也会走入这里
-                            if (filePath.search("json.html")!=-1){
+                            if (fileObj.controller === 0){
+                                res.writeHead(404);
+                                res.end();
+                                return ;
+                            }else if (filePath.search("json.html")!=-1){
                             	res.writeHead(200, {"Content-Type": "application/json"});
                             }else{
                             	res.writeHead(200, {"Content-Type": "text/html"});
                             }
                             
-                            if (filePath.match(/\/\w+\.html$/) ) {//不只根目录才会渲染
                             	if (fw.config.get("site_url")){
-                                	entireContent = entireContent.replace(/<base[\s\S]*?\/\s*>/g,"").replace("</head>",'<base href="'+fw.config.get("site_url")+'" /></head>');
+                                	entireContent = entireContent.replace(/<base[\s\S]*?>/g,"").replace("<head>",'<head><base href="'+fw.config.get("site_url")+'" />');
                                 }
-                                if ( fileObj.controller !== null ) {
-                                    var domarr = entireContent.split('<body');
-                                    if (domarr.length!=2){
-                                    	try{
-	                                    	fw.router.finishServerRender(req.url,"",function(page){
-	                                             res.end(page);
-	                                        });
-                                       }catch(e){
-                                       		console.dir(e);
-                                       		res.end();
-                                       }
-                                        return ;
+                                
+                                if ( fileObj.controller !=null) {
+                                    /*
+                                     server_auth 说明
+                                     1.在请求来时注册client，进行注册逻辑
+                                     2.将clientId传入controller
+                                     3.在controller的每一个subscribe中传入clientId
+                                     4.由于后续客户端渲染开始，因此不清理client，交给后续socket断开或者心跳清理
+                                     * */
+                                    //1. 解析出clientId
+                                    var clientId = getCookieFromString(req.headers.cookie,'clientId');
+                                    var authMethod = getCookieFromString(req.headers.cookie,'authMethod');
+                                    //2.认证，进行clientId进行auth认证
+                                    var client = fw.clientTracer.findClient(clientId);
+                                    var verify_callback = function(){
+                                        // conn.userInfo = this.userInfo;
+                                        //3.hou
+                                        var domarr = entireContent.split('<body');
+                                        if (domarr.length!=2){
+                                            try{
+                                                fw.router.start_routeing(req.url,clientId,"",function(page){
+                                                     res.end(page);
+                                                });
+                                           }catch(e){
+                                               fw.dev("error when server render....");
+                                               res.end();
+                                           }
+                                            return ;
+                                        }
+                                        
+                                        res.write(domarr[0]+'<body');//这部分无需等待
+                                        try{
+                                            //split by <body>,speedup render js,css
+                                            fw.router.start_routeing(req.url,clientId,domarr[1],function(page){
+                                                 res.end(page);
+                                            });
+                                        }catch(e){
+                                            fw.dev("error when server render....");
+                                            console.dir(e);
+                                            res.end(domarr[1]);
+                                        }
+                                        client && client.removeListener("verifty",verify_callback);
+                                    };
+                                    if (client && client.userInfo === false){
+                                        client.on('verify',verify_callback);
+                                        client.__verify(authMethod);
+                                    }else{
+                                        verify_callback();
                                     }
                                     
-                                    res.write(domarr[0]+'<body');//这部分无需等待
-                                 	try{
-                                    	//split by <body>,speedup render js,css
-                                    	fw.router.finishServerRender(req.url,domarr[1],function(page){
-                                             res.end(page);
-                                        });
-                                    }catch(e){
-                                        console.dir(e);
-                                        fw.dev("error when server render....");
-                                        res.end(domarr[1]);
-                                    }
+                                }else if (fileObj.controller === 0){
                                     
-                                    //这里有点丑陋，整理用output.js封装handlebars
-                                    // var content = fw.output.render(template,template_data);
-                                    // res.end(content);
                                 }else{
                                     res.end(entireContent);
                                 }
                                 
-                            }else{
-                                res.end(entireContent);
-                            }
-                            
                         } else if(extensionName == '.js' || extensionName == '.css'){
                             
                             
@@ -442,7 +550,7 @@ var http = require("http"),
                             res.writeHead(200, {'Content-Type' : contentType});
                             res.end(entireContent, 'utf-8');
                         }else {
-                            res.writeHead(200, {'Content-Type' : contentType});
+                            res.writeHead(200, {'Content-Type' : 'application/octet-stream'});//for download
                             res.end(entireContent, 'utf-8');
                         }
                         

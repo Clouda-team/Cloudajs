@@ -48,7 +48,7 @@ var runnable = function(fw){
      * 如果存在当前包空间，则直接跳出，防止重复创建对像
      */
     if(fw.netMessage){
-        fw.dev('netMessage already existed.');
+        //fw.dev('netMessage already existed.');
         return;
     }
     
@@ -87,15 +87,16 @@ var runnable = function(fw){
      * 从消息串还原为messageData并进行验证
      */
     var decodeMessage = function(msgStr){
-        // 解密并还原json对像
-        var message = fw.utils.parseJSON(msgStr);
+        var message =null
+            // 解密并还原json对像
+            message = fw.utils.parseJSON(msgStr);
         // 如有结构丢失，则返回false
         if(message.number === undefined || message.type === undefined || message.content === undefined){
             return false;
         }
         return message;
     };
-    
+    msgWrapper.__reg('decodeMessage',decodeMessage);
     /**
      * 创建一个消息对像
      * number 消息类型的编码
@@ -115,7 +116,7 @@ var runnable = function(fw){
         }
         return message;
     };
-    
+    msgWrapper.__reg('encodeMessage',encodeMessage);
     /**
      * 输出消息
      */
@@ -291,7 +292,14 @@ var runnable = function(fw){
      */
     // var onData = 
     msgWrapper.__reg("onData",function(msgStr,conn){
-        var message = decodeMessage(msgStr);
+        var message = null;
+        try{
+            message = decodeMessage(msgStr);
+        }catch(e){
+            // 不能解析的字符串,认为是server直接传回的非格式化内容.向外抛出;
+            throw "Server : " + msgStr;
+        }
+
         if(isServer && fw.SUMERU_APP_FW_DEBUG === false){
             try {
                 dispatch(message, conn);
@@ -371,7 +379,11 @@ var runnable = function(fw){
             }else{
                 // 如果不指定target，默认为 ''
                 target = insert.target || '';
-                overwrite = !!insert.overwrite;
+                
+                // FIXME !!!! 此处有小坑
+                // 如果不明确指定overwrite为true，则默认应为不覆盖之前的值，但是为了兼容之前的写法，又应当默认为true．
+                overwrite = !!insert.overwrite; //insert.overwrite === undefined ? true : !!insert.overwrite;
+                
                 if(! (handle = insert.handle) instanceof Function){
                     continue;
                 }

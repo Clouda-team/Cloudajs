@@ -263,6 +263,7 @@ var SUMERU_APP_FW_DEBUG = true;
     
 
     if(typeof module !='undefined' && module.exports){
+        GLOBAL[rootName] = global[rootName];    // 在node端仍然绑定到全局空间一个名为sumeru的对像
         module.exports = function(){
             return global[rootName];
         };

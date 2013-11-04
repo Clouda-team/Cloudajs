@@ -192,10 +192,7 @@
 			_wrap = document.createElement("div");
 	        _wrap.className = "_smr_runtime_wrapper";
 	        _wrap.id = "_smr_runtime_wrapper";
-	        // _wrap.style.width = "100%";
-	        // _wrap.style.height = "100%";
 			document.body.appendChild(_wrap);
-			_isFristLode = false;
 			// _fixSreenSize(_wrap);
 		}
 		_isFristLode = false;

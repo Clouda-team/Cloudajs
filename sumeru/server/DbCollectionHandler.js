@@ -143,7 +143,11 @@ var runnable = function(fw){
         
         var server = new mongodb.Server(host, port, serverOptions);
         var db = new mongodb.Db(databaseConfig.get('dbname') || 'test', server, {w : 1});
-	
+        
+        db.on('error',function(){
+            console.log("ERROR : DbCollectionHandle.js : 148 : ",arguments);
+        });
+        
         ObjectId = mongodb.ObjectID;
         
         getDbCollectionHandler = function(modelName, callback) {

@@ -88,7 +88,7 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
         		}
     			for( var t in other){
         			if (!iParts.params[t]) {//从session中提取url中没有的参数
-    					objstring = objstring + t +"="+other[t]+"&" 
+    					objstring = objstring + t +"="+other[t]+"&";
         				
         			}else if (iParts.params[t] != other[t]){
         				isforce = true;

@@ -11,18 +11,25 @@
 	var writeBuffer_ = fw.writeBuffer_;
 	
 	
-    if(!cookie.getCookie('clientId')){
-        cookie.addCookie('clientId',sumeru.utils.randomStr(12) , 24*365*20);
+	var clientId = null,
+	     authMethod = cookie.getCookie('authMethod');
+	
+    if(!(clientId = cookie.getCookie('clientId'))){
+        var t = Date.now().toString(32);
+        clientId = t + "_" + sumeru.utils.randomStr(12);
+        cookie.addCookie('clientId',clientId , 24*365*20);
     }
     
     if(!cookie.getCookie('OPEN_STICKY_SESSION')){
         cookie.addCookie('OPEN_STICKY_SESSION',1);
     }
     
+    
+    fw.__reg('clientId',clientId);
+    
     netMessage.addOutFilter(function(msg){
-        msg.sessionId = cookie.getCookie('sessionId');
-        msg.clientId = cookie.getCookie('clientId');
-        msg.passportType = cookie.getCookie('passportType');
+        msg.clientId = clientId;
+        msg.authMethod = authMethod;
         return msg;
     },0);
     

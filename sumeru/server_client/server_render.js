@@ -130,12 +130,11 @@ var runnable = function(fw,viewPath){
             //FIXME 写死了读取的文件路径
             tplMap[tplId] = 'loading';
             tplMapCallbackStack[tplId] = new Array();
+            tplMapCallbackStack[tplId].push(oncomplete);
             var filepath = viewPath+"/"+tplId+".html";
             fs.exists(filepath,function(exists){
                 if (exists){
-                	
-                    tplMapCallbackStack[tplId].push(oncomplete);
-                    fs.readFile(filepath, 'utf-8', function(error, entireContent){
+                	fs.readFile(filepath, 'utf-8', function(error, entireContent){
                         tplMap[tplId] = entireContent;
                         for(var i =0;i<tplMapCallbackStack[tplId].length;i++){
                         	tplMapCallbackStack[tplId][i](tplMap[tplId]);
@@ -146,13 +145,14 @@ var runnable = function(fw,viewPath){
                 }else{
                     fw.log("file not exist", filepath);
                     delete tplMap[tplId];
+                    delete tplMapCallbackStack[tplId];
                 }
             });
         }
         
     },true);
     
-}
+};
 if(typeof module !='undefined' && module.exports){
     module.exports = runnable;
 }else{//这里是前端

@@ -18,7 +18,7 @@ var runnable = function(fw,runfromServer){
     	this.controller = null;
     	this.original = null;
     	this.session="";
-    	this.type;
+    	this.router=null;
     	this.contr_argu = [];
     };
     var routerObj = null;
@@ -116,7 +116,15 @@ var runnable = function(fw,runfromServer){
 	    			}
 	    			contr_argu = controller.split("/");
 		    		contr_argu.unshift("");
-		    		controller = "";
+		    		//！更新！为了防止设置了default controller后，所有请求都没有了404，
+		    		//所以当匹配“”时，如果后面有arguments，将认为是404，
+		    		//如果想用argument，则不要使用空controller
+		    		if (contr_argu[1] == ''){
+		    		    controller = "";
+		    		}else{
+		    		    controller = 0;
+		    		}
+		    		
 	    		}else{
 	    			matchTmp = controller.match(routerObj[q].path);
 		    		contr_argu = controller.replace(routerObj[q].path,"");
@@ -127,9 +135,9 @@ var runnable = function(fw,runfromServer){
     		}
     		
     		if (routerObj[q].type==='file'){
-    		    this.type = routerObj[q].type;
     		    controller = null;//上传文件不需要server渲染
     		}
+            this.router = routerObj[q];
     	}else{// NO MATCH ROUTER
     		controller = null;
     		contr_argu.push("");
@@ -150,7 +158,7 @@ var runnable = function(fw,runfromServer){
         this.controller = controller;
         this.session  = session;
         this.contr_argu = contr_argu;
-    	return this;//{path:_filePath,params:paramsObj,controller:controller,session:session,contr_argu:contr_argu};
+       return this;//{path:_filePath,params:paramsObj,controller:controller,session:session,contr_argu:contr_argu};
 		
 		
     };

@@ -52,6 +52,15 @@ var runnable = function(fw,PublishContainer){
                 };
             }
             
+            //因为有再次订阅会两次返回，所以查看stub是否存在以后几个
+            //每次订阅都需要触发其他订阅的重新callback,如果是，这里补充env.wait
+            //否则不补充env.wait
+            for(var i=0,len = subscribeMgr[pubName].stub.length;i<len;i++){
+                if (subscribeMgr[pubName].stub[i].id === id){
+                    env && env.wait();
+                }
+            }
+            
             var callbackStr = Function.toString.call(completeCallback);
             
             var sourceCustomClosure = this.subscribe.caller;  
@@ -68,14 +77,14 @@ var runnable = function(fw,PublishContainer){
             //去重之后，包装原有callback，添加处理wait的方法
             var tmpfunc = function( ){
             	try{
-            		completeCallback(arguments[0],arguments[1]);
+            		completeCallback.apply(undefined,arguments);
                 }catch(e){
                 	console.warn("error when pubsub callback on line 84 ",e);
                 }
                 if(env){
                     env.start();//自动调用start方法
                 }
-            }
+            };
             subscribeMgr[pubName]['stub'].push({
                 id : id,
                 sourceCustomClosure : sourceCustomClosure,
@@ -85,14 +94,17 @@ var runnable = function(fw,PublishContainer){
                 env           :    this
             });
             
-            
-            fw.netMessage.sendMessage({
+            var sendObj = {
                 name    :    pubName,
                 //去掉第一个pubname，去掉最后一个回调函数
                 args    :    args,
                 uk:id,
                 version :    version
-            },'subscribe', function(err){
+            };
+            if (env && env.clientId){//from server controller
+                 sendObj.clientId = env.clientId;
+            }
+            fw.netMessage.sendMessage(sendObj,'subscribe', function(err){
                 sumeru.log("error : subscribe " + err);
             },function(){
                 sumeru.dev("send subscribe " + pubName, version || 'no version');

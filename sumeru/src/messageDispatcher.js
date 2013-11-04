@@ -224,8 +224,14 @@ var runnable = function(fw){
         if(doReactiveProcess === true){
             
             //因为JS的单线程执行，只要callback中没有setTimeout等异步调用，全局变量tapped_blocks就不会产生类似多进程同时写的冲突。
+            //FIX BY SUNDONG,tapped_blocks在callback不要清空已经bind的东西
             var tapped_blocks = [];
-            _controller && _controller.__reg('_tapped_blocks', tapped_blocks, true);
+            if (_controller._tapped_blocks) {
+                tapped_blocks = _controller._tapped_blocks;
+            }else{
+                _controller.__reg('_tapped_blocks', tapped_blocks, true);
+            }
+            
             
             var byPageSegment = new RegExp('@@_sumeru_@@_page_([\\d]+)'),
             ifPageMatch = pubname.match(byPageSegment);
@@ -615,7 +621,7 @@ var runnable = function(fw){
             handle : onError_data_write_from_server_validation
         },
     });
-}
+};
 if(typeof module !='undefined' && module.exports){
     module.exports = runnable;
 }else{//这里是前端

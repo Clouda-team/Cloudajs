@@ -45,25 +45,15 @@ var runnable =function(fw){
 		}
 		
     };
-    var __routeing = function(path,dom,callback){
+    var __routeing = function(path,clientId,dom,callback){
         var uriParts = fw.uri.getInstance(path);//routing_map[path];
-        
+        uriParts.clientId = clientId;
         //处理session change 
         isSessionChange = true;//lastSession != uriParts.session;
         lastSession = uriParts.session;
         //处理controller change 
         isControllerChange = uriParts.controller != lastController;
         lastController = uriParts.controller;
-        // debug log
-        fw.dev('isControllerChange :' + isControllerChange);
-        fw.dev('isSessionChange :' + isSessionChange);
-        fw.dev('parts of hash:' , uriParts);
-    
-        // 如果session序列化发生变化,并用不是内部拼接的(理论上此时应只有复制url产生),将变化的对像合并入session工厂.
-        // 移到 getcontrollerinstance 里面去做
-        // if(isSessionChange ){
-            // fw.session.setResume(lastSession,lastController);
-        // }
         
         return sDispatch(uriParts.controller, uriParts,path,dom,callback);
         
@@ -119,11 +109,8 @@ var runnable =function(fw){
         
         return true;
     };
-    var finishServerRender = function(path,dom,callback){
-        __routeing(path,dom,callback);
-    };
     
-    sRouter.__reg('finishServerRender', finishServerRender, 'private');
+    sRouter.__reg('start_routeing', __routeing, 'private');
     sRouter.__reg('check_routeing', check_routeing, 'private');
     
     sRouter.__reg('joinSessionToHash',function (serializeDat){
