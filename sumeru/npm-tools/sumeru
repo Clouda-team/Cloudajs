@@ -195,6 +195,20 @@ function updateApplicationAt(ph) {
   	copy(path.join(__dirname, '../../app/server_config'), server_config_path);
   }
   
+   //since 0.8.16, we have server_config/mime.js & server_config/tmp_dir.js in each app directory
+  //check if do NOT have one, copy from the sample app
+  //FIXME doesn't support multiple app scenario
+  var server_config_path = path.join(ph, 'app/server_config'),
+  	  mime_js = path.join(server_config_path, 'mime.js'),
+  	  tmp_dir_js = path.join(server_config_path, 'tmp_dir.js');
+  	  
+  if(!fs.existsSync(mime_js)){
+  	copy(path.join(__dirname, '../../app/server_config/mime.js'), mime_js);
+  }
+  if(!fs.existsSync(tmp_dir_js)){
+  	copy(path.join(__dirname, '../../app/server_config/tmp_dir.js'), tmp_dir_js);
+  }
+  
   
   console.log('   \x1b[36mCongratulations! Your application has been succesfully upgraded\x1b[0m');
   

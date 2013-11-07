@@ -2,6 +2,8 @@ var runnable = function(fw){
 	
     var _controller = fw.controller;
     var _model = fw.model;
+    var isServer = fw.IS_SUMERU_SERVER;
+    
     function mergeArray(array, struct){
         var structGroupType,structGroupCnt;
         for (var i = 0, ilen = struct.length; i < ilen; i++){
@@ -225,8 +227,9 @@ var runnable = function(fw){
             
             //因为JS的单线程执行，只要callback中没有setTimeout等异步调用，全局变量tapped_blocks就不会产生类似多进程同时写的冲突。
             //FIX BY SUNDONG,tapped_blocks在callback不要清空已经bind的东西
+            //添加修正，由于前端渲染是实时进行，所以在前端的回调中，要清空已渲染的
             var tapped_blocks = [];
-            if (_controller._tapped_blocks) {
+            if (_controller._tapped_blocks && isServer) {
                 tapped_blocks = _controller._tapped_blocks;
             }else{
                 _controller.__reg('_tapped_blocks', tapped_blocks, true);

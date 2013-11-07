@@ -186,7 +186,7 @@
 			classname:null
 		}
 	};
-	var _isFristLode = true;
+	var _isFirstLoad = true;
 	var _init = function(){
 		if (!(_wrap = document.getElementById("_smr_runtime_wrapper"))) {
 			_wrap = document.createElement("div");
@@ -195,7 +195,7 @@
 			document.body.appendChild(_wrap);
 			// _fixSreenSize(_wrap);
 		}
-		_isFristLode = false;
+		_isFirstLoad = false;
 	};
 
     var _createFlipObj = function(frontdom,backdom){
@@ -267,7 +267,7 @@
 	 */
 	var _transition = function(target){
 
-		if(_isFristLode) _init();
+		if(_isFirstLoad) _init();
         __dealTransitionAnim(target);
         
         var show = _setting.showScene;

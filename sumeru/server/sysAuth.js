@@ -324,8 +324,57 @@ var setSessionStatus = function(clientId,status,callback){
     
 };
 
+var inited = false;
+
 // sysAuth.__reg('verifySession',verifySession,true);
 sysAuth.__reg('cleanSession',cleanSession,true);
+sysAuth.__reg('initPublish',function(){
+    
+    if(inited){
+        return;
+    }
+    
+    inited = true;
+    
+    /**
+     * 客户端用户系统初始化操作.
+     * 这段代码这里本来应该放在sysAuth.js中,但是由于载入顺序的关系,只能先放这.
+     */
+    sumeru.publish('smr_Authentication', 'auth-init', function(clientId, authMethod, callback) {
+        // 验证客户端当前的session是否有效
+        if(clientId && authMethod){
+            this.find({clientId:clientId,authMethod:authMethod,expires:{$gte:Date.now()}},{clientId:false,authMethod:false,expires:false,status:false,_id:false},function(err,rs){
+                if(err){
+                    console.error(err);
+                    console.trace();
+                    callback([]);
+                    return;
+                }
+                
+                callback(rs);
+            });
+        }else{
+            callback([]);
+        }
+    }, {
+        beforeInsert : function(serverCollection, structData, userinfo, callback) {
+            // 阻止insert操作. insert只能由server内部操作,不能由publish引发
+            // callback();
+        },
+        afterInsert : function(serverCollection, structData) {
+        },
+        beforeDelete : function(serverCollection, structData, userinfo, callback) {
+            //  阻止update操作. update只能由server内部操作,不能由publish引发
+            // callback();
+        },
+        beforeUpdate : function(serverCollection, structData, userinfo, callback) {
+            // 阻止update操作. update只能由server内部操作,不能由publish引发
+            // callback();
+        },
+        onPubEnd : function(serverCollection) {
+        }
+    });
+},true);
 
 
 

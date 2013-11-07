@@ -155,6 +155,7 @@
                 'validation.js',
                 'validationRules.js',
                 '../library/obj.js',
+                '../library/cookie.js',
                 '../library/asyncCallbackHandler.js'
             ];
     

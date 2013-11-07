@@ -6,35 +6,13 @@ var config = fw.config;
 
 var isBae = ((typeof process.BAE !== 'undefined') ? true : false);
 //startup a server
-var http = require("http"), 
-    path = require('path'),
+var path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
     appName = isBae?'':(process.argv[2] || ''),
     fileUpload = require(__dirname + "/fileUpload.js");//用于文件处理
 
-var dealFileExtention = function(filepath){
-    var filepart1 = filepath.substring(0,filepath.lastIndexOf(".")),//filename etc.
-        filepart2 = filepath.substring(filepath.lastIndexOf("."));//extision as .gif
-    return [filepart1,filepart2];
-};
-var putFileAsName = function(filepath,i){
-    if ( fs.existsSync(filepath) ) {//存在，则i++进入递归，不存在重名，则返回path
-        var tmp = dealFileExtention(filepath);
-        var filepart1 = tmp[0],
-        filepart2 = tmp[1];
-        
-        if (!i)i=0;
-        var match = filepart1.match(/\((\d+)\)$/);
-        if (match){
-            filepart1 = filepart1.replace(/\((\d+)\)$/,"(" + i + ")");
-        }else{
-            filepart1 = filepart1+"(1)";
-        }
-        return putFileAsName(filepart1 + filepart2,++i);
-    }
-    return filepath;
-};
+
 var getCookieFromString = function(strcookie,name){
     if (typeof strcookie !== 'string') return '';
     var arrcookie = strcookie.split("; ");
@@ -72,12 +50,13 @@ var getCookieFromString = function(strcookie,name){
         };
         
         //把问号后面去掉
-        var fileObj  = fw.uri.getInstance(filePath);
+        var uriObj  = fw.uri.getInstance(filePath);
         
-        if ( fs.existsSync(localBase+filePath.replace(/\?.*/,""))){//存在文件
-            filePath = filePath.replace(/\?.*/,"");
-        }else{
-            filePath = fileObj.path;
+        //清除?后面的东西
+        filePath = filePath.replace(/\?.*/,"");
+        
+        if ( !fs.existsSync(localBase+filePath) ){//存在文件，则保持
+            filePath = uriObj.path;
         }
         
         
@@ -111,6 +90,8 @@ var getCookieFromString = function(strcookie,name){
         
         var extensionName = path.extname(filePath).toLowerCase(),
             contentType = 'text/html';
+        var extMap = sumeru.config.get("mime");
+        if (!extMap){//兼容没有设置mime情况
             extMap = {
                 '.js' : 'text/javascript',
                 '.css' : 'text/css',
@@ -120,8 +101,9 @@ var getCookieFromString = function(strcookie,name){
                 '.ico' : 'image/jpeg',
                 '.json' : 'text/json',
                 '.manifest' : 'text/cache-manifest'
-            },
-            _binaryMap = ['.jpg','.jpeg','.png','.gif','.bmp','.mp3', '.ico', '.png'],
+            };
+        }
+        var _binaryMap = ['.jpg','.jpeg','.png','.gif','.bmp','.mp3', '.ico', '.png'],
             binaryMap = {};
         
         _binaryMap.forEach(function(item){
@@ -132,7 +114,7 @@ var getCookieFromString = function(strcookie,name){
             contentType = extMap[extensionName];
         }
         //ADDED BY SUNDONG
-        if (fileObj.router && fileObj.router.type == 'file'){//deal upload
+        if (uriObj.router && uriObj.router.type == 'file'){//deal upload
             /*
                 pattern    :   '/files', //pattern用于定义匹配上传文件的uri
                 type  :   'file',
@@ -145,35 +127,49 @@ var getCookieFromString = function(strcookie,name){
             */
             if (req.method.toLowerCase() == 'post') {
                 // parse a file upload
-                var form = new fileUpload();
-                //fileObj.router
-                form.uploadDir = fw.config.get("tmp_dir");//process.env.TMP || process.env.TMPDIR || process.env.TEMP || '/tmp' || process.cwd();//localBase + '/upload/';上传到临时目录
-                if (fileObj.router.max_size_allowed) {
-                    form.maxFieldsSize = fileObj.router.max_size_allowed;
+                var form = new fileUpload({hash:"sha1"});
+                //uriObj.router
+                if (uriObj.router.max_size_allowed) {
+                    form.maxFieldsSize = uriObj.router.max_size_allowed;
                 }
-                form.parse(req, function(err, fields, files) {
-                  res.writeHead(200, {'content-type': 'text/plain'});
-                  //上传成功。重命名到上传目录
-                  var pubdir = (fileObj.router.upload_dir||"upload");
-                  var wholepubdir = process.dstDir + '/'+pubdir + "/";
-                  for(var n in files){
-                      if (files[n].size == 0 ) continue; 
-                      //if rename function exists,rename first.
-                      if (typeof fileObj.router.rename === 'function'){
-                          var tmp = dealFileExtention(files[n].name);
-                          var filepart1 = tmp[0],
-                          filepart2 = tmp[1];
-                          files[n].name = (fileObj.router.rename(filepart1)||"") + filepart2;
-                      }
-                      //then find a name to rename & save
-                      var pubfilepath = putFileAsName(wholepubdir + files[n].name);
-                      fs.renameSync(files[n].path, pubfilepath);//files[n].path 是临时文件的路径，savefilepath是排除了重复的文件
-                      var pubfilelink = (fw.config.get("site_url") || "")+ "/" + pubdir + pubfilepath.substring(pubfilepath.lastIndexOf("/"));
-                      res.end(pubfilelink);
-                      break;//暂不支持一个form多个上传文件，其实支持也很简单但是没有必要，正常情况一个文件一个文件上传处理即可。
-                  }
+                
+                var pubdir = (uriObj.router.upload_dir||"upload");//相对路径
+                var wholepubdir = process.appDir + '/'+pubdir + "/";//绝对路径
+                fs.exists(wholepubdir,function(exists){
+                    if (!exists){
+                        fs.mkdirSync(wholepubdir);
+                    }
+                });
+                //form.uploadDir = process.tmpDir;//在build/build.js中定义临时目录  //process.env.TMP || process.env.TMPDIR || process.env.TEMP || '/tmp' || process.cwd();//localBase + '/upload/';上传到临时目录
+                var tmpdir = (fw.config.get("tmp_dir") || "tmp");
+                form.uploadDir = process.appDir + '/'+tmpdir + "/";
+                fs.exists(form.uploadDir,function(exists){
+                    if (!exists){
+                        fs.mkdirSync(form.uploadDir);
+                    }
+                    form.parse(req, function(err, fields, files) {
+                      res.writeHead(200, {'content-type': 'text/plain'});
+                      //上传成功。重命名到上传目录
+                      for(var n in files){
+                          if (files[n].size == 0 && files[n].name == "" ) continue; 
+                          //if rename function exists,rename first.
+                          if (typeof uriObj.router.rename === 'function'){
+                              var tmp = form._dealFileExtention(files[n].name);
+                              var filepart1 = tmp[0],
+                              filepart2 = tmp[1];
+                              files[n].name = (uriObj.router.rename(filepart1)||"") + filepart2;
+                          }
+                          //then find a name to rename & save
+                          var pubfilepath = form._parseFilePath(wholepubdir + files[n].name);
+                          fs.renameSync(files[n].path, pubfilepath);//files[n].path 是临时文件的路径，savefilepath是排除了重复的文件
+                          var pubfilelink = (fw.config.get("site_url") || "")+ "/" + pubdir + pubfilepath.substring(pubfilepath.lastIndexOf("/"));
+                          res.end(form._outputSuccess(pubfilelink));
+                          break;//暂不支持一个form多个上传文件，其实支持也很简单但是没有必要，正常情况一个文件一个文件上传处理即可。
+                     }
+                     res.end(form._outputError((err && err.toString() )|| "no files"));
+                });
                   
-                  res.end('no files');
+                  
                 });
             
                 return;
@@ -403,7 +399,7 @@ var getCookieFromString = function(strcookie,name){
                             });
                         } else if(extensionName == '.html'){
                             //view from cache : true以后，controller的模板也会走入这里
-                            if (fileObj.controller === 0){
+                            if (uriObj.controller === 0){
                                 res.writeHead(404);
                                 res.end();
                                 return ;
@@ -417,7 +413,7 @@ var getCookieFromString = function(strcookie,name){
                                 	entireContent = entireContent.replace(/<base[\s\S]*?>/g,"").replace("<head>",'<head><base href="'+fw.config.get("site_url")+'" />');
                                 }
                                 
-                                if ( fileObj.controller !=null) {
+                                if ( uriObj.controller !=null) {
                                     /*
                                      server_auth 说明
                                      1.在请求来时注册client，进行注册逻辑
@@ -426,8 +422,8 @@ var getCookieFromString = function(strcookie,name){
                                      4.由于后续客户端渲染开始，因此不清理client，交给后续socket断开或者心跳清理
                                      * */
                                     //1. 解析出clientId
-                                    var clientId = getCookieFromString(req.headers.cookie,'clientId');
-                                    var authMethod = getCookieFromString(req.headers.cookie,'authMethod');
+                                    var clientId = Library.cookie.parseCookie(req.headers.cookie,'clientId');
+                                    var authMethod = Library.cookie.parseCookie(req.headers.cookie,'authMethod');
                                     //2.认证，进行clientId进行auth认证
                                     var client = fw.clientTracer.findClient(clientId);
                                     var verify_callback = function(){
@@ -466,7 +462,7 @@ var getCookieFromString = function(strcookie,name){
                                         verify_callback();
                                     }
                                     
-                                }else if (fileObj.controller === 0){
+                                }else if (uriObj.controller === 0){
                                     
                                 }else{
                                     res.end(entireContent);

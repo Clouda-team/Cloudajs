@@ -23,33 +23,7 @@ var runnable = function(fw,runfromServer){
     };
     var routerObj = null;
     
-    // var parseFileFromUrl = function(filePath){// all files
-    	// //1.  ?后的一切都不是file的name
-		// if ( filePath.indexOf('?') != -1 ) {
-            // filePath = filePath.substring(0,filePath.indexOf("?"));
-        // }
-        // //文件直接读取,使用baseurl，已经彻底解决此问题
-        // if (filePath.match(/\.\w+$/) ) {
-        	// if (filePath.indexOf('.html/') != -1){
-        		// filePath = filePath.substring(filePath.indexOf(".html/")+5);
-        	// }
-        	// //检测controller的去减
-        	// // if (!routerObj){
-	    		// // routerObj = fw.router.getAll();
-	    	// // }
-// 	    	
-        // }
-    	// //2. /的前面如果有.html也舍弃后面的
-    	// if ( filePath.indexOf('.html/') != -1) {
-    		// filePath = filePath.substring(0,filePath.indexOf('.html/')+5);
-    	// }
-    	// //3. /前面没有.html，且匹配了定义的router,则返回index.html
-    	// if ( !filePath.match(/\.\w+$/) ) {//文件直接读取
-        	// filePath = "/index.html";
-        // }
-//     	
-    	// return filePath;
-    // };
+   
     var parseFromUrl = function(filePath){
     	//0. 去掉#号
     	if (filePath.indexOf("#")!= -1) {
@@ -59,7 +33,7 @@ var runnable = function(fw,runfromServer){
     	
     	// hack to support no base_url router eg. debug.html/js/src/sumeru.js could be js/src/sumeru.js
         if (filePath.indexOf('.html/') != -1){
-            if (filePath.match(/\.\w+$/) || filePath.match(/\.\w+\?/) ) {//static file
+            if (filePath.match(/^[^?]*\.\w+$/) || filePath.match(/\.\w+\?/) ) {//static file
                 filePath = filePath.substring(filePath.indexOf(".html/")+5);              
             }
         }

@@ -1,29 +1,32 @@
 ;
 if(typeof module != 'undefined' && module.exports){//server运行
-	Library.cookie = sumeru.Library.create(function(exports){	
-	    var EMPTY = '';
-		var cookieStack = {};
-		var addCookie = exports.addCookie = function(name, value, expireHours){
-			cookieStack[name] = value;
-		};
-		
-		var getCookie = exports.getCookie = function(name){
-			return cookieStack[name] || EMPTY;
-		};
-		
-		var deleteCookie = exports.deleteCookie = function(name){
-		    delete cookieStack[name];
-		};
-		var getCookieFromString = exports.parseCookie = function(strcookie,name){
-		    var arrcookie = strcookie.split("; ");
-            for(var i = 0; i < arrcookie.length; i++){
-                var arr = arrcookie[i].split("=");
-                if(arr[0] == name) return arr[1];
-            }
-            return '';
-		};
-		return exports;
-	});
+    var runnable = function(sumeru){
+    	Library.cookie = sumeru.Library.create(function(exports){	
+    	    var EMPTY = '';
+    		var cookieStack = {};
+    		var addCookie = exports.addCookie = function(name, value, expireHours){
+    			cookieStack[name] = value;
+    		};
+    		
+    		var getCookie = exports.getCookie = function(name){
+    			return cookieStack[name] || EMPTY;
+    		};
+    		
+    		var deleteCookie = exports.deleteCookie = function(name){
+    		    delete cookieStack[name];
+    		};
+    		var parseCookie = exports.parseCookie = function(strcookie,name){
+    		    var arrcookie = strcookie.split("; ");
+                for(var i = 0; i < arrcookie.length; i++){
+                    var arr = arrcookie[i].split("=");
+                    if(arr[0] == name) return arr[1];
+                }
+                return '';
+    		};
+    		return exports;
+    	});
+	};
+	module.exports = runnable;
 }else{//client
 	
 	Library.cookie = sumeru.Library.create(function(exports){	

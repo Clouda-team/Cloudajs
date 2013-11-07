@@ -27,6 +27,7 @@ function File(properties) {
   }
 
   if(typeof this.hash === 'string') {
+    //fw.dev("-00000000000----fileUpload -- this.hash" , properties.hash);
     this.hash = crypto.createHash(properties.hash);
   } else {
     this.hash = null;
@@ -434,7 +435,7 @@ function IncomingForm(opts) {
   this.encoding = opts.encoding || 'utf-8';
   this.headers = null;
   this.type = null;
-  this.hash = false;
+  this.hash = opts.hash || false;
 
   this.bytesReceived = null;
   this.bytesExpected = null;
@@ -889,5 +890,38 @@ IncomingForm.prototype._maybeEnd = function() {
   }
 
   this.emit('end');
+};
+//get file_extention from file_name by '.'
+IncomingForm.prototype._dealFileExtention = function(filepath){
+    var pos = filepath.lastIndexOf(".");
+    var filepart1 = filepath.substring(0,pos),//filename etc.
+        filepart2 = filepath.substring(pos);//extision as .gif
+    return [filepart1,filepart2];
+};
+//pick up an unique file name.
+IncomingForm.prototype._parseFilePath = function(filepath,i) {
+  if ( fs.existsSync(filepath) ) {//存在，则i++进入递归，不存在重名，则返回path
+        var tmp = this._dealFileExtention(filepath);
+        var filepart1 = tmp[0],
+        filepart2 = tmp[1];
+        
+        if (!i)i=0;
+        var match = filepart1.match(/\((\d+)\)$/);
+        if (match){
+            filepart1 = filepart1.replace(/\((\d+)\)$/,"(" + i + ")");
+        }else{
+            filepart1 = filepart1+"(1)";
+        }
+        return this._parseFilePath(filepart1 + filepart2,++i);
+    }
+    return filepath;
+};
+
+
+IncomingForm.prototype._outputSuccess = function(filename){
+    return JSON.stringify({errno:0,data:filename});
+};
+IncomingForm.prototype._outputError = function(msg){
+    return JSON.stringify({errno:1,data:msg});
 };
 module.exports = IncomingForm;

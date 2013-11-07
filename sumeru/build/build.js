@@ -39,17 +39,13 @@ if (typeof process.BAE !== 'undefined'){
     
 }
 
-//mkdir dirs
-!fs.existsSync(dstDir+"/upload") && fs.mkdirSync(dstDir+"/upload");
-!fs.existsSync(dstDir+"/tmp") && fs.mkdirSync(dstDir+"/tmp");
-
 process.appDir = appDir;
-    
-sumeru.dev('build from :' + baseDir);
-sumeru.dev('to :' + dstDir);
 
 process.baseDir = baseDir;
 process.dstDir = dstDir;
+
+sumeru.dev('build from :' + baseDir);
+sumeru.dev('to :' + dstDir);
 
 
 if (baseDir.charAt(baseDir.length-1) == '/'){

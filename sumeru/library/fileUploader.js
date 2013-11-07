@@ -43,7 +43,7 @@ Library.fileUploader = sumeru.Library.create(function(exports){
             var oFile = e.target.files[0];
             // little test for filesize
             if (this.max_size_allowed >0 && oFile.size > this.max_size_allowed) {
-                alert("too big file");
+                me.onError("too big file");
                 return;
             }
             var ext = oFile.name.replace(/.*\./,"").toLowerCase();
@@ -57,7 +57,7 @@ Library.fileUploader = sumeru.Library.create(function(exports){
                 }
             }
             if (iLimit == true){
-                alert("extention not allowed");
+                me.onError("extention not allowed");
                 return;
             }
             this.fileSize = oFile.size;
@@ -124,9 +124,19 @@ Library.fileUploader = sumeru.Library.create(function(exports){
             me.status = fileUploader.UPLOADING;
         }, false);
         
-        oXHR.addEventListener('load', function(){
+        oXHR.addEventListener('load', function(e){
             // me.success && me.success.apply(me,arguments);
-            me.onSuccess.apply(me,arguments);
+            try{
+                var data = JSON.parse(e.target.responseText);
+                if (!data.errno){
+                    me.onSuccess.call(me,data.data);
+                }else{
+                    me.onError.call(me,data.data);
+                }
+            }catch(error){
+                me.onError.call(me,error.message);
+            }
+            
             me.status = fileUploader.COMPLETE;
         }, false);
         
@@ -147,17 +157,6 @@ Library.fileUploader = sumeru.Library.create(function(exports){
         
     };
     
-    // fileUploader.prototype.onSelect = function(e){
-        // var oFile = e.target.files[0];
-        // // little test for filesize
-        // if (this.max_size_allowed >0 && oFile.size > this.max_size_allowed) {
-            // alert("too big file");
-            // return;
-        // }
-        // this.fileSize = oFile.size;
-        // this.extension = oFile.name.replace(/.*\./,"");
-    // };
-    
     fileUploader.prototype.onSuccess = function(e,data){
     
     };
@@ -166,8 +165,8 @@ Library.fileUploader = sumeru.Library.create(function(exports){
     
     };
     
-    fileUploader.prototype.onError = function(fileObj,data){
-    
+    fileUploader.prototype.onError = function(msg){
+        fw.log("error ",msg);
     };
     
     fileUploader.prototype.onComplete = function(fileObj,data){

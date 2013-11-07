@@ -44,13 +44,6 @@ var globalConfig = function(fw){
     	    configPath : configPath,
     	});
     	
-    	//var upload_dir = process.dstDir + '/upload/';//app目录/upload ，build.js中有创建
-        var tmp_dir = process.dstDir + '/tmp/';
-        
-    	fw.config({
-            //"upload_dir":upload_dir,
-            "tmp_dir":tmp_dir
-        });
     }
     
     var viewConfig = fw.config.defineModule('view');
