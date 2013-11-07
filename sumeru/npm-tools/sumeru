@@ -121,7 +121,7 @@ function createApplicationAt(ph, options) {
   options = options || {};
 
   var name = path.basename(path.resolve(CUR_DIR, ph));
-  copy(path.join(__dirname, '../../'), ph);
+  copyDir(path.join(__dirname, '../../'), ph);
   mkdir(path.join(ph, 'sumeru/server/logs'));
 
   var repalcefile = [];
@@ -176,7 +176,7 @@ function updateApplicationAt(ph) {
       backupPath = path.join(ph, 'backup/' + currentDate);
 
   mkdir(backupPath);
-  copy(ph, backupPath);
+  copyDir(ph, backupPath);
   
   //use create to init a new project
   createApplicationAt(ph, {
@@ -185,29 +185,39 @@ function updateApplicationAt(ph) {
 
 
   //copy app back
-  copy(path.join(backupPath, 'app'), path.join(ph, 'app'));  
+  copyDir(path.join(backupPath, 'app'), path.join(ph, 'app'));  
 
   //since 0.8.0, we have server_config in each app directory
   //check if do NOT have one, copy from the sample app
   //FIXME doesn't support multiple app scenario
   var server_config_path = path.join(ph, 'app/server_config');
   if(!fs.existsSync(server_config_path)){
-  	copy(path.join(__dirname, '../../app/server_config'), server_config_path);
+  	copyDir(path.join(__dirname, '../../app/server_config'), server_config_path);
   }
   
-   //since 0.8.16, we have server_config/mime.js & server_config/tmp_dir.js in each app directory
+  //since 0.8.16, we have server_config/mime.js & server_config/tmp_dir.js in each app directory
   //check if do NOT have one, copy from the sample app
   //FIXME doesn't support multiple app scenario
   var server_config_path = path.join(ph, 'app/server_config'),
   	  mime_js = path.join(server_config_path, 'mime.js'),
-  	  tmp_dir_js = path.join(server_config_path, 'tmp_dir.js');
+  	  tmp_dir_js = path.join(server_config_path, 'tmp_dir.js'),
+  	  package_js = path.join(server_config_path, 'package.js');
   	  
   if(!fs.existsSync(mime_js)){
-  	copy(path.join(__dirname, '../../app/server_config/mime.js'), mime_js);
+  	copyFile(path.join(__dirname, '../../app/server_config/mime.js'), mime_js);
   }
   if(!fs.existsSync(tmp_dir_js)){
-  	copy(path.join(__dirname, '../../app/server_config/tmp_dir.js'), tmp_dir_js);
+  	copyFile(path.join(__dirname, '../../app/server_config/tmp_dir.js'), tmp_dir_js);
   }
+  //check if package.json contains them, if not, add them.
+  var pkgContent = fs.readFileSync(package_js).toString();
+  if(pkgContent.match(/mime\.js/m) == null){
+	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'mime.js'"});
+  }
+  if(pkgContent.match(/tmp_dir\.js/m) == null){
+	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'tmp_dir.js'"});
+  }
+  fs.writeFileSync(package_js, pkgContent);
   
   
   console.log('   \x1b[36mCongratulations! Your application has been succesfully upgraded\x1b[0m');
@@ -349,15 +359,36 @@ function legalArgNum(argNum) {
 };
 
 /**
+ * Copy one file to project.
+ *
+ * @param {String} origin
+ * @param {String} target
+ */
+function copyFile(origin, target) {
+  if(!fs.existsSync(origin)) abort(origin + ' is not exist.');
+  if(!fs.existsSync(path.dirname(target))) {
+    mkdir(path.dirname(target));
+    console.log('   \x1b[36mcreate\x1b[0m : ' + path.dirname(target));
+  }
+
+
+  if(fs.statSync(origin).isFile()) {
+    fs.writeFileSync(target, fs.readFileSync(origin, ''), '');
+    console.log('   \x1b[36mcreate\x1b[0m : ' +  target);
+  }
+  
+};
+
+/**
  * Copy template files to project.
  *
  * @param {String} origin
  * @param {String} target
  */
-function copy(origin, target) {
+function copyDir(origin, target) {
   if (path.basename(origin) == 'backup') {return};
   if(!fs.existsSync(origin)) abort(origin + ' is not exist.');
-  if(!fs.existsSync(target)) {
+  if(!fs.existsSync(target) && fs.statSync(origin).isDirectory()) {
     mkdir(target);
     console.log('   \x1b[36mcreate\x1b[0m : ' + target);
   }
@@ -371,7 +402,7 @@ function copy(origin, target) {
         fs.writeFileSync(tCurrent, fs.readFileSync(oCurrent, ''), '');
         console.log('   \x1b[36mcreate\x1b[0m : ' + tCurrent);
       } else if(fs.statSync(oCurrent).isDirectory()) {
-      	copy(oCurrent, tCurrent);
+      	copyDir(oCurrent, tCurrent);
       }
   }
   
@@ -384,7 +415,7 @@ function copy(origin, target) {
       if(fs.statSync(oCurrent).isFile()) {
         fs.writeFileSync(tCurrent, fs.readFileSync(oCurrent, ''), '');
         console.log('   \x1b[36mcreate\x1b[0m : ' + tCurrent);
-      } else if(fs.statSync(oCurrent).isDirectory()) copy(oCurrent, tCurrent);
+      } else if(fs.statSync(oCurrent).isDirectory()) copyDir(oCurrent, tCurrent);
     }
   });*/
 };
