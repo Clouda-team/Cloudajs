@@ -212,10 +212,10 @@ function updateApplicationAt(ph) {
   //check if package.json contains them, if not, add them.
   var pkgContent = fs.readFileSync(package_js).toString();
   if(pkgContent.match(/mime\.js/m) == null){
-	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'mime.js'"});
+	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'mime.js,'"});
   }
   if(pkgContent.match(/tmp_dir\.js/m) == null){
-	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'tmp_dir.js'"});
+	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'tmp_dir.js,'"});
   }
   fs.writeFileSync(package_js, pkgContent);
   
