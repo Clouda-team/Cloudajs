@@ -12,16 +12,6 @@ var path = require('path'),
     appName = isBae?'':(process.argv[2] || ''),
     fileUpload = require(__dirname + "/fileUpload.js");//用于文件处理
 
-
-var getCookieFromString = function(strcookie,name){
-    if (typeof strcookie !== 'string') return '';
-    var arrcookie = strcookie.split("; ");
-    for(var i = 0; i < arrcookie.length; i++){
-        var arr = arrcookie[i].split("=");
-        if(arr[0] == name) return arr[1];
-    }
-    return '';
-};
     module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
         var frkDir = __dirname + '/../../',

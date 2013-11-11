@@ -7,9 +7,8 @@ var util = require('util'),
     os = require('os');
 
 //-------FILE BEGIN
-var WriteStream = fs.WriteStream,
-    crypto = require('crypto');
-
+var WriteStream = fs.WriteStream;
+    
 function File(properties) {
   EventEmitter.call(this);
 
@@ -26,12 +25,7 @@ function File(properties) {
     this[key] = properties[key];
   }
 
-  if(typeof this.hash === 'string') {
-    //fw.dev("-00000000000----fileUpload -- this.hash" , properties.hash);
-    this.hash = crypto.createHash(properties.hash);
-  } else {
-    this.hash = null;
-  }
+  this.hash = null;
 }
 // module.exports = File;
 util.inherits(File, EventEmitter);
@@ -55,9 +49,6 @@ File.prototype.toJSON = function() {
 
 File.prototype.write = function(buffer, cb) {
   var self = this;
-  if (self.hash) {
-    self.hash.update(buffer);
-  }
   this._writeStream.write(buffer, function() {
     self.lastModifiedDate = new Date();
     self.size += buffer.length;
@@ -68,9 +59,6 @@ File.prototype.write = function(buffer, cb) {
 
 File.prototype.end = function(cb) {
   var self = this;
-  if (self.hash) {
-    self.hash = self.hash.digest('hex');
-  }
   this._writeStream.end(function() {
     self.emit('end');
     cb();
@@ -435,7 +423,7 @@ function IncomingForm(opts) {
   this.encoding = opts.encoding || 'utf-8';
   this.headers = null;
   this.type = null;
-  this.hash = opts.hash || false;
+  this.hash = false;
 
   this.bytesReceived = null;
   this.bytesExpected = null;

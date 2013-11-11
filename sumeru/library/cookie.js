@@ -16,6 +16,7 @@ if(typeof module != 'undefined' && module.exports){//server运行
     		    delete cookieStack[name];
     		};
     		var parseCookie = exports.parseCookie = function(strcookie,name){
+    		    if (typeof strcookie !== 'string') return '';
     		    var arrcookie = strcookie.split("; ");
                 for(var i = 0; i < arrcookie.length; i++){
                     var arr = arrcookie[i].split("=");
