@@ -4,8 +4,8 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	//package
 	var external = fw.addSubPackage('external');
 	//constants
-	var REQUEST_TIMEOUT = 30 * 1000;    //request timeout config
-	
+	var REQUEST_TIMEOUT = 6 * 1000;    //request timeout config
+	var urlParser = typeof require !== 'undefined' && require("url");
 	//data managers
 	var remoteDataMgr = {};		//fetched and dev resolved data manager from external server
 	var localDataMgr = {};		//executed data manager by sumeru
@@ -137,12 +137,14 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		getRequest.on('error', function(err){
 			fw.log("Error when do external fetch", url);
 			errorHandler && errorHandler(err);
+			cb([]);
 		});
 		
 		//timeout handler
 		getRequest.setTimeout( REQUEST_TIMEOUT, function(info){
 			fw.log("Timeout when do external fetch", url);
 			timeoutHandler && timeoutHandler();
+			cb([]);
 		});
 		
 	}
@@ -205,6 +207,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 			fw.log("Error when do external post");
 			options && postData && fw.log(options, postData);
 			errorHandler && errorHandler(err);
+			cb([]);
 		});
 		
 		//timeout handler
@@ -212,6 +215,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 			fw.log("Timeout when do external post");
 			options && postData && fw.log(options, postData);
 			timeoutHandler && timeoutHandler();
+			cb([]);
 		});
 		
 	}
@@ -243,22 +247,20 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	 * @param {String} pubName : publish name
 	 * @return {Array} return the resolved data
 	 */
-	function _resolve(originData, pubName){
+	function _resolve(originData, pubName, url){
 		var config = externalConfig[pubName];
 		var data = config.buffer ? originData : originData.toString();
 		if(!config.resolve){ //强制有resolve函数
-			fw.log('Need function resolve for external fetch!');
+			fw.log('Need resolve method for external fetch!');
 			return;
-			//throw new Error('Need function resolve for external fetch!');
 		} 
 		try{
-			config.resolve(data);
 			var remoteData = config.resolve(data);
 			remoteData = Array.isArray(remoteData) ? remoteData : [remoteData];
 			return remoteData;
 		}catch(e){
-			fw.log("3rd party server encounters an error");
-			//throw new Error("3rd party server encounters an error");
+			fw.log("Please check fetch url, 3rd-party server encounters an error: ", url, "\n" ,data, "\n");
+			return ;
 		}
 		
 	}
@@ -277,31 +279,34 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		var remoteData = remoteDataMgr[url];
 		var ret = new LocalData();
 
-		remoteData.forEach(function(item){
+		if(remoteData){
+			remoteData.forEach(function(item){
 			
-			var newItem = fw.utils.deepClone(struct);
-			for(var p in newItem){
-				newItem[p] = item[p];
-			}
+				var newItem = fw.utils.deepClone(struct);
+				for(var p in newItem){
+					newItem[p] = item[p];
+				}
 
-			var unique = config.uniqueColumn || config.keyColume;
-			var oldItem = null;
+				var unique = config.uniqueColumn || config.keyColume;
+				var oldItem = null;
 
-			if(unique){
-				oldItem = localDataMgr[url] && localDataMgr[url].findOne(unique, newItem[unique]);
-			}
-			
-			if(oldItem){
-				newItem.smr_id = oldItem.smr_id;
-			}else{
-				newItem.smr_id = serverObjectId.ObjectId();
-			}
-			ret.insert(newItem);
-			
-		});
+				if(unique){
+					oldItem = localDataMgr[url] && localDataMgr[url].findOne(unique, newItem[unique]);
+				}
+				
+				if(oldItem){
+					newItem.smr_id = oldItem.smr_id;
+				}else{
+					newItem.smr_id = serverObjectId.ObjectId();
+				}
+				ret.insert(newItem);
+				
+			});
 
-		localDataMgr[url] = null;
-		
+			localDataMgr[url] = null;
+
+		}
+
 		return ret;
 
 	}
@@ -320,7 +325,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		var _doSync = function(data){
 
 			if(typeof remoteDataMgr[url] === "undefined"){ var firstFetch = true; }	//首次抓取不必trigger_push
-			var remoteData = _resolve(data, pubName);	//处理原始数据
+			var remoteData = _resolve(data, pubName, url);	//处理原始数据
 			if(firstFetch){
 				remoteDataMgr[url] = remoteData;
 				localDataMgr[url] = _process(modelName, pubName, url);
@@ -328,7 +333,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 				callback(dataArray);
 			}else{
 				var diff = (JSON.stringify(remoteData) === JSON.stringify(remoteDataMgr[url])); //这里可以不需要Diff工具，直接stringify对比
-				if(!diff){
+				if(!diff && remoteData){
 					remoteDataMgr[url] = remoteData;
 					localDataMgr[url] = _process(modelName, pubName, url);
 					fw.netMessage.sendLocalMessage({modelName : modelName}, 'trigger_push');
@@ -339,12 +344,22 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		}
 
 		if(method.toLowerCase() === "post"){
+
 			var postData = encodeURIComponent(config.postData); 	//args为postData
+			try{
+				var postOptions = urlParser && urlParser.parse(url);
+			}catch(e){
+				return fw.log("externalConfig: fetchUrl must return a url \n\n", url);
+			}
 			
+			if(!postOptions.hostname || !postOptions.pathname){
+				return fw.log('unexpected post url', url);
+			}
+
 			var opts = {
-				hostname : config.postOptions.hostname || config.postOptions.host,
-				path : config.postOptions.path,
-				port : config.postOptions.port || 80,
+				hostname : postOptions.hostname,
+				path : postOptions.pathname,
+				port : postOptions.port || 80,
 				method : 'POST',
 				headers: {
 			        'Content-Type': 'application/x-www-form-urlencoded',
@@ -358,7 +373,11 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 				return;
 			}
 		}else{
-			_doGet(url, _doSync);
+			try{
+				_doGet(url, _doSync);	
+			}catch(e){
+				fw.log("Fetch by get request failed", e);
+			}
 		}
 
 	}
@@ -531,14 +550,8 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		var method = config.method || "get";
 		var url;
 		if(method.toLowerCase() === "post"){
-			var postOptions = (config.fetchUrl && config.fetchUrl.apply(null, args));
+			url = (config.fetchUrl && config.fetchUrl.apply(null, args));
 			config.postData = args[args.length - 1] || ""; //规定最后一个参数为postdata
-			config.postOptions = postOptions;
-			url = postOptions.hostname || postOptions.host;
-			if(postOptions.port){
-				url = url + ":" + postOptions.port;
-			}
-			url += postOptions.path;
 		}else{
 			url = (config.fetchUrl && config.fetchUrl.apply(null, args)) || config.geturl(args); //兼容老的geturl方法	
 		}
@@ -549,8 +562,6 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 			urlMgr[modelName].push(url);
 		}
 		
-		//有本地数据,直接返回本地数据
-		//无本地数据,抓取后trigger_push
 		var localData = localDataMgr[url];
 		if(localData){
 			var dataArray = fw.utils.deepClone(localData.getData());  //生成一个对象，否则本地update导致数据同步异常
