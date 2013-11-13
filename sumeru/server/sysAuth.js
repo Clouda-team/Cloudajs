@@ -109,8 +109,7 @@ var verifySession = function(clientId,authMethod,callback){
     authCollection.findOne({clientId:clientId},function(err,data){
         
         if(err){
-            console.log(err);
-            console.tracer();
+            console.error(err.stack || err);
             callback(COMMON_STATUS_CODE['2004'],null);
             return;
         }
@@ -141,7 +140,7 @@ var verifySession = function(clientId,authMethod,callback){
                         callback(COMMON_STATUS_CODE[err.code],null);
                     }else{
                         callback(COMMON_STATUS_CODE['2004'],null);
-                        fw.log(err);
+                        fw.log(err.stack || err);
                     }
                     return;
                 }
@@ -154,7 +153,7 @@ var verifySession = function(clientId,authMethod,callback){
                             callback(COMMON_STATUS_CODE[err.code],null);
                         }else{
                             callback(COMMON_STATUS_CODE['2004'],null);
-                            fw.log(err);
+                            fw.log(err.stack || err);
                         }
                         return;
                     }
@@ -234,8 +233,7 @@ var buildSession = function(token,pwd,type,userInfo,clientId,callback){
     authCollection.remove({clientId:clientId},function(err){
         
         if(err){
-            console.error(err);
-            console.trace();
+            console.error(err.stack || err);
             callback({code:2004},null);
             return;
         }
@@ -243,8 +241,7 @@ var buildSession = function(token,pwd,type,userInfo,clientId,callback){
         //debugger;
         authCollection.save(authSession,function(err,item){
             if(err){
-                console.error(err);
-                console.trace();
+                console.error(err.stack || err);
                 callback({code:2004},null);
             }else{
                 callback(null,authSession);
@@ -345,8 +342,7 @@ sysAuth.__reg('initPublish',function(){
         if(clientId && authMethod){
             this.find({clientId:clientId,authMethod:authMethod,expires:{$gte:Date.now()}},{clientId:false,authMethod:false,expires:false,status:false,_id:false},function(err,rs){
                 if(err){
-                    console.error(err);
-                    console.trace();
+                    console.error(err.stack || err);
                     callback([]);
                     return;
                 }
@@ -688,8 +684,7 @@ netMessage.setReceiver({
            
            setSessionStatus(clientId,'offline',function(err){
                if(err){
-                   console.error(err);
-                   console.trace();
+                   console.error(err.stack || err);
                    return;
                }
                

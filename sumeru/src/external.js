@@ -1,11 +1,11 @@
 "use strict";
-var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId){
+var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId, url){
 
 	//package
 	var external = fw.addSubPackage('external');
 	//constants
 	var REQUEST_TIMEOUT = 6 * 1000;    //request timeout config
-	var urlParser = typeof require !== 'undefined' && require("url");
+	var urlParser = fw.IS_SUMERU_SERVER && url;
 	//data managers
 	var remoteDataMgr = {};		//fetched and dev resolved data manager from external server
 	var localDataMgr = {};		//executed data manager by sumeru

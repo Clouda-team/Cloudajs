@@ -304,7 +304,8 @@ if (fs.existsSync(publishBaseDir)) {
 var http = require("http");
 var sockjs = require("sockjs");
 var serverObjectId = require("./ObjectId");
-require(__dirname + '/../src/external.js')(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId);
+var url = require('url');
+require(__dirname + '/../src/external.js')(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId, url);
 
 
 var runStub = function(db) {

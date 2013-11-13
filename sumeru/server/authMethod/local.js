@@ -52,8 +52,7 @@ var handles = {
         },function(err,user){
             
             if(err){
-                console.warn(err);
-                console.trace();
+                sumeru.log(err.stack || err);
                 callback(err && {code:2004},null);
                 return;
             }
@@ -118,8 +117,7 @@ var handles = {
             var token = testItem.token;
             userCollection.count({token:token},function(err,len){
                 if(err){
-                    console.warn(err);
-                    console.trace();
+                    sumeru.log(err.stack || err);
                 }
                 // 不等于0就认为是不能注册...
                 callback(err && {code:2004},len === 0);
@@ -173,6 +171,7 @@ var handles = {
         // 重复检查
         userCollection.count({token:token},function(err,len){
             if(err){
+                sumeru.log(err.stack || err);
                 callback({code:2004},null);
                 return;
             }
@@ -186,7 +185,7 @@ var handles = {
             userCollection.insert(user,function(err,item){
                 //debugger;
                 if(err){
-                    sumeru.log(err,item);
+                    sumeru.log(err.stack || err);
                     callback({code:2004},null);
                 }else{
                     sumeru.log("localUser : register :" , token );
@@ -224,7 +223,7 @@ var handles = {
         
         userCollection.findOne({userId:userId},function(err,user){
             if(err){
-                sumeru.log(err,item);
+                sumeru.log(err.stack || err);
                 callback({code:2004},null);
                 return;
             }
@@ -298,7 +297,7 @@ var handles = {
         
         userCollection.findOne({token:token},function(err,item){
             if(err){
-                sumeru.log(err,item);
+                sumeru.log(err.stack || err);
                 callback({code:2004},null);
                 return;
             }
@@ -315,7 +314,7 @@ var handles = {
             
             userCollection.save(item,function(err){
                 if(err){
-                    sumeru.log(err,item);
+                    sumeru.log(err.stack || err);
                     callback({code:2004},null);
                     return;
                 }
@@ -366,7 +365,7 @@ var handles = {
         
         userCollection.findOne({token:token},function(err,item){
             if(err){
-                sumeru.log(err,item);
+                sumeru.log(err.stack || err);
                 callback({code:2004},null);
                 return;
             }
@@ -383,7 +382,7 @@ var handles = {
             
             userCollection.save(item,function(err){
                 if(err){
-                    sumeru.log(err,item);
+                    sumeru.log(err.stack || err);
                     callback({code:2004},null);
                     return;
                 }
