@@ -280,7 +280,7 @@ var copySumeruFile2AppBin = function(){
             buildAppResource(dir, theBinDir);
         }
     });
-}
+};
 
 copySumeruFile2AppBin();
 

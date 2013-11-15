@@ -10,7 +10,18 @@ fw.__reg('IS_SUMERU_SERVER', true);
 fw.__reg('idField', 'smr_id');
 fw.__reg('clientIdField', '__clientId');
 
-
+//设置server的bae变量
+fw.__reg('BAE_VERSION', (function(){
+    var version = 0;
+    if (process.env && process.env.SERVER_SOFTWARE === 'bae/3.0') {
+        version = 3;
+    }else if (typeof process.BAE !== 'undefined'){
+        version = 2;
+    }else{
+    }
+    return version;
+})());
+fw.log("node start,running checking bae version:"+fw.BAE_VERSION);
 /**
  * 以下引入js均需使用newPkg.js的功能，在node中，整个运行过程中，只在这里载入一次，
  * 其它组件文件只需载入newPkg.js即可，否则将引发一个重复载入的错误。
@@ -69,10 +80,15 @@ var nope = function(){};
 //startup a server
 
 
-var PORT =  (typeof process !== 'undefined' && 
-     typeof process.BAE !== 'undefined') ?
-    process.env.APP_PORT : config.get('httpServerPort');
-    
+var PORT;
+if (fw.BAE_VERSION === 2) {
+    PORT = process.env.APP_PORT;
+}else if (fw.BAE_VERSION === 3){
+    PORT = 18080;
+}else{
+    PORT = config.get('httpServerPort');
+}
+
 var idField = fw.idField;
 
 var DbCollectionHandler = require(__dirname + "/DbCollectionHandler.js")(fw);
@@ -251,15 +267,13 @@ require(__dirname + '/poller/poller.js')(fw,getDbCollectionHandler);
 
 
 //require all publish and model
-var appPath  = __dirname + '/../../app' + 
-    ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
+var appPath  =  process.appDir;
 var publishBaseDir = appPath + '/publish';
 var allTheDirFiles = []; 
 
-if (typeof process.BAE == 'undefined'){//not bae
-    // runFileServer = false;
+if (fw.BAE_VERSION != 2){//
     viewPath = appPath + '/bin';
-}else{
+}else{//TODO 为了老用户平滑迁移，本次不动build目录，等平滑迁移后，再指引做足再迁移2.0 (原BAE的app.conf转发规则/bin指向__bae__/bin)
 	viewPath = __dirname + '/../../__bae__/bin';
 }
 

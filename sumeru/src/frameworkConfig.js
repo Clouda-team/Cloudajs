@@ -5,7 +5,7 @@ var globalConfig = function(fw){
     var view_from_cache = false;
     
     // BAE CONFIG    
-    if (typeof process !== 'undefined' && typeof process.BAE !== 'undefined'){
+    if (fw.BAE_VERSION > 0){
         httpServerPort = 0;
         whiteList = ['xhr-streaming'];
         view_from_cache = true;

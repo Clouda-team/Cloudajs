@@ -134,11 +134,14 @@ var runnable = function(fw){
             username = databaseConfig.get('user') || '',
             password = databaseConfig.get('password') || '';
         
-        if(process && process.BAE){
+        if(fw.BAE_VERSION === 2){
             host = process.env.BAE_ENV_ADDR_MONGO_IP;
             port = +process.env.BAE_ENV_ADDR_MONGO_PORT;
             username = process.env.BAE_ENV_AK;
             password = process.env.BAE_ENV_SK;
+        }else if (fw.BAE_VERSION === 3){
+            host = 'mongo.duapp.com';
+            port = 8908;
         }
         
         var server = new mongodb.Server(host, port, serverOptions);

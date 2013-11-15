@@ -46,8 +46,7 @@ var runnable = function(fw){
 	var buildModelTemp = function(){
 		//var modelPath = path.join(process.dstDir, 'server/tmp/model.js');
         
-        var appPath  = __dirname + '/../../app' + 
-            ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
+        var appPath  = process.appDir;
         var allTheDirFiles = [];
         var modelBaseDir = appPath + '/model';
         var findAllTheDirFiles = function(theDir) {                                 
@@ -103,7 +102,7 @@ var runnable = function(fw){
 	        fw.server_model.modelTempContainter[model] = fieldsMap;
 	        fw.server_model.modelTempContainter[model].needAuth = exports['config'].needAuth;
 	    }
-	}
+	};
 	buildModelTemp();
 	fw.server_model.getModelRelation = function(modelName){
 		if(typeof fw.server_model.modelRelation[modelName] == 'undefined'){
@@ -125,6 +124,6 @@ var runnable = function(fw){
 		//client model name with :::: Model.modelName,so remove "Model."
 		return fw.server_model.getModelTemp(modelName.substr(6));
 	}
-}
+};
 
 module.exports = runnable;

@@ -4,18 +4,16 @@ require(__dirname  + '/../src/log.js')(fw);
 var config = fw.config;
 
 
-var isBae = ((typeof process.BAE !== 'undefined') ? true : false);
 //startup a server
 var path = require('path'),
     fs = require('fs'),
     zlib = require('zlib'),
-    appName = isBae?'':(process.argv[2] || ''),
     fileUpload = require(__dirname + "/fileUpload.js");//用于文件处理
 
     module.exports = function(req, res){
         //localBase 为sumeru和 apps所在的根目录。
         var frkDir = __dirname + '/../../',
-            localBase = frkDir + '/app'+ (appName ? '/' + appName : ''),
+            localBase = process.appDir,
             filePath = req.url,
             range = typeof req.headers.range == 'string' ? req.headers.range : undefined;
         
