@@ -4,7 +4,8 @@
   "description": "A Realtime Javascript RIA Framework For Mobile WebApp",
   "main": "app.js",
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
