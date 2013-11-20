@@ -186,7 +186,12 @@ var path = require('path'),
                         res.end();
                     } else {
                         //进行view partial的拼装，处理include逻辑
-                        if(!view_from_cache && (filePath.indexOf('/view/') != -1 || filePath.indexOf('/viewEngine/') != -1)){
+                        if(filePath.indexOf('/view/') != -1 || filePath.indexOf('/viewEngine/') != -1){
+                            if (view_from_cache){//不拼装，直接返回
+                                res.writeHead(200, {'Content-Type' : contentType});
+                                res.end(entireContent, 'utf-8');
+                                return ;
+                            }
                             var asyncPartialMap = {},
                                 //partialCount = 0,
                                 //检测循环引用
@@ -208,32 +213,6 @@ var path = require('path'),
                                     //先去掉所有HTML的注释
                                     var commentRegExp = /(<!--([\s\S]*?)-->)/mg; // means <!--xxx-->
                                     fw.dev('view remove comment', content.match(commentRegExp));
-                                    
-                                    /*
-                                    var tplRoleOpenPart = /<!--([\s]*tpl-role[\s]*=[\s]*[\s\S]*?)-->/g,
-                                        tplRoleClosePart = /<!--([\s]*\/tpl-role[\s]*)-->/g;
-                                    
-                                    entireContent = entireContent.replace(tplRoleRegExp, function($0){
-                                       //先替换close的
-                                       $0 = $0.replace(tplRoleClosePart, function($0, $1){
-                                           return '!!--' + $1 + '--!!';
-                                       });
-                                       $0 = $0.replace(tplRoleOpenPart,function($0, $1){
-                                           return '!!--' + $1 + '--!!';
-                                       });
-                                       return $0;
-                                    });
-                                    content = content.replace(tplRoleRegExp, function($0){
-                                       
-                                       $0 = $0.replace(tplRoleClosePart, function($0, $1){
-                                           return '!!--' + $1 + '--!!';
-                                       });
-                                       $0 = $0.replace(tplRoleOpenPart,function($0, $1){
-                                           return '!!--' + $1 + '--!!';
-                                       });
-                                       return $0;
-                                    });
-                                    */
                                     
                                     entireContent = entireContent.replace(commentRegExp, '');
                                     content = content.replace(commentRegExp, '');

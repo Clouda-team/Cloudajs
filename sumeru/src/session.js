@@ -198,15 +198,13 @@ var runnable = function(fw){
         fw.router.joinSessionToHash(one_session);
         
     },true);
-    
+    /**
+     * 使用中，会触发session.commit
+     */
     session.__reg('setResumeNew',function(serializeDat,identifier){//by server ,TODO for client
         var serialize_pollurl = (serializeDat && parseJSON("{"+serializeDat+"}")) || {};
         //instance_pool 注册
         for (var key in serialize_pollurl) {
-        	// if (!instance_pool[key]) {
-        		// //复原session
-        		// session.create(key);
-        	// }
         	if (serialize_pollurl[key]=='{}'){
         		serialize_pollurl[key] = "";
         	}
@@ -219,14 +217,13 @@ var runnable = function(fw){
         
     },true);
     /**
-     * 合并需要反序列化的session对像
+     * 初始化，由url恢复session但不触发commit
      */
-    session.__reg('setResume',function(serializeDat,controller){
+    session.__reg('preResume',function(serializeDat,controller){
         var serialize_pollurl = (serializeDat && parseJSON("{"+serializeDat+"}")) || {};
         //instance_pool 注册
         for (var key in serialize_pollurl) {
         	if (!instance_pool[key]) {
-        		//复原session
         		session.create(key);
         	}
         	if (serialize_pollurl[key]=='{}'){
@@ -235,26 +232,14 @@ var runnable = function(fw){
         	serialize_pool[key] = serialize_pollurl[key];
         }
         var key = controller+"!" ;
-        if(instance_pool[key].__unserialize()){
-        	instance_pool[key].commit();
-        }
-//         
-        // for(var key in instance_pool){
-        	// if (controller+"!" == key) {//resume 只commit本controller下的session
-        		// if(instance_pool[key].__unserialize()){
-	                // instance_pool[key].commit();
-	            // };
-        	// }
-//             
-        // }
-        
+        instance_pool[key].__unserialize();
     },true);
     
     session.__reg('getSessionByController',function(controller){
         return serialize_pool[controller+"!"];
     },true);
     
-}
+};
 if(typeof module !='undefined' && module.exports){
     module.exports = runnable;
 }else{//这里是前端

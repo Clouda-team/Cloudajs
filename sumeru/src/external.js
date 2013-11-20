@@ -221,7 +221,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	}
 
 	//在各种post成功后，更新本地数据
-	function _updateLocalData(modelName, pubName, url, type, data){
+	/* function _updateLocalData(modelName, pubName, url, type, data){
 
 		var localData = localDataMgr[url];
 
@@ -239,7 +239,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 			//抓取回来以后会自动update, 这里不用做localUpdate
 		}
 
-	}
+	} */
 	
 	/**
 	 * @method _resolve: resolve fetched originData to Array. 处理抓取的原始数据
@@ -316,6 +316,8 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	 * @param {String} modelName : name of model
 	 * @param {String} pubName : publish name
 	 * @param {String} url : external data source url
+	 * @param {Function} callback : publish callback
+	 * @param {Function} afterSync : after _doGet response from 3rd-party server.
 	 */
 	function _sync(modelName, pubName, url, callback, afterSync){
 
@@ -441,7 +443,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		
 		var suffix = 'Url';
 		var opts;
-
+		args = args.concat();	//copy args
 		if(config.postUrl){
 			Array.prototype.unshift.call(args, type);
 			opts = config.postUrl.apply(null, args);
@@ -497,8 +499,6 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		        	data = buffer ? data : data.toString();
 		        	fw.netMessage.sendMessage(data,cbn,conn._sumeru_socket_id);
 		        });
-	            
-	            
 	        }
 	    }
 	});
@@ -592,6 +592,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		
 		//generate postData and options by developers' config.
 		var config = externalConfig[pubName];
+		args = args.concat();	//copy args
 		Array.prototype.pop.call(args); //remove callback
 		var d = _getPostData(config, type, smrdata, modelName, pubName),
 			opt = _getPostOptions(config, type, args);
@@ -612,7 +613,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 		_doPost(opts, postData, function(data){
 		 	//成功的情况下，重新拉取数据
 			urlMgr[modelName].forEach(function(refetchurl){
-				_updateLocalData(modelName, pubName, refetchurl, type, smrdata);
+				//_updateLocalData(modelName, pubName, refetchurl, type, smrdata);
 				_sync(modelName, pubName, refetchurl, function(){});		//POST完成后重新抓取三方数据,trigger_push不用主动callback	
 			});
 
@@ -631,26 +632,33 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	 * @param {Function} cb: get callback, result for getData;
 	 */
 	function sendGetRequest(url, cb, buffer){
+		//server
+		if(fw.IS_SUMERU_SERVER){
+			_doGet(url, function(data){
+	        	data = buffer ? data : data.toString();
+	        	cb(data);
+	        });
+		} else { //client
+			if(!url || !cb){ fw.log('Please specify url and callback for sumeru.external.get!');}
+			var cbn = "WAITING_EXTERNAL_GET_CALLBACK_" + fw.utils.randomStr(8);
 
-		if(!url || !cb){ fw.log('Please specify url and callback for sumeru.external.get!');}
-		var cbn = "WAITING_EXTERNAL_GET_CALLBACK_" + fw.utils.randomStr(8);
+			fw.netMessage.setReceiver({
+		        onMessage : {
+		            target : cbn,
+		            overwrite: true,
+		            once:true,
+		            handle : function(data){
+		            	cb(data);
+		            }
+		        }
+		    });
 
-		fw.netMessage.setReceiver({
-	        onMessage : {
-	            target : cbn,
-	            overwrite: true,
-	            once:true,
-	            handle : function(data){
-	            	cb(data);
-	            }
-	        }
-	    });
-
-		fw.netMessage.sendMessage({
-	        cbn : cbn,
-	        url : url,
-	        buffer : buffer
-	    }, "SEND_EXTERNAL_GET");
+			fw.netMessage.sendMessage({
+		        cbn : cbn,
+		        url : url,
+		        buffer : buffer
+		    }, "SEND_EXTERNAL_GET");
+		}
 	    
 	}
 	
@@ -663,28 +671,46 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	 * @param {Function} cb: post callback, result for;
 	 */
 	function sendPostRequest(options, postData, cb){
+		//server
+		if(fw.IS_SUMERU_SERVER){
+            postData = encodeURIComponent(JSON.stringify(postData));
+            var defaultOptions = {
+				method : 'POST',
+				headers: {
+			        'Content-Type': 'application/x-www-form-urlencoded',
+			        'Content-Length': postData.length
+			    }
+			};
 
-		if(!options || !postData){fw.log("please specify options or postData for sumeru.external.post");return false;}
-		cb = cb || function(){};
+			var opts = Library.objUtils.extend(true, defaultOptions, options);
 
-		var cbn = "WAITING_EXTERNAL_POST_CALLBACK_" + fw.utils.randomStr(8);
+	        _doPost(opts, postData, function(data){
+	        	cb(data);
+	        });
 
-		fw.netMessage.setReceiver({
-	        onMessage : {
-	            target : cbn,
-	            overwrite: true,
-	            once:true,
-	            handle : function(data){
-	            	cb(data);
-	            }
-	        }
-	    });
+		} else { //client
+			if(!options || !postData){fw.log("please specify options or postData for sumeru.external.post");return false;}
+			cb = cb || function(){};
 
-		fw.netMessage.sendMessage({
-	        cbn : cbn,
-	        options : options,
-	        postData : postData
-	    }, "SEND_EXTERNAL_POST");
+			var cbn = "WAITING_EXTERNAL_POST_CALLBACK_" + fw.utils.randomStr(8);
+
+			fw.netMessage.setReceiver({
+		        onMessage : {
+		            target : cbn,
+		            overwrite: true,
+		            once:true,
+		            handle : function(data){
+		            	cb(data);
+		            }
+		        }
+		    });
+
+			fw.netMessage.sendMessage({
+		        cbn : cbn,
+		        options : options,
+		        postData : postData
+		    }, "SEND_EXTERNAL_POST");
+		}
 
 	}
 
@@ -699,30 +725,40 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, serv
 	 */
 	function synchronize(modelName, pubName, url, cb){
 
-		if(arguments.length < 3){
-			fw.log("please sepecify modelName, pubName and url in order.");
-			return false;
+		if(fw.IS_SUMERU_SERVER){
+            var urls = urlMgr[modelName];
+            var config = externalConfig[pubName];
+
+            _sync(modelName, pubName, url, function(){}, function(){
+            	cb({msg:"ok"});
+            });
+		} else { //client
+			if(arguments.length < 3){
+				fw.log("please sepecify modelName, pubName and url in order.");
+				return false;
+			}
+
+			var cbn = "WAITING_SYNC_CALLBACK_" + fw.utils.randomStr(8);
+
+			fw.netMessage.setReceiver({
+		        onMessage : {
+		            target : cbn,
+		            overwrite: true,
+		            once:true,
+		            handle : function(data){
+		            	cb && cb(data);
+		            }
+		        }
+		    });
+
+			fw.netMessage.sendMessage({
+		        cbn : cbn,
+		        modelName : modelName,
+		        pubName : pubName,
+		        url : url
+		    }, "SEND_SYNC_REQUEST");
 		}
-
-		var cbn = "WAITING_SYNC_CALLBACK_" + fw.utils.randomStr(8);
-
-		fw.netMessage.setReceiver({
-	        onMessage : {
-	            target : cbn,
-	            overwrite: true,
-	            once:true,
-	            handle : function(data){
-	            	cb && cb(data);
-	            }
-	        }
-	    });
-
-		fw.netMessage.sendMessage({
-	        cbn : cbn,
-	        modelName : modelName,
-	        pubName : pubName,
-	        url : url
-	    }, "SEND_SYNC_REQUEST");
+		
 
 	}
 	

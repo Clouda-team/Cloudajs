@@ -122,8 +122,21 @@ var runnable = function(fw){
                     })*/
                     doReactiveProcess = false;
                 } else {
-                    collection.add(structData);
-                    doReactiveProcess = true;    
+                    var externalInfo = fw.pubsub._subscribeMgr[collection.pubName].externalInfo;
+                    if(externalInfo){
+                        var uc = externalInfo.uniqueColumn;
+                        var criteria = {};
+                        criteria[uc] = structData[uc];
+                        var is_uc_exist = collection.find(criteria);
+                        if(is_uc_exist.length){
+                            is_uc_exist[0].set("smr_id", structData.smr_id);
+                        }else{
+                            collection.add(structData);
+                        }
+                    }else{
+                        collection.add(structData);
+                    }
+                    doReactiveProcess = true;  
                 }
             } else if (struct.type == 'delete'){
                 var structData = struct['cnt'];
@@ -437,7 +450,8 @@ var runnable = function(fw){
         var pilotId = data['pilotid'],
         	uk = data['uk']||"",
             val = data['data'],
-            serverVersion = data['version'];
+            serverVersion = data['version'],
+            externalInfo = data['external'] || "";
 
         if(pubName){
             if (!(pubName in fw.pubsub._subscribeMgr)) {
@@ -450,6 +464,10 @@ var runnable = function(fw){
                 //如果是prioritySubscribe的全量写回（即第一次的返回），又存在fw.pubsub._priorityAsyncHandler(是redo)
                 fw.pubsub._priorityAsyncHandler.decrease();
             };
+            
+            if(externalInfo){
+                fw.pubsub._subscribeMgr[pubName].externalInfo = externalInfo;
+            }
             
             //candidates is array of collections
             var candidates = fw.pubsub._subscribeMgr[pubName].stub;

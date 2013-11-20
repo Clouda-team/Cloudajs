@@ -1201,9 +1201,16 @@ var runStub = function(db) {
                     version : dataVersion
                 };
 
+                if(pubRecord.extPublish){
+                    var config = externalConfig && externalConfig[pubname];
+                    if(config){
+                        params.external = {
+                            uniqueColumn : config.uniqueColumn || config.keyColume || "",
+                        };
+                    }
+                }
+
                 var cmd = deltaFlag ? 'data_write_from_server_delta' : 'data_write_from_server';
-
-
 
                 netMessage.sendMessage(params, cmd, socketId, function(err){
                         fw.log('send data_write_from_server fail ' + err , socketId);

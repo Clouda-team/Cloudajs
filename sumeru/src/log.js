@@ -73,6 +73,29 @@ var runnable = function(sumeru){
     sumeru.__reg('dev', log.dev);
     sumeru.__reg('ConfigLogTrace', configLogTrace);
     
+    var logtime_container = {}; 
+    sumeru.__reg('logtimeclear', function(uniqueid){
+        delete logtime_container[uniqueid];
+    }); 
+    sumeru.__reg('logtime', function(uniqueid,word){
+        if (typeof uniqueid != 'string' || uniqueid.match(/\w{11}/) === null) {
+            console.log(uniqueid,word);
+            return ;
+        }   
+        var timediff = 0;
+        if (logtime_container[uniqueid]){
+            timediff = (new Date()).getTime() - logtime_container[uniqueid];
+        }   
+        logtime_container[uniqueid] = (new Date()).getTime();
+    
+        _log("[" + uniqueid+'] [' + timediff + ']' + word);
+    }); 
+    sumeru.__reg('logerror', function(){
+      arguments[0] = formatDate() + arguments[0];
+      console && console.error.apply(this, arguments);
+    }); 
+    
+    
     return log;
 };
 

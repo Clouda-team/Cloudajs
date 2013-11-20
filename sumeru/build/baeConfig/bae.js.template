@@ -1,11 +1,13 @@
 /*$
   Do not make any changes, otherwise it will lead to build failure for bae.
 $*/
-if(typeof process != 'undefined' && process.BAE){
-    sumeru.config.database({
-        dbname : 'your_bae_db_name'
-    });
-    sumeru.config({
-        site_url : 'http://yourapp.duapp.com/'
-    });
+if(sumeru.BAE_VERSION){
+	sumeru.config.database({
+		dbname : 'your_bae_db_name',
+		user: 'your_bae_pk',//bae 3.0 required
+		password: 'your_bae_sk',//bae 3.0 required
+	}); 
+	sumeru.config({
+		site_url : 'http://yourapp.duapp.com', //with tailing slash
+	}); 
 }

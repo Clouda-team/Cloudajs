@@ -127,13 +127,9 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
         isControllerChange = uriParts.controller != lastController;
         lastController = uriParts.controller;
 
-        fw.dev('isControllerChange :' + isControllerChange);
-        fw.dev('isSessionChange :' + isSessionChange);
-        fw.dev('parts of hash:' , uriParts);
-        
-        // 如果session序列化发生变化,并用不是内部拼接的(理论上此时应只有复制url产生),将变化的对像合并入session工厂.
+        // 如果session序列化发生变化,或者controller变化，则将从url恢复到session中，但不需要触发commit
         if(isSessionChange || isControllerChange){
-            fw.session.setResume(lastSession,lastController);
+            fw.session.preResume(lastSession,lastController);
         }
         
         if(isIgnore == false && (isControllerChange || isParamsChange)){

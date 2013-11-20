@@ -174,8 +174,7 @@
             }
             
             //
-            var appPath  = __dirname + '/../../app' + 
-                            ((typeof process.BAE == 'undefined' && process.argv[2]) ? '/' +process.argv[2] : '');
+            var appPath  = process.appDir;
                 
             //读取config文件
             var configPath = appPath + '/config';
@@ -184,7 +183,7 @@
             //读取server config文件
             configPath = appPath + '/server_config';
             readClientFile.evalByPackageJS(configPath,{process:process,sumeru:sumeru});        
-        }
+        };
         module.exports =  buildServer;
     }
 })(this);
