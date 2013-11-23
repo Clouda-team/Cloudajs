@@ -27,7 +27,7 @@
 		对应Controller的名称
 
     如果你想**关闭Server渲染**，可使用下面方法：
-                                                    f
+                                                    
         sumeru.router.add(
             {
              	pattern: '/studentList',
@@ -1869,12 +1869,13 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
         var myAuth = sumeru.auth.create(env);
 
+### Auth对象的方法
 
 * ### on
 
     增加一个用户系统相关的事件监听器
-
-        sumeu.auth.on(type,handle)
+		
+        on(type,handle);
 
     参数说明：
 
@@ -1938,7 +1939,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     移除由on方法增加的监听器
 
-        Sumeru.auth.removeListener(type,handle)
+        removeListener(type,handle)
 
     参数说明：
 
@@ -1955,7 +1956,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     一次性移除所有已添加的监听器事件
 
-        Sumeru.auth.removeAllListener(type)
+        removeAllListener(type)
 
     参数说明：
 
@@ -1973,7 +1974,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     根据token,pwd登陆由`authMethod`所指定的类型用户系统. 不提供`authMethod`时默认为`local`. 登陆过程中的每次状态变化将触发`statusChange`事件
 
-        sumeru.auth.login(token,pwd,[args],[authMethod])
+        login(token,pwd,[args],[authMethod])
 
     参数说明：
 
@@ -2035,7 +2036,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
 	登出，并触发statusChange变化
 
-        sumeru.auth.logout()
+        logout()
 
     实例：
 
@@ -2048,7 +2049,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     取得当前的认证状态. 返回值为String类型
 
-        sumeru.auth.getStatus()
+        getStatus()
 
     返回值如下：
 
@@ -2074,7 +2075,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     取得最后一个操作发生的错误信息，每一个新操作产生时，上一次的错误信息将被清空
 
-        sumeru.auth.getLastError()
+        getLastError()
 
     实例：
 
@@ -2088,7 +2089,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     取得当前认证用户的信息,如果未登陆则返回`null`
 
-        sumeru.auth.getUserInfo()
+        getUserInfo()
 
     实例：
 
@@ -2116,7 +2117,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     注册一个用户
 
-        sumeru.auth.register(token,pwd,userInfo, authMethod, callback)
+        register(token,pwd,userInfo, authMethod, callback)
 
     参数说明：
 
@@ -2158,7 +2159,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     测试一个注册信息是否可用
 
-        sumeru.auth.registerValidate(userInfo,authMethod,callback)
+        registerValidate(userInfo,authMethod,callback)
 
     参数说明：
 
@@ -2207,7 +2208,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     修改用户信息
 
-        sumeru.auth.modifyUserInfo(token,pwd,userInfo,authMethod,callback)
+        modifyUserInfo(token,pwd,userInfo,authMethod,callback)
 
     参数说明：
 
@@ -2235,7 +2236,7 @@ View使用handlebars组件作为模板引擎，handlebars语法请参考官网�
 
     修改用户登陆密码信息
 
-        sumeru.auth.modifyPassword(token,oldPwd,newPwd,authMethod,callback)
+        modifyPassword(token,oldPwd,newPwd,authMethod,callback)
 
     参数说明：
 
