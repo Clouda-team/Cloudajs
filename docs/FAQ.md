@@ -6,7 +6,7 @@
 
 2. “XMLHttpRequest cannot load http://sfenglish.sx.duapp.com/socket/info. Origin http://sfenglish.duapp.com is not allowed by Access-Control-Allow-Origin.”错误解决。
 
-    答：该错误说明Clouda服务器代码出险错误，可查看Clouda在BAE上的log定位问题。
+    答：该错误说明你访问的地址和配置的site_url不一致，去 app/server_config/site_url.js 修改
 
 
 3. 在Controller中使用env.redirect()跳转后出险页面覆盖和重叠的问题？
