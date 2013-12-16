@@ -24,13 +24,20 @@ var evalByPackageJS = function(path,context,filename){
 	}
 	var entireContent = fs.readFileSync(url, 'utf-8');
     var contentReg = /packages\s*\(\s*(.*)\s*\)/mg;
+    var commentReg = /\/\/.*(\n|\r)|(\/\*(.*?)\*\/)/mg;
     var dirnameList = [];
-    
+         
+    //去掉在package.js里的注释
+    entireContent = entireContent.replace(commentReg, '');  
+
     //去掉换行符、换页符、回车符等
     entireContent = entireContent.replace(/\n|\r|\t|\v|\f/g, '');
     
     //取出参数， 存于dirnameList
     var result = contentReg.exec(entireContent);
+    if (result === null) {
+        return;
+    }
     entireContent = result[1];
     entireContent = entireContent.replace(/'|"/mg, '');
     dirnameList = entireContent.split(',');

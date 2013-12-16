@@ -39,6 +39,9 @@ module.exports = function(sumeruDir, dstDir) {
       entireContent = entireContent.replace(/\n|\r|\t|\v|\f/g, '');
       //取出参数， 存于dirnameList
       var result = contentReg.exec(entireContent);
+      if (result === null) {
+           return;
+      }
       entireContent = result[1];
       entireContent = entireContent.replace(/'|"/mg, '');
       dirnameList = entireContent.split(',');

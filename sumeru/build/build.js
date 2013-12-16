@@ -69,38 +69,46 @@ var buildAppResource = function(appDir, theBinDir){
     var buildAppContent = '';
     var buildAppCssContent = '';
 
-    function readPackage(path){
-        var url = path + '/package.js';
-        var entireContent = fs.readFileSync(url, 'utf-8');
-        var contentReg = /packages\s*\(\s*(.*)\s*\)/mg;
-        var dirnameList = [];
-        
-        //去掉换行符、换页符、回车符等
-        entireContent = entireContent.replace(/\n|\r|\t|\v|\f/g, '');
-        
-        //取出参数， 存于dirnameList
-        var result = contentReg.exec(entireContent);
-        entireContent = result[1];
-        entireContent = entireContent.replace(/'|"/mg, '');
-        dirnameList = entireContent.split(',');
-        
-        dirnameList.forEach(function(dirname){
-            dirname = dirname.trim();
-            if(!dirname)return;
-            
-            var reg = /.js$/g,
-                cssReg = /.css$/g;
-            
-            var fileUrl = path + '/' + dirname;
-            if(reg.test(dirname)){
-                buildAppContent += ';'+fs.readFileSync(fileUrl, 'utf-8');
-            }else if(cssReg.test(dirname)){
-                buildAppCssContent += fs.readFileSync(fileUrl, 'utf-8');
-            }else{
-                readPackage(fileUrl);
-            }
-        });
-    };
+    var readPackage = function(path) {
+      var url = path + '/package.js';
+      var entireContent = fs.readFileSync(url, 'utf-8');
+      var contentReg = /packages\s*\(\s*(.*)\s*\)/mg;
+      var commentReg = /\/\/.*(\n|\r)|(\/\*(.*?)\*\/)/mg;
+      var dirnameList = [];
+         
+      //去掉在package.js里的注释
+      entireContent = entireContent.replace(commentReg, '');  
+    
+      //去掉换行符、换页符、回车符等
+      entireContent = entireContent.replace(/\n|\r|\t|\v|\f/g, '');
+      //取出参数， 存于dirnameList
+      var result = contentReg.exec(entireContent);
+      if (result === null) {
+        return;
+      }
+      entireContent = result[1];
+      entireContent = entireContent.replace(/'|"/mg, '');
+      dirnameList = entireContent.split(',');
+
+      dirnameList.forEach(function(dirname) {
+        dirname = dirname.trim();
+        if (!dirname) {
+          return;
+        }
+
+        var reg = /.js$/g,
+        cssReg = /.css$/g;
+
+        var fileUrl = path + '/' + dirname;
+        if (reg.test(dirname)) {
+          buildAppContent += ';'+fs.readFileSync(fileUrl, 'utf-8');
+        } else if (cssReg.test(dirname)) {
+          buildAppCssContent += fs.readFileSync(fileUrl, 'utf-8');
+        } else {
+          readPackage(fileUrl);
+        }
+      });
+    }
 
     readPackage(appDir);
     
