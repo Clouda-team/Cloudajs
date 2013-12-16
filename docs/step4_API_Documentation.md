@@ -27,7 +27,7 @@
 		对应Controller的名称
 
     如果你想**关闭Server渲染**，可使用下面方法：
-
+                                                    
         sumeru.router.add(
             {
              	pattern: '/studentList',
@@ -48,6 +48,16 @@
 	设置默认启动Controller
 	
 		sumeru.router.setDefault('App.studentList');
+
+* ### externalProcessor.add(processor);
+
+        语法：sumeru.router.externalProcessor.add(processor);
+
+    添加外部处理器
+
+        添加一个backbone的外部处理器
+
+        sumeru.router.externalProcessor.add(Backbone.Router.extend());
 		
 		
 ## Model
@@ -138,7 +148,7 @@ Model用来定义App的数据模型。
 		{name: 'gender',  type: 'string', defaultValue:'male'},
 
 
-* ### validate
+* ### validation
 
 		{name: 'name',  type: 'string', validation:'length[1,20]'},
 
@@ -220,11 +230,11 @@ Model用来定义App的数据模型。
 
 		{name: 'name',  type: 'string', validation:'length[1,20]|required'},
 		
-* ### addrule
+* ### addRule
 
 	除了上面的验证方法外，还可以自定义验证方法。
 		
-		sumeru.validation.addrule(ruleName,{
+		sumeru.validation.addRule(ruleName,{
 										"runat" : "client",
 
 										验证方法  ,
@@ -232,7 +242,7 @@ Model用来定义App的数据模型。
 										"msg"   : "",
 									   });
 
-	* rulename
+	* ruleName
 		
 		验证方法的名称，如"chinese"、"url"
 			
@@ -258,7 +268,7 @@ Model用来定义App的数据模型。
 
             使用自定义正则表达式对字段进行验证
 
-                  sumeru.validation.addrule(ruleName,{
+                  sumeru.validation.addRule(ruleName,{
                                                         "runat" : "client",
 
                                                         "regxp" : "()",
@@ -270,7 +280,7 @@ Model用来定义App的数据模型。
 
             使用自定义函数对字段进行验证
 
-                  sumeru.validation.addrule(ruleName,{
+                  sumeru.validation.addRule(ruleName,{
                                                          "runat" : "client",
 
                                                          "func" : function(){},
@@ -282,7 +292,7 @@ Model用来定义App的数据模型。
 
              该验证函数在服务器端运行，先获取指定modelObj的数据，然后根据asyncFunc中的方法进行验证，在callback中给出验证的结果。
 
-                  sumeru.validation.addrule(ruleName,{
+                  sumeru.validation.addRule(ruleName,{
                                                         "runat" : "client",
 
                                                         "asyncFunc":function(callback,k,v,modelObj){}
@@ -613,7 +623,7 @@ Collection是Model的集合，我们之前曾使用过的subscribe()返回的结
 
 View使用handlebars组件作为模板引擎，handlebars语法请参考官网。
 
-Clouda对handlebars的语法做了一些扩展：
+为了更快的开发视图代码，Clouda对handlebars的语法做了一些扩展：
 
 * ### view中引入view
 
@@ -707,6 +717,24 @@ Clouda对handlebars的语法做了一些扩展：
         {{#compare 1 1}}
             1 == 1
         {{/compare}}
+
+* ### sumeru.config.view.set
+
+        语法：sumeru.config.view.set('path', viewpath);
+
+    一般情况下将编写的view文件存放在app/view文件夹下，如果编写的view文件不在View文件夹下，我们也提供View文件路径配置的方法，框架会在配置路径下寻找需要的View文件:
+
+    实例：
+
+        sumeru.config.view.set('path', 'path/to/');
+
+
+    则Clouda会在如下目录中加载视图：
+
+	    app目录/path/to/view/
+
+    注意:即使是修改viewpath的情况下，**在最内一侧仍然需要有一层view文件夹**，如上面路径的最后部分。
+
 
 ## Transition
 
@@ -1020,7 +1048,7 @@ Clouda对handlebars的语法做了一些扩展：
 			session.commit();
 	
 
-### Sub Controller
+### sub controller
 
 创建的Controller可以作为另外一个Controller的子Controller使用。
 
@@ -1069,11 +1097,211 @@ Clouda对handlebars的语法做了一些扩展：
 			env.destroy = function(){
 			};		
 						
-			
+
+## Touch
+
+在开发移动端的应用中会使用到很多的手势操作，例如一指拖动、两指旋转等等，为了方便开放者快速集成这些手势，在Clouda中内置了事件和手势库`Library.touch`，下面将详细的介绍如何使用Library.touch。
+
+### touch.config
+
+    语法： touch.config(config)
+
+对手势事件库进行全局配置。
+
+参数描述：
+
+* config为一个对象
+
+        {
+            tap: true,                  //tap类事件开关, 默认为true
+            doubleTap: true,            //doubleTap事件开关， 默认为true
+            hold: true,                 //hold事件开关, 默认为true
+            holdTime: 650,              //hold时间长度
+            swipe: true,                //swipe事件开关
+            swipeTime: 300,             //触发swipe事件的最大时长
+            swipeMinDistance: 18,       //swipe移动最小距离
+            swipeFactor: 5,             //加速因子, 值越大变化速率越快
+            drag: true,                 //drag事件开关
+            pinch: true,                //pinch类事件开关
+        }
+
+### touch.on
+
+    语法：touch.on(element, types, options, callback)
+
+绑定指定元素的事件。
+
+参数描述：
+
+* element: 元素对象或选择器。
+
+* types: 事件的类型, 可接受多个事件以空格分开，支持原生事件的透传, 支持的一些事件类型有:
+
+<table border="0" cellpadding="0" cellspacing="0" style="margin-left: 30px;" >
+
+    <tr>
+        <th> pinchstart </th>
+        <th> 双指缩放动作开始 </th>
+    </tr>
+    <tr>
+        <th> pinchend </th>
+        <th> 双指缩放动作结束 </th>
+    </tr>
+    <tr>
+        <th> pinch </th>
+        <th> 双指缩放事件 </th>
+    </tr>
+    <tr>
+        <th> pinchin </th>
+        <th> 双指向里缩小 </th>
+    </tr>
+    <tr>
+        <th> pinchout </th>
+        <th> 双指向外放大 </th>
+    </tr>
+    <tr>
+        <th> rotateleft </th>
+        <th> 向左旋转 </th>
+    </tr>
+    <tr>
+        <th> rotateright </th>
+        <th> 向右旋转 </th>
+    </tr>
+    <tr>
+        <th> rotate </th>
+        <th> 旋转事件 </th>
+    </tr>
+    <tr>
+        <th> swipestart </th>
+        <th> 单指滑动动作开始 </th>
+    </tr>
+    <tr>
+        <th> swiping </th>
+        <th> 单指滑动事件 </th>
+    </tr>
+    <tr>
+        <th> swipeend </th>
+        <th> 单指滑动动作结束 </th>
+    </tr>
+    <tr>
+        <th> swipeleft </th>
+        <th> 单指向左滑动 </th>
+    </tr>
+    <tr>
+        <th> swiperight </th>
+        <th> 单指向右滑动事件 </th>
+    </tr>
+    <tr>
+        <th> swipeup </th>
+        <th> 单指向上滑动 </th>
+    </tr>
+    <tr>
+        <th> swipedown </th>
+        <th> 单指向下滑动 </th>
+    </tr>
+    <tr>
+        <th> swipe </th>
+        <th> 单指滑动事件 </th>
+    </tr>
+    <tr>
+        <th> drag </th>
+        <th> 单指向左右拖动 </th>
+    </tr>
+    <tr>
+        <th> hold </th>
+        <th> 单指按住不放事件 </th>
+    </tr>
+    <tr>
+        <th> tap </th>
+        <th> 单指点击 </th>
+    </tr>
+    <tr>
+        <th> doubletap </th>
+        <th> 单指双击 </th>
+    </tr>
+  </table>
+
+例如旋转实例如下：
+
+    var angle = 30;
+    touch.on('#rotation .target', 'touchstart', function(ev){
+    ev.startRotate();
+    ev.originEvent.preventDefault();
+    ev.originEvent.stopPropagation();
+    });
+    touch.on('#rotation .target', 'rotate', {interval: 10}, function(ev){
+    var totalAngle = angle + ev.rotation;
+    if(ev.fingerStatus === 'end'){
+      angle = angle + ev.rotation;
+    }
+
+    this.style.webkitTransform = 'rotate(' + totalAngle + 'deg)';
+    });
+
+更多使用实例请查看<http://code.baidu.com/>
+
+* options(可选): 目前可配置的参数为:
+
+        {
+           //采样频率
+           interval: 10,//性能参数，值越小，实时性越好， 但性能可能略差， 值越大， 性能越好。遇到性能问题时，可以将值设大调优，建议值设置为10。
+           //swipe加速度因子（swipe事件专用）
+           swipeFactor: 5 //(int: 1-10)值越大，速率更快。
+        }
+
+* callback: 事件处理函数， 该函数接受的参数为一个gesture event object, 可访问的属性有：
+
+    * originEvent   //触发某事件的原生对象
+
+    * type  //事件的名称
+
+    * rotation  //旋转角度
+
+    * scale  //缩放比例
+
+    * direction  //操作的方向属性
+
+    * fingersCount  //操作的手势数量
+
+    * position  //相关位置信息, 不同的操作产生不同的位置信息。
+
+    * distance  //swipe类两点之间的位移
+
+    * distanceX  //swipe类事件x方向的位移
+
+    * distanceY   //swipe类事件y方向的位移
+
+    * angle   //swipe类事件触发时偏移角度
+
+    * factor   //swipe事件加速度因子
+
+    * startRotate //启动单指旋转方法，在某个元素的touchstart触发时调用。
+
+### touch.live
+
+    语法：touch.live(selector, types, options, callback)
+
+使用方法基本上与on相同，live的第一个参数只接受`css3选择器`。通过`live()`方法附加的事件处理程序适用于匹配选择器的当前及未来的元素（比如由脚本创建的新元素）
+
+
+### touch.off
+
+    语法：touch.off(element,types,callback)
+
+解除某元素上的事件绑定。
+
+参数描述：
+
+* element：元素对象或选择器
+
+* types：事件的类型
+
+* callback：时间处理函数
+
 ## Publish/Subscribe
 
 
-### Subscribe
+### subscribe
 
 订阅被发布的数据，与pubilsh配合使用
 		
@@ -1150,7 +1378,7 @@ Clouda对handlebars的语法做了一些扩展：
 
 
 
-### Publish
+### publish
 
 发布数据的方法，其运行在Server上。
 
@@ -1334,175 +1562,703 @@ Clouda对handlebars的语法做了一些扩展：
 
 		sumeru.securePublishPlain(modelName,pubName,function(userinfo, callback){},options)
 
-* #### publish第三方数据
+* #### external
 
-    在publish中获取第三方数据
-
-        fw.publish('news','pubnews',function(callback){
-            var collection = this;
-
-            collection.extfind('pubnews',callback);
-        });
+    实现了三方数据同步的方法，用来满足从三方网站/三方接口获取和同步数据的需求。
 
     * extfind(pubName,callback)
 
-        publish第三方数据
+        在publish文件中发布第三方数据
+
+            fw.publish('news','pubnews',function(callback){
+                var collection = this;
+
+                collection.extfind('pubnews',callback);
+            });
 
     使用该方法需要在publish下添加一个如何获取第三方数据的配置文件
 
-    * extpubConfig
+    * config[pubname]
 
-        配置方法
+        * pubname
 
-        * geturl()
+            与publish中collection.extfind(pubname,callback)方法pubname一致，全局唯一
 
-            配置抓取数据的url
+        * uniqueColumn
 
-        * resolve(originData)
+            uniqueColumn为三方数据唯一标识，类型为`String`
 
-            返回抓取的数据，并将数据存储在originData中
+                uniqueColumn : "name",
+
+        * fetchUrl: function((/** arg1, arg2, arg3 */)){}
+
+            指定抓取的URL。arg1,arg2为传递的参数
+
+                fetchUrl : function(/** arg1, arg2, arg3 */){
+                    return 'http://some.host.com';
+                }
+
+        * resolve : function(originData){}
+
+            resolve方法作用是将抓取回来的原始数据(originData)转化成为符合Model定义的数据(resolved)
+
+                resolve : function(originData){
+                    var j = JSON.parse(originData);
+                    var resolved = j;
+                    return resolved;
+                }
 
         * fetchInterval
 
-            抓取时间间隔
+            fetchInterval为可选参数，用来指定抓取时间间隔，单位为ms
 
         * buffer
 
-            true：表示originData为buffer
+            buffer为可选参数，值为true时表示获取原始Buffer，否则获取原始数据字符串
 
-            false：表示originData为String
 
-    * iconv
+        * type
 
-        抓取网站的编码不是UTF-8时，需要使用iconv来完成decode
+            声明此模块为归属为'external'
 
-            var iconv = require('iconv-lite');
+                return {
+                    type : 'external',
+                    config : config
+                }
 
-            decodeData = iconv.decode(originData,'gb2312');
+        实例如下：
 
-    具体使用请查看《Example》文档中的实例。
+            /**
+             * 获取三方数据信息，由开发者自定义
+             */
+            function runnable(){
+                //{Object} config是所有三方publish配置的容器
+                var config = {};
+
+                config['pubext'] = {
+                    //{String} uniqueColumn为三方数据唯一标识
+                    uniqueColumn : "name",
+
+                    //{Function} fetchUrl的参数就是订阅时发起的参数，返回值为pubext所抓取的url地址
+                    fetchUrl : function(/** arg1, arg2, arg3 */){
+                        return 'http://some.host.com';
+                    },
+
+                    //{Function} resolve方法作用是将抓取回来的原始数据(originData)转化成为符合Model定义的数据(resolved)
+                    resolve : function(originData){
+                        var j = JSON.parse(originData);
+                        var resolved = j;
+
+                        return resolved;
+                    },
+
+                    //{Number} fetchInterval为可选参数，用来指定抓取时间间隔，单位为ms
+                    fetchInterval : 60 * 1000,
+
+                    //{Boolean} buffer为可选参数，值为true时表示获取原始Buffer，否则获取原始数据字符串
+                    buffer : false
+                }
+
+                //最后需要声明此模块为归属为'external'
+                return {
+                    type : 'external',
+                    config : config
+                }
+
+            }
+
+            module.exports = runnable;
+
+    * 指定三方增/删/改接口以及数据
+
+        当数据发生变化时，如何使用Clouda达到三方数据同步的效果，具体实现方法如下：
+
+        * 较为紧凑的声明方式
+
+            * postUrl
+
+                `postUrl`方法用来指定三方post接口的地址信息, 参数type为增量类型，增量类型为'insert','update','delete'三者之一;
+
+            * prepare
+
+                `prepare`方法用来将增量数据转化成为符合三方POST接口要求的post数据，参数type同为增量类型，参数data为增量的实际数据。
+
+
+            实例如下：
+
+                /**
+                 *	三方数据POST请求信息，由开发者自定义
+                 */
+                function runnable(){
+
+                    var config = {}
+
+                    config['pubext'] = {
+
+                        /**
+                         * 声明三方POST接口地址
+                         * {String} type为'delete', 'insert', 'update'其中之一
+                         * 如果subscribe时带参数，参数会按照subscribe顺序接在postUrl的参数中
+                         */
+                        postUrl : function(type /** arg1, arg2, arg3... */){
+                            var options = {
+                                host : 'some.host.com',
+                                path : '/' + type ,
+                                headers: {
+                                    //在此自定义header内容，clouda默认的 'Content-Type': 'application/x-www-form-urlencoded'
+                                    'Content-Type': ...
+                                }
+                            }
+                            return options;
+                        },
+
+                        /**
+                         * prepare方法将增量数据转化为符合三方要求的post数据。
+                         * {String} type为增量操作，值为'delete', 'insert', 'update'其一;
+                         * {Object} data为增量数据，如：{ name : 'user1', age : 26 }。
+                         */
+                        prepare : function(type, data){
+                            var prepareData = {};  //prepareData为三方post所需的data
+                            if(type === "delete"){
+                                prepareData.name = data.name;
+                            }else if(type === "insert"){
+                                prepareData.name = data.name;
+                                prepareData.age = data.age;
+                            }else{
+                                prepareData.name = data.name;
+                                prepareData.age = data.age;
+                            }
+
+                            return prepareData;
+                        }
+                    }
+
+                    return {
+                        type : 'external',
+                        config : config
+                    }
+
+                }
+
+                module.exports = runnable;
+
+
+        * 较为工整的声明方式
+
+            * `deleteUrl`，`insertUrl`，`updateUrl`
+
+                三个方法作用等同于`postUrl`，返回不同操作下三方接口url信息
+
+            * `onDelete`，`onInsert`，`onUpdate`
+
+                三个方法作用等同于`prepare`方法, 返回经过处理，传给三方接口的post数据
+
+            实例如下：
+
+                function runnable(){
+
+                    var config = {};
+
+                    config['pubext'] = {
+                        //arg1, arg2, arg3是subscribe时输入的参数
+                        deleteUrl : function(/** arg1, arg2, arg3... */){
+                            return {
+                                host : 'some.host.com',
+                                path : '/delete'
+                            }
+                        },
+
+                        insertUrl : function(/** arg1, arg2, arg3... */){
+                            return {
+                                host : 'some.host.com',
+                                path : '/insert'
+                            }
+                        },
+
+                        updateUrl : function(/** arg1, arg2, arg3... */){
+                            return {
+                                host : 'some.host.com',
+                                path : '/update'
+                            }
+                        },
+
+                        onInsert : function(data){
+                            var prepareData = {};
+                            prepareData.name = data.name;
+                            prepareData.age = data.age;
+                            return prepareData;
+                        },
+
+                        onUpdate : function(data){
+                            var prepareData = {};
+                            prepareData.name = data.name;
+                            prepareData.age = data.age;
+                            return prepareData;
+                        },
+
+                        onDelete : function(data){
+                            var prepareData = {}
+                            prepareData.name = data.name;
+                            return prepareData;
+                        }
+                    }
+
+                    return {
+                        type : 'external',
+                        config : config
+                    }
+
+                }
+
+                module.exports = runnable;
+
+    * sumeru.external.get
+
+        向第三方发送get请求
+
+            var url = "http://some.host.com";
+            var getCallback = function(data){
+            	console.log(data);
+            }
+            sumeru.external.get(url, getCallback);
+
+    * sumeru.external.post
+
+        向第三方发送post请求
+
+            var options = {
+                host : "some.host.com",
+                path : "/insert"
+            }
+
+            var postData = {
+                name : sumeru.utils.randomStr(8),
+                age : parseInt( 100 * Math.random())
+            }
+
+            var postCallback = function(data){
+                console.log(data);
+            }
+
+            sumeru.external.post(options, postData, postCallback);
+
+
+    * sumeru.external.sync
+
+        将抓取最新的三方数据，并将新数据推送至前端
+
+            var cb = function(data){
+                console.log(data);
+            }
+            var url = "some.host.com";
+            sumeru.external.sync(modelName, pubName, url, cb);
+
+    具体使用请查看《Example》文档中的SpiderNews实例。
 
 
 ## Auth
 
+
+* ### create
+
+    创建一个auth对象
+
+        sumeru.auth.create(env)
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+
+### Auth对象的方法
+
+* ### on
+
+    增加一个用户系统相关的事件监听器
+		
+        on(type,handle);
+
+    参数说明：
+
+    * type
+
+        每次认证状态变化时被触发，类型string，目前只支持一个事件类型,即 “statusChange”
+
+    * handle
+
+        事件处理函数. 可接收两个参数`err`与`status`
+
+        * err
+
+        有错误产生时的错误对像
+
+        * status
+
+            表示当前认证状态的字符串
+
+            * not_login
+
+                当前未登陆
+
+            * logined
+
+                已登陆
+
+            * doing_login
+
+                正在登陆过程中
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+
+        var statusChangeHandle = function(err,status){
+            if(err){
+                // err.code | err.msg
+                return;
+            };
+
+            switch(status){
+                case "not_login" :
+                    // do something
+                    break;
+                case "logined" :
+                    // do something
+                    break;
+                case "doing_login" :
+                    // do something
+                    break;
+                default:
+                    // do something
+            }
+        }
+
+        myAuth.on('statusChange',statusChangeHandle);
+
+
+* ### removeListener
+
+    移除由on方法增加的监听器
+
+        removeListener(type,handle)
+
+    参数说明：
+
+    * type
+
+        事件名称, 目前只支持一个事件,即“statusChange”
+
+    * handle
+
+        事件处理函数
+
+
+* ### removeAllListener
+
+    一次性移除所有已添加的监听器事件
+
+        removeAllListener(type)
+
+    参数说明：
+
+    * type
+
+        事件名称, 目前只支持一个事件,即“statusChange”
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        myAuth.removeAllListener('statusChange');
+
+
 * ### login
 
-	使用本地账户登陆，有两种给定参数的方式
-	
-	* sumeru.auth.login(token, password, expires, callback)
-	
-			sumeru.auth.login(token, value, 1000, function(){
-			  
-			});
-			
-		* token
-		
-			用户信息的唯一标识，比如邮箱，电话号码，身份证号等等
-			
-		* password
-		
-			用户密码
-			
-		* expires
-		
-			有效期
-						
-			
-	* sumeru.auth.login({token: 'name', password: 'cryption', callback: function,expires: 1000})
+    根据token,pwd登陆由`authMethod`所指定的类型用户系统. 不提供`authMethod`时默认为`local`. 登陆过程中的每次状态变化将触发`statusChange`事件
 
-			sumeru.auth.login({
-        		token: token,
-           		password: value,
-            	callback: callback,
-            	expires: 1000
-        	});
-        	
-* ### baidu.login
+        login(token,pwd,[args],[authMethod])
 
-	使用百度账户登陆,有两种给定参数的方式
-	
-	* sumeru.auth.baidu.login(token, password, verifycode, callback)
-	
-			sumeru.auth.login(token, value, 1000, verifycode, function(){
-			  
-			});
-	
-	* sumeru.auth.baidu.login({token: 'name', password: 'cryption', callback: function,verifycode:'code',expires: 1000})
-	
-			sumeru.auth.baidu.login({
-        		token: token,
-           		password: value,
-            	callback: callback,
-            	verifyCode: code,
-            	expires: 1000
-        	});
+    参数说明：
+
+    * token
+
+        用户的用户名，类型为string
+
+    * pwd
+
+        用户的密码，类型为string
+
+    * args
+
+        登陆时需附加的其它信息,具体内容根据`authMethod`的不同传入内容将不同.如不提供默认为{},类型为map，所有除用户名和密码外需要传入的其它数据（如验证码等），都需要通过这个args参数传入
+
+    * authMethod
+
+        登陆用户的类型，默认为“local”，类型为string
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+
+        var statusChangeHandle = function(err,status){
+            if(err){
+                // err.code | err.msg
+                return;
+            };
+
+            switch(status){
+                case "not_login" :
+                    // do something
+                    break;
+                case "logined" :
+                    // do something
+                    break;
+                case "doing_login" :
+                    // do something
+                    break;
+                default:
+                    // do something
+            }
+        }
+
+        myAuth.on('statusChange',statusChangeHandle);
+
+        // 完整的调用方式
+        myAuth.login('userName','pwd',{a:100,b:200,c:[1,2,3]},'authMehtod_XXX');
+
+        // 也可使用以下不完整的参数调用方式。
+        // 1.省略authMethod认为 authMethod = 'local'
+        // myAuth.login('userName',’pwd‘,{a:100,b:200});
+
+        // 2.同时省略args与authMethod时，认为args={},authMethod='local'
+        // myAuth.login('userName','pwd');
 
 
 * ### logout
 
-	退出
+	登出，并触发statusChange变化
 
-		sumeru.auth.logout();
+        logout()
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+		myAuth.logout();
+
+
+
+* ### getStatus
+
+    取得当前的认证状态. 返回值为String类型
+
+        getStatus()
+
+    返回值如下：
+
+    * not_login
+
+        当前未登陆
+
+    * logined
+
+        已登陆
+
+    * doing_login
+
+        正在登陆过程中
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        myAuth.getStatus();
+
+
+* ### getLastError
+
+    取得最后一个操作发生的错误信息，每一个新操作产生时，上一次的错误信息将被清空
+
+        getLastError()
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        var errObj = myAuth.getLastError();
+
+        console.log(errObj);
+
+
+* ### getUserInfo
+
+    取得当前认证用户的信息,如果未登陆则返回`null`
+
+        getUserInfo()
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        myAuth.getUserInfo();
+
+    userInfo结构如下：
+
+        userInfo = {
+            "token":"token",
+            "info":{"param1":"modify1","param2":"modify2","param3":["1","2"]},
+            "status":"online",
+            "smr_id":"5253a5aa546610001200014a",
+            "__clientId":"7qgj3s1grr",
+            "userId":"5253a5a95466100012000148",
+            "clientId":"183ou3qrg_QZKUYDxapKFO",
+            "authMethod":"local",
+            "expires":1381213910081
+        }
+
+    注意：其中info字段的内容，来源于`register`时提供的userInfo
+
 
 * ### register
 
-	sumeru提供一套帐号系统，可直接使用register方法完成注册
-	
-	sumeru.auth.register(token, password, info, callback);
-	
-		sumeru.auth.register(token, password, {age:18}, function(){});
-		
-	* info
-	
-		用户信息除用户名和密码以外的信息
-		
+    注册一个用户
 
-* ### update
+        register(token,pwd,userInfo, authMethod, callback)
 
-	更新某用户的信息
-	
-	sumeru.auth.update(user,callback);
-	
-		sumeru.auth.update({info:{age: 18} },function(){});
-		
-	* user
-	
-		sumeru内建的user Model，结构如下：
-		
-			{	
-				token：‘’,
-				password : '', 
-				info: {}
-			}
-		
-		需要更新用户的哪项信息，直接传入值即可。
+    参数说明：
 
-* ### getToken
+    * token
 
-	获取token
+        用户的登陆标识，类型为string
 
-		sumeru.auth.getToken();
+    * pwd
 
-* ### getModel
+        登陆密码，类型为string
 
-	获取用户Model
-	
-		sumeru.auth.getModel();
+    * userInfo
+
+        新的用户信息对像，类型为object
+
+    * authMethod
+
+        目标的用户类型，类型为string
+
+    * callback
+
+        注册完成后的回调方法,可接收一个`err`参数,当产生错误时返回对应的错误对像,如果成功,返回`null`
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        myAuth.register('user123','pwd',{age:100},local,function(err){
+            if(err){
+                // 注册失败
+                return；
+            }
+            // 注册成功
+            // do something ..
+        });
+
+    注意：在注册前，尽量使用sumeru.auth.registerValidate() 进行验证，可以有效减少错误发生。
+
+* ### registerValidate
+
+    测试一个注册信息是否可用
+
+        registerValidate(userInfo,authMethod,callback)
+
+    参数说明：
+
+    * userInfo
+
+        待测试的注册信息，类型为object
+
+    * authMethod
+
+        用户类型，类型为string
+
+    * callback
+
+        测试完成后的回调函数，可接收err与isUsefull参数
+
+            * err
+
+                产生错误是传入对应的错误对像
+
+            * isUserfull
+
+                值为`true`时表示测试的用户可以使用
+
+    实例：
+
+        var myAuth = sumeru.auth.create(env);
+        myAuth.registerValidate({token:'user123',age:100},'local',function(err,isUsefull){
+            if(isUserfull){
+                // 注册信息验证成功，可以进行注册
+                myAuth.register('user123','pwd',{age:100},local,function(err){
+                    if(err){
+                        // 注册失败
+                        return；
+                    }
+                    // 注册成功
+                    // do something ..
+                });
+            }else{
+                // 注册信息验证失败
+                //err.code || err.msg
+            }
+        });
 
 
-* ### isLogin
+* ### modifyUserInfo
 
-	判断当前是否登陆
-	
-		sumeru.auth.isLogin();
+    修改用户信息
 
+        modifyUserInfo(token,pwd,userInfo,authMethod,callback)
 
-* ### getVerifyCode
+    参数说明：
 
-	获取图片验证码
-	
-		sumeru.auth.getVerifyCode();
+    * token
 
+        用户的登陆标识
+
+    * pwd
+
+        登陆密码
+
+    * userInfo
+
+        用户信息对像
+
+    * authMethod
+
+        用户类型
+
+    * callback
+
+        用户信息修改完成后的回调函数，可接受一个`err`参数，当修改信息发生错误时，返回产生的错误信息，如果修改成功，则返回`null`
+
+* ### modifyPassword
+
+    修改用户登陆密码信息
+
+        modifyPassword(token,oldPwd,newPwd,authMethod,callback)
+
+    参数说明：
+
+    * token
+
+        用户的登陆标识
+
+    * oldPwd
+
+        当前密码
+
+    * newPwd
+
+        新密码
+
+    * authMethod
+
+        目标的用户类型
+
+    * callback
+
+        修改完成后的回调函数，可接收一个`err`参数,当修改信息发生错误时，返回产生的错误信息,如果修改成功,则为`null`
 
 ## Library
 
@@ -1530,7 +2286,7 @@ Clouda对handlebars的语法做了一些扩展：
 		
 ## Reachability
 
-网络连接状态
+查看网络连接状态
 
 
 * ### getStatus
@@ -1564,6 +2320,65 @@ Clouda对handlebars的语法做了一些扩展：
 
 		sumeru.reachability.STATUS_CONNECTED;
 
+
+
+## File Uploading
+
+* #### Library.fileUploader.init()
+
+    完成端上上传文件的初始化
+
+具体方法：
+
+    var myUploader = Library.fileUploader.init({
+        routerPath:"/files",
+        onSuccess:function(urlLink){//成功之后的处理，此处有保存文件的逻辑
+
+        },
+        fileSelect:function(e){//用户选择文件之后的处理
+
+        },
+        onProgress:function(e){//进度更新
+
+        },
+        onError:function(e){//出错
+
+        },
+        onAbort:function(e){//中断
+
+        },
+    });
+
+* ##### routerPath
+
+   与router中的pattern对应
+
+* ##### onSuccess:function(urlLink)
+
+   成功之后的处理，此处有保存文件的逻辑
+
+* ##### fileSelect:function(e)
+
+   用户选择文件之后的处理
+
+* ##### onProgress:function(e)
+
+   进度更新
+
+* ##### onError:function(e)
+
+   当上传出错时在该方法中处理
+
+* ##### onAbort:function(e)
+
+   当出现`中断`时在该方法中处理
+
+
+* #### startUpload()
+
+    端上上传文件的方法
+
+        myUploader.startUpload();
 
 
 ## package.js
