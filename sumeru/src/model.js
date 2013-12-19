@@ -556,17 +556,30 @@ var runnable = function(fw){
 			
 			if(typeof modelDef.config != 'undefined'){
 				var fields = modelDef.config.fields || [],
-					oneField;
+					oneField, defaultValue;
 				
-				//FIXME 理论上 我只准备在model上保留_fieldsMap了
-				//newModelTemp.fields = fields;
 				
 				for(var i = 0, l = fields.length; i < l; i++){
 					
 					oneField = fields[i];
 					
-					newModelTemp._fieldsMap[oneField['name']] = oneField;
+					if(oneField['type'] == 'array'){
+						if(oneField['defaultValue']){
+							defaultValue = oneField['defaultValue'];
+							oneField['defaultValue'] = Library.objUtils.isArray(defaultValue)?defaultValue:[];
+						}else{
+							oneField['defaultValue'] = [];
+						}
+				    } else if(oneField['type'] == 'object'){
+						if(oneField['defaultValue']){
+							defaultValue = oneField['defaultValue'];
+							oneField['defaultValue'] = Library.objUtils.isObject(defaultValue)?defaultValue:{};
+						}else{
+							oneField['defaultValue'] = {};
+						}
+				    }
 
+					newModelTemp._fieldsMap[oneField['name']] = oneField;
 					//FIXME 这里还要把validation的函数生成出来。还不确定是不是要这样干。
 					
 				}
@@ -632,10 +645,9 @@ var runnable = function(fw){
 				        //解析now()
 				        newModel[oneField['name']] = fw.utils.getTimeStamp();
 				    } else if(oneField['type'] == 'array'){
-				    	//FIXME array的默认值不应该是eval出来的，标记，以后要改
-				    	newModel[oneField['name']] = eval(oneField['defaultValue']) || [];
+				    	newModel[oneField['name']] = fw.utils.deepClone(oneField['defaultValue']) || [];
 				    } else if(oneField['type'] == 'object'){
-						newModel[oneField['name']] = fw.utils.parseJSON(oneField['defaultValue']) || [];
+						newModel[oneField['name']] = fw.utils.deepClone(oneField['defaultValue']) || {};
 				    } else {
 	                    newModel[oneField['name']] = oneField['defaultValue'] || undefined; //其实后一个undefined不用写，只是为了更易读   
 				    }
