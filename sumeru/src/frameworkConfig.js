@@ -13,11 +13,20 @@ var globalConfig = function(fw){
     //
     
     fw.config.defineModule('cluster');
-    fw.config.cluster({
-        enable : true,
-        cluster_mgr : '127.0.0.1',
-        cluster_mgr_port : 6379
-    });
+    if(fw.BAE_VERSION){
+        fw.config.cluster({
+            enable : false,
+            host : 'redis.duapp.com',
+            port : 80
+        });
+    }else{
+        fw.config.cluster({
+            enable : false,
+            host : '127.0.0.1',
+            port : 6379
+        });
+    }
+    
    
     fw.config({
     	httpServerPort: httpServerPort,
@@ -29,7 +38,7 @@ var globalConfig = function(fw){
         clientValidation: true,
         serverValidation: true
     });
-    
+
     if (typeof location != 'undefined') {
 
     	fw.config({
