@@ -144,7 +144,8 @@ var buildAppResource = function(appDir, theBinDir){
      * */
     
     var compressor = UglifyJS.Compressor({
-        unused : false
+        unused : false,
+        warnings: false
     });
     ast.figure_out_scope();
     var compressed_ast = ast.transform(compressor);
