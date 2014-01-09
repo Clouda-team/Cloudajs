@@ -200,7 +200,7 @@ var buildManifest = function(appDir, theBinDir){
             }
         }
     };
-    readAllFileInView(baseViewDir,  'view');
+    readAllFileInView(baseViewDir,  '/view');
 
     var cdir = buildConfig.cacheDirectory;
     if(cdir){
