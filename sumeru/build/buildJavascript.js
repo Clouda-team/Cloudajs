@@ -77,7 +77,8 @@ module.exports = function(sumeruDir, dstDir) {
     var orig_code = buildEntireContent;
     var ast = UglifyJS.parse(orig_code); // parse code and get the initial AST
     var compressor = UglifyJS.Compressor({
-        unused : false
+        unused : false,
+        warnings:false
     });
     ast.figure_out_scope();
     var compressed_ast = ast.transform(compressor);
