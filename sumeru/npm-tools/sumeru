@@ -200,22 +200,30 @@ function updateApplicationAt(ph) {
   //FIXME doesn't support multiple app scenario
   var server_config_path = path.join(ph, 'app/server_config'),
   	  mime_js = path.join(server_config_path, 'mime.js'),
-  	  tmp_dir_js = path.join(server_config_path, 'tmp_dir.js'),
+      tmp_dir_js = path.join(server_config_path, 'tmp_dir.js'),
+      cluster_js = path.join(server_config_path, 'cluster.js'),
   	  package_js = path.join(server_config_path, 'package.js');
   	  
   if(!fs.existsSync(mime_js)){
   	copyFile(path.join(__dirname, '../../app/server_config/mime.js'), mime_js);
   }
   if(!fs.existsSync(tmp_dir_js)){
-  	copyFile(path.join(__dirname, '../../app/server_config/tmp_dir.js'), tmp_dir_js);
+    copyFile(path.join(__dirname, '../../app/server_config/tmp_dir.js'), tmp_dir_js);
+  }
+
+  if(!fs.existsSync(cluster_js)){
+    copyFile(path.join(__dirname, '../../app/server_config/cluster.js'), cluster_js);
   }
   //check if package.json contains them, if not, add them.
   var pkgContent = fs.readFileSync(package_js).toString();
   if(pkgContent.match(/mime\.js/m) == null){
-	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'mime.js,'"});
+	 pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'mime.js,'"});
   }
   if(pkgContent.match(/tmp_dir\.js/m) == null){
-	pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'tmp_dir.js,'"});
+   pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'tmp_dir.js,'"});
+  }
+  if(pkgContent.match(/cluster\.js/m) == null){
+   pkgContent = pkgContent.replace(/sumeru.packages\(/g, function($0){return $0 + '\n' + "'cluster.js,'"});
   }
   fs.writeFileSync(package_js, pkgContent);
   
