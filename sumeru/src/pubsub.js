@@ -28,15 +28,28 @@ var runnable = function(fw,PublishContainer){
                 env = this ;//this是env
                 env.wait();//自动调用wait方法
             }
-            
-            var collection = fw.collection.create({modelName : modelName});
-            
-            //在collection上记了一下他是从哪个publish上来的
-            collection.pubName = pubName;
-            
+
             var completeCallback = arrPop.call(arguments);
             var args = arrSlice.call(arguments,1);
 
+            var collection;
+            var cache = fw.cache.getPubData(pubName,args);
+            if(cache!=null){
+                try{
+                    cache = JSON.parse(cache);
+                    collection = fw.collection.create({modelName : modelName}, cache);
+                    collection.pubName = pubName;
+                }catch(e){
+                    collection = fw.collection.create({modelName : modelName});
+                    collection.pubName = pubName;
+                }
+            }else{
+                collection = fw.collection.create({modelName : modelName});
+                collection.pubName = pubName;
+            }
+            
+            //在collection上记了一下他是从哪个publish上来的
+            
             //send the subscribe netMessage
             var version = collection.getVersion();
             var id =  this.__UK;
@@ -79,7 +92,7 @@ var runnable = function(fw,PublishContainer){
             	try{
             		completeCallback.apply(undefined,arguments);
                 }catch(e){
-                	console.warn("error when pubsub callback on line 84 ",e);
+                	console.warn("error when pubsub callback on line 84 \n" + e.stack || e);
                 }
                 if(env){
                     env.start();//自动调用start方法
@@ -91,6 +104,7 @@ var runnable = function(fw,PublishContainer){
                 collection    :    collection,
                 callback      :    tmpfunc,
                 callbackStr   :    callbackStr,
+                args   : args,
                 env           :    this
             });
             
@@ -109,7 +123,11 @@ var runnable = function(fw,PublishContainer){
             },function(){
                 sumeru.dev("send subscribe " + pubName, version || 'no version');
             });
-            
+            //for offline render中会执行callback，里面会用到return的 collection，所以需要延迟执行。--jin
+            if(cache!=null){
+                //collection.render();
+                setTimeout((function(c){return function(){c.render()}})(collection),2);
+            }
             return collection;
             //when data received from server, will run the onComplete
         },

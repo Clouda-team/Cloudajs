@@ -1,4 +1,4 @@
-//version 0.2.10
+//version 0.2.11
 var touch = touch || {};
 
 (function(doc, exports) {
@@ -63,7 +63,9 @@ var touch = touch || {};
 			if (el.className) {
 				var cns = el.className.split(/\s+/);
 				return "." + cns.join(".");
-			} else {
+			} else if(el === document){
+				return "body";
+			}else{
 				return el.tagName.toLowerCase();
 			}
 		},
@@ -146,7 +148,11 @@ var touch = touch || {};
 					e[p] = e.detail[p];
 				}
 			}
-			handler.call(e.target, e);
+			var returnValue = handler.call(e.target, e);
+			if(typeof returnValue !== "undefined" && !returnValue){
+				e.stopPropagation();
+				e.preventDefault();
+			}
 		};
 
 		handler.proxy = handler.proxy || {};
@@ -193,7 +199,7 @@ var touch = touch || {};
 	 */
 	var _delegate = function(el, evt, sel, handler) {
 		var proxy = function(e) {
-			var target;
+			var target, returnValue;
 			e.originEvent = e;
 			e.startRotate = function() {
 				__rotation_single_finger = true;
@@ -214,13 +220,21 @@ var touch = touch || {};
 				while (!utils.matchSelector(target, integrateSelector)) {
 					target = target.parentNode;
 				}
-				handler.call(target, e);
+				returnValue = handler.call(e.target, e);
+				if(typeof returnValue !== "undefined" && !returnValue){
+					e.stopPropagation();
+					e.preventDefault();
+				}
 			} else {
 				if (os.ios7) {
 					utils.forceReflow();
 				}
 				if (match || ischild) {
-					handler.call(e.target, e);
+					returnValue = handler.call(e.target, e);
+					if(typeof returnValue !== "undefined" && !returnValue){
+						e.stopPropagation();
+						e.preventDefault();
+					}
 				}
 			}
 		};
@@ -408,12 +422,6 @@ var touch = touch || {};
 			if (directions[key]) return key;
 		}
 		return null;
-	}
-
-	//取消事件的默认行为和冒泡
-	function preventDefault(ev) {
-		ev.preventDefault();
-		ev.stopPropagation();
 	}
 
 	function getXYByElement(el) {

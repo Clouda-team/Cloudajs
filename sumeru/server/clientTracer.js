@@ -409,9 +409,16 @@ clientTracer.__reg('onSocketConnection',function(clientId,socketId,conn){
   }
   socket_count ++;
   var client = findClient(clientId);
+  // 获取来源ip.
+  var ip = conn.remoteAddress;
+  
+  // 处理有代理的情况下的ip来源
+  if(conn.headers['x-forwarded-for']){
+      ip = conn.headers['x-forwarded-for'].split(', ')[0];
+  }
   
   // 检查来源ip是否与client创建时一至,防止cookie,session的伪造
-  if(client.__safeIP(conn.remoteAddress)){
+  if(client.__safeIP(ip)){
       client.__socketConnection(socketId);
   }else{
       console.warn('unsafe ip address : ' , conn.remoteAddress);

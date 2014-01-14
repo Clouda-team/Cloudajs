@@ -16,7 +16,7 @@
  * }
  * 
  * default number : handleName  
- *            "0" : "onLocalMessage",         // 随便什么鬼地方去接收，但不从网络进行派发,当前由于client端存在这种使用情况.所以在此预留
+ *            "0" : "onLocalMessage",         // 随便什么地方接收，但不从网络进行派发,当前由于client端存在这种使用情况.所以在此预留
  *          "100" : "onError",                // 两侧通用为处理错误消息
  *          "200" : "onMessage",              // 两侧能用为处理数据消息
  *          "300" : "onGlobalError",          // to client only, 两端都存在，但只有client端目前存在使用场景

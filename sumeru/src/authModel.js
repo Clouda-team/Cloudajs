@@ -13,7 +13,7 @@ Model.smr_Authentication = function(exports){
             {name: 'userId', type: 'string'},                           // 与用户系统所关联的一个值,用于在用户系统中检索唯一用户
             {name: 'info', type: 'object'},                             // 附加信息，来源自用户系统返回的，希望在当前用户活动过程中被使用到的一些数据
             {name: 'authMethod', type: 'string'},                     // 当前的登陆类型, local|baidu|tpa
-            {name: 'expires', type: 'int'},                             // 超时时间,当用到达指定时间时,当前登陆则超时.
+            {name: 'expires', type: 'number'},                             // 超时时间,当用到达指定时间时,当前登陆则超时.
             {name: 'status', type: 'string', defaultValue : 'offline'},  // 标记当前在线或离线状态, online | offline
             {name: 'remoteAddr', type: 'string'}                         // 记录当前登陆IP,随status变化而记录最新值.
         ],

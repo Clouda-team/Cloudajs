@@ -299,10 +299,9 @@ if (fs.existsSync(publishBaseDir)) {
                 if(publishModule && publishModule.config && publishModule.type === 'external'){
                     externalConfig = publishModule.config;
                 }
-            }else if((typeof publishModuleObject).toLowerCase() === "object"){
-                //兼容老的external.js, 坑。。。
+            }else if((typeof publishModuleObject).toLowerCase() === "object"){//兼容老的external.js
                 var publishModule = require(file);
-                if(publishModule && !publishModule.config){
+                if(publishModule && !publishModule.config && publishModule.geturl){
                     externalConfig = publishModule;
                 }
             }
@@ -314,12 +313,12 @@ if (fs.existsSync(publishBaseDir)) {
     fw.dev(publishBaseDir + ' DO NOT EXIST');
 }
 
-//external.js
 var http = require("http");
+var https = require("https");
 var sockjs = require("sockjs");
 var serverObjectId = require("./ObjectId");
 var url = require('url');
-require(__dirname + '/../src/external.js')(fw, findDiff, publishBaseDir, externalConfig, http, serverObjectId, url);
+require(__dirname + '/../src/external.js')(fw, findDiff, publishBaseDir, externalConfig, http, https, serverObjectId, url);
 
 
 var runStub = function(db) {
@@ -359,7 +358,8 @@ var runStub = function(db) {
         	require(__dirname + "/../src/event.js")(fw);
 	        require(__dirname + "/../src/pubsub.js")(fw,PublishContainer);
 	        require(__dirname + "/../src/sense.js")(fw);
-	        require(__dirname + "/../src/pilot.js")(fw);
+            require(__dirname + "/../src/pilot.js")(fw);
+            require(__dirname + "/../src/cache.js")(fw);
 	        
 	        require(__dirname + '/../src/model.js')(fw);
 			require(__dirname + '/../src/modelPoll.js')(fw);
@@ -390,7 +390,7 @@ var runStub = function(db) {
     }).listen(PORT, function() {
         fw.log('Server Listening on ' + PORT);
     });
-    
+
     // register the server to group
     //groupManager.register([{addr:config.get('selfGroupManagerAddr') || '0.0.0.0',port:config.get('selfGroupManagerPort') || (parseInt(PORT) + 3000)}]);
 
@@ -426,6 +426,18 @@ var runStub = function(db) {
         });
     });
     
+
+    /**
+     * 此处是为测试离线加的
+     * 测试离线时，需要格外的暴露globalServer、PORT。
+     * start --jin
+     
+    if(process.argv[2]&&process.argv[2]=='test'){
+        process.globalServer = globalServer;
+        process.sock = sock;
+        process.PORT = PORT;
+    }
+    end --jin*/
     
     var clearSocketMgrBySocketId = function(_sumeru_socket_id){
         delete SocketMgr[_sumeru_socket_id];
@@ -645,6 +657,9 @@ var runStub = function(db) {
                                                 'modelname' : PublishContainer[pubname]['modelName'],
                                                 'plainstruct' : PublishContainer[pubname]['plainStruct']
                                                 };
+                    if(PublishContainer[pubname]['needAuth']){
+                        publishModelMap[pubname]['needAuth'] = true;
+                    }
                 }
                 var msgObj = {
                     timestamp: (new Date()).valueOf(),
@@ -652,7 +667,7 @@ var runStub = function(db) {
                 };
                 if (fw.config.get("rsa_enable")){
                     msgObj.swappk = fw.myrsa.getPk();//server传递给客户端自己的公钥，这句不加密
-                }
+                };
                 setTimeout(function(){
                     netMessage.sendMessage(msgObj,'echo_from_server', socketId, function(err){
                         fw.log('send echo_from_server faile' + err);

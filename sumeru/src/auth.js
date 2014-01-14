@@ -7,7 +7,7 @@
     var auth = new fw.utils.emitter();
     
     var pkgAuth = fw.addSubPackage('auth');
-    
+    var inited = false;
     // fw.utils.cpp(auth,fw.utils.emitter);
     
     var __emit = auth.emit;
@@ -59,6 +59,11 @@
 	};
 	
     var sendAndCallback = function(msg,target,cb){
+        
+        if(inited == false){
+            throw new Error("not inited");
+            return;
+        }
         
         var cbn = "WAITING_CALLBACK_" + fw.utils.randomStr(8);
         
@@ -286,7 +291,7 @@
             }else{
                 statusChange(null,NOT_LOGIN,null);
             }
-            
+            inited = true;
             cb && cb();
         });
         
@@ -320,6 +325,9 @@
         'getStatus':getStatus,
         'getLastError':getLastError,
         'getUserInfo':getUserInfo,
+        'isInited':function(){
+            return inited;
+        },
         // ------ 
         'isLogin':isLogin,
         'getToken':getToken

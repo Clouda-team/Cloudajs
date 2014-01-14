@@ -81,12 +81,12 @@ var runnable = function(fw){
 									});
 	fw.validation.addrule("chinese" , {  
 										"runat":"both", 
-								        "regexp":"/^[\u4e00-\u9fa5]+$/",
+								        "regexp":"^[\u4e00-\u9fa5]+$",
 										"msg":"$1必须为中文。"
 								    });
 	fw.validation.addrule("url" , {   
 										"runat":"both",
-								        "regexp":"/^[a-zA-z]:\\/\\/[^s]$/",
+								        "regexp":"^[A-Za-z]+://[A-Za-z0-9-_]+\\.[A-Za-z0-9-_%&\?\/.=]+$",
 										"msg":"$1必须为URL。"
 								    });
 	fw.validation.addrule("unique" , {

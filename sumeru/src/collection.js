@@ -639,23 +639,10 @@ var runnable = function(fw){
 		return instance;
 	};
 	
-
-
-	/**
-	 * for developer , storable
-	 */
     fw.collection.__reg('create', function(def,dataMap){
-    	var coll = __collectionFactory(def,dataMap);
-    	coll._setStorable();
-		return coll;
-	});
-
-    /**
-     * for framework, unstorable
-     */
-    fw.collection.__reg('_create', function(def,dataMap){
 		return __collectionFactory(def,dataMap);
 	});
+
 }
 if(typeof module !='undefined' && module.exports){
 	module.exports = runnable;

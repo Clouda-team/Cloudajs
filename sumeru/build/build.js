@@ -1,5 +1,6 @@
 var path = require('path');
 var fs = require('fs');
+var _debug = true;
 
 var baseDir = path.join(__dirname, '../../');
 var sumeruDir = path.join(__dirname, '/../');
@@ -38,11 +39,11 @@ if (typeof process.BAE !== 'undefined'){
     dstDir = appDir;//path.join(__dirname, '/../../app' + (process.argv[2] ? '/' +process.argv[2] : ''));
     
 }
-
 process.appDir = appDir;
 
 process.baseDir = baseDir;
 process.dstDir = dstDir;
+
 
 sumeru.dev('build from :' + baseDir);
 sumeru.dev('to :' + dstDir);
@@ -111,6 +112,9 @@ var buildAppResource = function(appDir, theBinDir){
     }
 
     readPackage(appDir);
+
+
+
     
     var UglifyJS = require('uglify-js');
   
@@ -165,8 +169,9 @@ var buildAppResource = function(appDir, theBinDir){
         buildView(appDir, binDir);
         buildManifest(appDir, path.join(dstDir, 'bin'));
     }else{
-        fs.writeFileSync(theBinDir + '/app.js', packedAppContent, 'utf-8');
-        fs.writeFileSync(theBinDir + '/app.css', packedAppCssContent, 'utf-8');
+        fs.writeFileSync(theBinDir + '/app.js', _debug?buildAppContent:packedAppContent, 'utf-8');
+        fs.writeFileSync(theBinDir + '/app.css', _debug?buildAppCssContent:packedAppCssContent, 'utf-8');
+
         buildView(appDir, theBinDir);
         buildManifest(appDir, theBinDir);
     }

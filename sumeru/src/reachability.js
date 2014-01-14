@@ -10,6 +10,7 @@ var runnable = function(sumeru){
     
     var STATUS_OFFLINE = 0x00;
     var STATUS_CONNECTING = 0x10;
+    var STATUS_CONNECTOPEN = 0x11;
     var STATUS_CONNECTED = 0x100;
     
     var TYPE_WIFI = 0x01;
@@ -33,6 +34,8 @@ var runnable = function(sumeru){
             functionstack.offline && functionstack.offline();
         }else if(status === STATUS_CONNECTING) {
             functionstack.connecting && functionstack.connecting();
+        }else if(status === STATUS_CONNECTOPEN) {
+            functionstack.connectopen && functionstack.connectopen();
         }else if(status === STATUS_CONNECTED) {
             functionstack.online && functionstack.online();
         }
@@ -52,6 +55,7 @@ var runnable = function(sumeru){
     
     api.STATUS_OFFLINE = STATUS_OFFLINE;
     api.STATUS_CONNECTING = STATUS_CONNECTING;
+    api.STATUS_CONNECTOPEN = STATUS_CONNECTOPEN;
     api.STATUS_CONNECTED = STATUS_CONNECTED;
     //FIXME 完善在线功能，添加trigger online、offline方法。
     //因为断线有两种可能，一种是与server中断（可能server故障），第二种是失去网络连接

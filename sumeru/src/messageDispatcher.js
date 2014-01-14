@@ -268,7 +268,11 @@ var runnable = function(fw){
         }
         
         //a flag tells if data have been stored remotely
-        if(!isPlainStruct)collection._setSynced(true);
+        if(!isPlainStruct){
+            collection._setSynced(true);
+            if(pubname!='auth-init')
+            fw.cache.setPubData(pubname,item.args,JSON.stringify(collection.getData()));
+        }
     }
     
     /*
@@ -416,6 +420,7 @@ var runnable = function(fw){
      * 2.添加了从服务器接收公钥
      */
     var onMessage_echo_from_server = function(data){
+        fw.reachability.setStatus_(fw.reachability.STATUS_CONNECTED);
     	var localTimeStamp = (new Date()).valueOf(); 
     	serverTimeStamp = data.timestamp;
     	
@@ -433,6 +438,7 @@ var runnable = function(fw){
     	fw.utils.__reg('getTimeStamp', getTimeStamp);
     	
     	Library.objUtils.extend(sumeru.pubsub._publishModelMap, data.pubmap);
+        fw.cache.set('publishModelMap',JSON.stringify(data.pubmap));
     	
         fw.netMessage.sendLocalMessage({}, 'after_echo_from_server');
     };

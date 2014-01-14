@@ -40,7 +40,8 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
     // var isInternalJoin = false;
     var isControllerChange = true, isParamsChange  = true, isSessionChange = true;
     var lastController = null ,lastParams = null,lastSession = null,lastOneSession=null;
-    var isIgnore = false , isforce = false;
+    var isIgnore = false , /*?这里的isIgnore一直是false状态，用处是什么？*/
+        isforce = false;
     
     var objToUrl = function(session){
     	var sessionObj = (typeof session == 'object') ?session:JSON.parse(session);

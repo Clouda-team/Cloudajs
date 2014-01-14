@@ -28,6 +28,9 @@ var runnable = function(sumeru){
     }
 
     var getPilot = function(pilotid){
+        if(fw.IS_SUMERU_SERVER){
+            return;
+        }
         return pilot[pilotid];
     }
 

@@ -12,7 +12,7 @@
 	
 	
 	var clientId = null,
-	     authMethod = cookie.getCookie('authMethod');
+	    authMethod = cookie.getCookie('authMethod');
 	
     if(!(clientId = cookie.getCookie('clientId'))){
         var t = Date.now().toString(32);
@@ -73,7 +73,7 @@
 		};
 		
 		socket.onopen = function(){
-		    reachability.setStatus_(reachability.STATUS_CONNECTED);
+		    reachability.setStatus_(reachability.STATUS_CONNECTOPEN);
 		    
 			//发送链接标示符
 			var identifier = {};
@@ -181,13 +181,32 @@
 	};
 	
 	fw.init = function(callback){
+
+		/**
+		 * 假设网络始终处于连接状态：
+		     一个app只需要连接一次，断线重连时的socket重连以及消息重发由reachability来处理。
+		     transition.init也只需要做一次。
+		 */
 		if(!inited){
-			__socketInit(0, callback);
-		}else{
-		    callback && callback();
+			if(fw.config.get('pubcache')){
+				__socketInit(0);
+			}else{
+				__socketInit(0, function(){
+	            	callback && callback();
+				});
+			}
+			//for offline
+			var publishModelMap = fw.cache.get('publishModelMap');
+			if(publishModelMap){
+    			Library.objUtils.extend(sumeru.pubsub._publishModelMap, JSON.parse(publishModelMap));
+			}
+			fw.transition._init();
 		}
-		fw.transition._init();
-		//fw.Controller.__load('_load').apply(this, arguments);
+
+		if(fw.config.get('pubcache')){
+			//目前的callback都是分发路由
+            callback && callback();
+		}
 	};
 	
 	fw.reconnect = function(){

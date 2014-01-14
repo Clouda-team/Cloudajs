@@ -95,6 +95,18 @@
             pos = route.splice(0,1)[0];
           }
           return e;
+        },
+
+        delcomment: function(e){
+          if(e.nodeType==8){
+            e.parentNode.removeChild(e);
+          }else{
+            var len = e.childNodes.length-1;
+            while(len>=0){
+              util.delcomment(e.childNodes[len]);
+              len--;
+            }
+          }
         }
       }
 
@@ -324,10 +336,18 @@
 
         var d1 = util.make(targetElement.nodeName,newhtml),d2 = targetElement;
 
+        //删除需要diff的dom中的注释。
+        util.delcomment(d1);
+        util.delcomment(d2);
+
         var routes = getDiff(d1,d2), route, iroute,
             d, lastRoute = routes.length, v;
 
         if(lastRoute===1 && routes[0]===0) { return false; }
+        if(lastRoute>fw.config.get('domdiffnum')){
+          targetElement.innerHTML = newhtml;
+          return false;
+        }
 
         for(d = 0; d < lastRoute; d++)
         {

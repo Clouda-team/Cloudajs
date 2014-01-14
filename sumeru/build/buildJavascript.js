@@ -5,6 +5,7 @@
   */
 var sumeru = require(__dirname + '/../src/newPkg.js')();
 require(__dirname + '/../src/log.js')(sumeru);
+var _debug = true;
 
 module.exports = function(sumeruDir, dstDir) {
   var fs = require('fs');
@@ -99,7 +100,7 @@ module.exports = function(sumeruDir, dstDir) {
 
     //写入sumeru.js 和 sumeru.css文件
     fs.writeFileSync(targetCSSFileName, packedCSS, 'utf8');
-    fs.writeFileSync(targetJsFileName, final_code, 'utf8');
+    fs.writeFileSync(targetJsFileName, _debug?buildEntireContent:final_code, 'utf8');
 
   } else{
     sumeru.log('sumeru dir or sumeru package.js does not exist!');

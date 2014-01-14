@@ -27,7 +27,7 @@ var arrPop= Array.prototype.pop;
 var prefix = __dirname + '/authMethod/';
 
 // 帐户类型
-var authMethodList = [ "local" , 'baidu' , 'tpa'];
+var authMethodList = [ "local" ];
 
 var AccountHandler = {supportType:[]};
 

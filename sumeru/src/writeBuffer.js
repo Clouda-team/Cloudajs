@@ -35,9 +35,20 @@ var runnable = function(sumeru){
         };
 
         var current;
-        
+        if(reachability.getStatus() == reachability.STATUS_CONNECTOPEN){
+            for(var i=buffer.length-1;i>=0;i--){
+                current = buffer[i];
+                if(JSON.parse(current.msg).target == 'echo'){
+                    output_(current.msg, current.onError, current.onSuccess);
+                    buffer.splice(i,1);
+                    break;
+                }
+            }
+            
+        }
+
         while(reachability.getStatus() == reachability.STATUS_CONNECTED 
-            && (current = buffer.shift())){
+                && (current = buffer.shift())){
             output_(current.msg, current.onError, current.onSuccess);
         }
     }
