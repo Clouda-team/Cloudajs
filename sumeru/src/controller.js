@@ -239,7 +239,7 @@ var runnable = function(fw){
         redirect:function(queryPath,paramMap,isforce){
             var urlHash = queryPath;
             if(paramMap){
-                urlHash += "!" + fw.utils.mapToUriParam(paramMap);
+                urlHash += "?" + fw.utils.mapToUriParam(paramMap);
             }
             fw.router.redirect(urlHash,isforce);
         },
