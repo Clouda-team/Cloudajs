@@ -712,27 +712,15 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, http
 	 */
 	function sendPostRequest(options, postData, cb, buffer){
 		//server
-		var defaultOptions;
 		if(fw.IS_SUMERU_SERVER){
-			if (options && options.json === true) {
-        postData = JSON.stringify(postData);
-        defaultOptions = {
-					method : 'POST',
-					headers: {
-		        'Content-Type': 'application/json',
-		        'Content-Length': postData.length
+            postData = encodeURIComponent(JSON.stringify(postData));
+            var defaultOptions = {
+				method : 'POST',
+				headers: {
+			        'Content-Type': 'application/x-www-form-urlencoded',
+			        'Content-Length': postData.length
 			    }
-				};
-			} else {
-        postData = encodeURIComponent(JSON.stringify(postData));
-        defaultOptions = {
-					method : 'POST',
-					headers: {
-		        'Content-Type': 'application/x-www-form-urlencoded',
-		        'Content-Length': postData.length
-			    }
-				};
-			}
+			};
 
 			var opts = Library.objUtils.extend(true, defaultOptions, options);
 
