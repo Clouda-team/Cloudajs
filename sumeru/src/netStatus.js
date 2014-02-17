@@ -46,9 +46,9 @@ var runnable = function(sumeru){
     window.addEventListener("offline", offlineHandle, false);
     window.addEventListener("online", onlineHandle, false);
 
-    api.__reg('info', getNetworkInfo, 'publish');
-    api.__reg('setStatus_', setStatus_, 'publish');
-    api.__reg('getStatus_', getStatus_, 'publish');
+    api.__reg('info', getNetworkInfo, 'private');
+    api.__reg('setStatus_', setStatus_, 'private');
+    api.__reg('getStatus_', getStatus_, 'private');
 
 }
 if(typeof module !='undefined' && module.exports){

@@ -70,7 +70,9 @@ var runnable = function(fw){
         if(fw.IS_SUMERU_SERVER){
             return;
         }
-        if(!sumeru.pubsub._publishModelMap[pubname.replace(/@@_sumeru_@@_page_([\d]+)/, '')]['needAuth']){
+
+        if(pubname&&fw.config.get('pubcacheexcept').indexOf(pubname)<0)//过滤掉不需要缓存的publish
+        if(!fw.pubsub._publishModelMap[pubname.replace(/@@_sumeru_@@_page_([\d]+)/, '')]['needAuth']){
             var key = pubname+((args instanceof Array)?'_'+args.join('_'):'');
             set(key,value);
         }

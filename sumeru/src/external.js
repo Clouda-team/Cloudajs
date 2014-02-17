@@ -97,8 +97,10 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, http
 		var chunks = [];
 		var size = 0;
 		var urlObj = urlParser && urlParser.parse(url);
-		var mode = urlObj.protocol === "https:" ? https : http;
-
+		var mode = urlObj.protocol === "https" ? https : http;
+		if(urlObj && urlObj.protocol){
+			delete urlObj.protocol;	
+		}
 		var getRequest = mode.get(url, function(res){
 		
 			var data = null;
@@ -178,8 +180,10 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, http
 		
 		var chunks = [];
 		var size = 0;
-		var mode = options.protocol === "https:" ? https : http;
-		
+		var mode = options.protocol === "https" ? https : http;
+		if(options && options.protocol){
+			delete options.protocol;	
+		}
 		var postRequest = mode.request(options, function(res){
 			
 			var data = null;

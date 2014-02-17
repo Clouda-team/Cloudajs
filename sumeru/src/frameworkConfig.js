@@ -44,6 +44,7 @@ var globalConfig = function(fw){
         pubcache:true,//true:缓存subscript数据
         pubcachenum: 200,//本地缓存subscript数据条数的上限
         pubcachegap: 5,//缓存超出时每次删除的条数。
+        pubcacheexcept:['auth-init'],//定义不缓存的部分
         domdiff: true,//是否开启domdiff
         domdiffnum: 20//domdiff阀值，超过这个数量，就直接覆盖innerHTML
     });

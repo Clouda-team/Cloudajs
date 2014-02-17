@@ -270,7 +270,6 @@ var runnable = function(fw){
         //a flag tells if data have been stored remotely
         if(!isPlainStruct){
             collection._setSynced(true);
-            if(pubname!='auth-init')
             fw.cache.setPubData(pubname,item.args,JSON.stringify(collection.getData()));
         }
     }
