@@ -8,6 +8,16 @@
     
     var pkgAuth = fw.addSubPackage('auth');
     var inited = false;
+    var isOnline =fw.reachability ? fw.reachability.getStatus() == fw.reachability.STATUS_CONNECTED : false;
+    
+    fw.eventStack._on('online',function(){
+    	isOnline = true;
+    });
+    
+    fw.eventStack._on('offline',function(){
+    	isOnline = false;
+    });
+    
     // fw.utils.cpp(auth,fw.utils.emitter);
     
     var __emit = auth.emit;
@@ -22,6 +32,19 @@
         }else{
             __emit.apply(auth,arguments);
         } 
+    };
+    
+    /**
+     * 检查网络和是否已初始化，如果未初始化则触发auth的error事件并返回false，否则返回true。
+     */
+    var checkWorking = function(cb, msg){
+    	return function(){
+    		if(isOnline && inited){
+    			return cb && cb.apply(null,arguments);
+    		}
+    		emit('error',new Error(msg || "unconnected network"));
+    		return;
+    	};
     };
     
 	var netMessage = fw.netMessage;
@@ -181,7 +204,7 @@
     };
 
     var logout = function(){
-       
+        
         authMethod = cookie.getCookie('authMethod');
         
         // 在非登陆状态下,或cookie里没有authMethod,不能完成退出操作,直接退出
@@ -316,15 +339,15 @@
     
     
     fw.utils.cpp(auth,{
-        'login':login,
-        'logout':logout,
-        'modifyUserInfo':modifyUserInfo,
-        'modifyPassword':modifyPassword,
-        'registerValidate':registerValidate,
-        'register':register,
-        'getStatus':getStatus,
-        'getLastError':getLastError,
-        'getUserInfo':getUserInfo,
+        'login':checkWorking(login),
+        'logout':checkWorking(logout),
+        'modifyUserInfo':checkWorking(modifyUserInfo),
+        'modifyPassword':checkWorking(modifyPassword),
+        'registerValidate':checkWorking(registerValidate),
+        'register':checkWorking(register),
+        'getStatus':checkWorking(getStatus),
+        'getLastError':checkWorking(getLastError),
+        'getUserInfo':checkWorking(getUserInfo),
         'isInited':function(){
             return inited;
         },

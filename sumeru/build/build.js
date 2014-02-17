@@ -1,6 +1,6 @@
 var path = require('path');
 var fs = require('fs');
-var _debug = true;
+var _debug = false;
 
 var baseDir = path.join(__dirname, '../../');
 var sumeruDir = path.join(__dirname, '/../');

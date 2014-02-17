@@ -5,7 +5,7 @@
   */
 var sumeru = require(__dirname + '/../src/newPkg.js')();
 require(__dirname + '/../src/log.js')(sumeru);
-var _debug = true;
+var _debug = false;
 
 module.exports = function(sumeruDir, dstDir) {
   var fs = require('fs');

@@ -51,7 +51,7 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
         }
         return hash.join("&");
         
-    }
+    };
     /**
      * 将session部份,拼入hash
      * 修改by孙东，此函数作为session改造的一部分，在压入url的session只能压入本controller的内容
@@ -128,12 +128,19 @@ var SUMERU_ROUTER = SUMERU_ROUTER === undefined ? true : SUMERU_ROUTER;
         isControllerChange = uriParts.controller != lastController;
         lastController = uriParts.controller;
 
+        //处理arguments change 
+        isParamsChange = lastParams != uriParts.contr_argu.join("/");
+        lastParams =  uriParts.contr_argu.join("/");
+        
         // 如果session序列化发生变化,或者controller变化，则将从url恢复到session中，但不需要触发commit
         if(isSessionChange || isControllerChange){
             fw.session.preResume(lastSession,lastController);
         }
+        if (isParamsChange || isSessionChange){
+            isforce = true;
+        }
         
-        if(isIgnore == false && (isControllerChange || isParamsChange)){
+        if(isforce){
             // 进入目标controller.
             fw.init((function(contr, params){
                     return function(){

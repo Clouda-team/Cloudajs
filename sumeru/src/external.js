@@ -285,11 +285,11 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, http
 			return;
 		}
 		try{
-			var remoteData = config.resolve(data);
+			var remoteData = config.resolve(data, pubName, url);
 			remoteData = Array.isArray(remoteData) ? remoteData : [remoteData];
 			return remoteData;
 		}catch(e){
-			fw.log("Please check fetch url, 3rd-party server encounters an error: ", url, "\n" ,data, "\n");
+			fw.log("Please check fetch url, 3rd-party server encounters an error: ", url, "\n" ,data, "\n",e.stack);
 			return ;
 		}
 		
@@ -806,7 +806,7 @@ var runnable = function(fw, findDiff, publishBaseDir, externalConfig, http, http
 	external.__reg('post', sendPostRequest);
 	external.__reg('sync', synchronize);
 	
-}
+};
 
 if(typeof module !='undefined' && module.exports){
     module.exports = runnable;

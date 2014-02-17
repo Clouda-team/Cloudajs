@@ -126,7 +126,7 @@ var runnable = function(fw,PublishContainer){
             //for offline render中会执行callback，里面会用到return的 collection，所以需要延迟执行。--jin
             if(cache!=null){
                 //collection.render();
-                setTimeout((function(c){return function(){c.render()}})(collection),2);
+                setTimeout((function(c){return function(){c.render()}})(collection),0);
             }
             return collection;
             //when data received from server, will run the onComplete
