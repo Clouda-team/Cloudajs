@@ -95,7 +95,7 @@ module.exports = function(sumeruDir, dstDir) {
    
     //clean css
     var cleanCSS = require('clean-css');
-    var packedCSS = cleanCSS.process(buildCSSEntireContent);
+    var packedCSS = new cleanCSS().minify(buildCSSEntireContent);
     
 
     //写入sumeru.js 和 sumeru.css文件

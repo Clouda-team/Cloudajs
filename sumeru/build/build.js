@@ -160,7 +160,7 @@ var buildAppResource = function(appDir, theBinDir){
 
     //clean css
     var cleanCSS = require('clean-css');
-    var packedAppCssContent = cleanCSS.process(buildAppCssContent);
+    var packedAppCssContent = new cleanCSS().minify(buildAppCssContent);
     
     
     if(typeof process.BAE !== 'undefined'){
