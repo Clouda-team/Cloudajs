@@ -551,6 +551,25 @@ Controller具有以下几个时态：onload()、onrender()、onready()、onsleep
 	更多内置验证方法和自定义验证方法，请参考附录：《API说明文档》
 
 
+* ### function
+   
+     定义Model的function
+     给 student 增加 ageAndGender() 。（不要覆盖 get set 等原有 function）
+
+	 Model.student = function(exports){
+    	exports.config = {
+        	fields: [
+        		{name : 'studentName', type: 'string'},
+           		{name :	'age',         type: 'int'},
+          		{name :	'gender',      type: 'string'}
+        	]
+    	};
+        exports.ageAndGender = function(){
+          return this.age + ' ' + this.gender
+          }
+     };
+
+
 * #### model
 
 	当type值为model和collection时，表示该字段包含一个指向其他model的1:1 或 1:n 的关系。
