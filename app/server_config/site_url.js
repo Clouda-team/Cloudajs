@@ -1,3 +1,3 @@
 sumeru.config({
-	site_url:"http://localhost:8080/" //with a tailing slash
+	site_url: "/" //with a tailing slash
 });
