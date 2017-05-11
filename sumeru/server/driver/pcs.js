@@ -11,8 +11,8 @@ var pcsconf = config.PCS;
 //body_param is not using
 var makeOption = function(cookie, sapi, method, url_param, body_parm){
     
-    url_param =(typeof(url_param) == "undefined")? '' : url_param;
-    body_param = (typeof(body_param) == "undefined") ? '' : body_param;
+    var url_param  = url_param || '',
+        body_param = body_param || '';
 
     //var pcsconf = config.PCS;
     var queryString = {
@@ -64,15 +64,9 @@ var pcsSend = function(){
 		return;
 	    }
 	    //console.log(jsonObj);TODO remove this check
-	    if ((typeof arg) != 'undefined'){
-		if ((arg.length > 0) && (typeof(arg[0]) == 'function')){
-		    callback = arg[0];
-		    //arg = [].slice.call(arg, 1, arg.length);
-			if (res.statusCode != '200'){
-				callback(res.statusCode,jsonObj);
-			}else
-			    callback(null,jsonObj);
-		}
+	    if ( arg.length > 0 && typeof arg[0] == 'function')){
+		//arg = [].slice.call(arg, 1, arg.length);
+		callback(res.statusCode != '200' ? res.statusCode : null,jsonObj);
 	    }
 	});//endof res.on
 	res.on('data',function(chunk){
