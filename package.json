@@ -23,7 +23,7 @@
     "sockjs": "0.3",
     "uglify-js": "2.4",
     "redis": "0.10",
-    "clean-css": "2.1"
+    "clean-css": "4.2"
   },
   "devDependencies": {
     "mocha": "1.8.1",
